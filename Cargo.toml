@@ -1,0 +1,23 @@
+[package]
+name = "backend"
+version = "0.1.0"
+authors = ["Luis Hebendanz <luis.nixos@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "2.0"
+actix-http = "1.0.1"
+log = "0.4.8"
+env_logger = "0.7.1"
+actix-rt = "1.0"
+actix-files = "0.2.1"
+listenfd = "0.3.3"
+tokio-postgres = "0.5.4"
+deadpool-postgres = "0.5.5"
+tokio-pg-mapper-derive = "0.1.5"
+tokio-pg-mapper = "0.1.7"
+failure = "0.1.8"
+serde = "1.0.110"
+config = "0.10.1"
