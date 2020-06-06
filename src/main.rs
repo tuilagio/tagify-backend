@@ -1,31 +1,21 @@
-
-use actix_web::{
-    HttpServer,
-    App,
-    middleware::Logger
-};
 use actix_files as fs;
+use actix_web::{middleware::Logger, App, HttpServer};
 
 use listenfd::ListenFd;
-use tokio_postgres::{NoTls};
 use std::fs::File;
 use std::io::Read;
+use tokio_postgres::NoTls;
 
-
- 
-//new
 mod config;
+mod db;
 mod errors;
-mod models;
 mod handlers;
+mod models;
 
 use crate::handlers::*;
 
-
-
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-
     // Read config
     let conf = crate::config::MyConfig::new("Settings").unwrap();
 
@@ -38,7 +28,10 @@ async fn main() -> std::io::Result<()> {
     // Read schema.sql and create db table
     let mut schema = String::new();
     File::open("schema.sql")?.read_to_string(&mut schema)?;
-    client.batch_execute(&schema).await.expect("Failed while creating a new database");
+    client
+        .batch_execute(&schema)
+        .await
+        .expect("Failed while creating a new database");
 
     // Build server address
     let ip = conf.server.hostname + ":" + &conf.server.port;
@@ -50,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Register http routes
-    let mut server = HttpServer::new(move|| {
+    let mut server = HttpServer::new(move || {
         App::new()
             // Enable logger
             .wrap(Logger::default())
