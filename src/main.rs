@@ -23,17 +23,19 @@ use std::io::Read;
 use serde::{Serialize, Deserialize};
 use deadpool_postgres::{Pool};
 use tokio_pg_mapper_derive::PostgresMapper;
+use actix_identity::{Identity, CookieIdentityPolicy, IdentityService};
 use tokio_pg_mapper::FromTokioPostgresRow;
 use failure::Fail;
 use log::{debug, error};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct Server {
     pub hostname: String,
-    pub port: String
+    pub port: String,
+    pub key: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct MyConfig {
     pub postgres: deadpool_postgres::Config,
     pub server: Server
@@ -61,7 +63,9 @@ enum UserError {
     #[fail(display = "Parsing error on field: {}", field)]
     BadClientData { field: String  },
     #[fail(display = "An internal error occured. Try again later")]
-    InternalError
+    InternalError,
+    #[fail(display = "You are not logged in")]
+    AuthFail,
 }
 
 impl ResponseError for UserError {
@@ -75,6 +79,7 @@ impl ResponseError for UserError {
         match *self {
             UserError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             UserError::BadClientData {..} => StatusCode::BAD_REQUEST,
+            UserError::AuthFail => StatusCode::UNAUTHORIZED,
         }
     }
 }
@@ -177,6 +182,30 @@ async fn update_todo(pool: web::Data<Pool>, data: web::Json<Todo>) -> Result<Htt
     Ok(HttpResponse::new(StatusCode::OK))
 }
 
+#[put("login")]
+async fn login(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, UserError> {
+    id.remember("User1".to_owned());
+
+    Ok(HttpResponse::new(StatusCode::OK))
+}
+
+#[put("logout")]
+async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
+    id.forget();
+
+    Ok(HttpResponse::new(StatusCode::OK))
+}
+
+#[get("get_user")]
+async fn get_user(id: Identity) -> Result<String, UserError> {
+    // access request identity
+    if let Some(id) = id.identity() {
+        Ok(format!("Welcome! {}", id))
+    } else {
+        Err(UserError::AuthFail)
+    }
+}
+
 #[get("/get_all_todos")]
 async fn get_all_todos(pool: web::Data<Pool>) -> Result<HttpResponse, UserError> {
 
@@ -243,9 +272,15 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
+    let cookie_key = conf.server.key;
     // Register http routes
     let mut server = HttpServer::new(move|| {
         App::new()
+            .wrap(IdentityService::new(
+                CookieIdentityPolicy::new(cookie_key.as_bytes())
+                .name("auth-cookie")
+                .secure(false)
+            ))
             // Enable logger
             .wrap(Logger::default())
             // Give every handler access to the db connection pool
@@ -258,6 +293,11 @@ async fn main() -> std::io::Result<()> {
             .service(add_todo)
             .service(delete_todo)
             .service(update_todo)
+
+            // Login handlers
+            .service(login)
+            .service(get_user)
+            .service(logout)
     });
 
     // Enables us to hot reload the server
