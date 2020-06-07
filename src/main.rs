@@ -10,9 +10,14 @@ mod config;
 mod db;
 mod errors;
 mod handlers;
+
+mod admin_handlers;
+
 mod models;
 
+
 use crate::handlers::*;
+use crate::admin_handlers::*;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -52,11 +57,8 @@ async fn main() -> std::io::Result<()> {
             // Serve every file in directory from ../dist
             .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
             // Register handlers
-            .service(index)
-            .service(get_all_todos)
-            .service(add_todo)
-            .service(delete_todo)
-            .service(update_todo)
+            .service(create_admin)
+            .service(delete_admin)
     });
 
     // Enables us to hot reload the server
