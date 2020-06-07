@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS todos (
-    id          SERIAL PRIMARY KEY,
-    description TEXT NOT NULL,
-    date        TEXT NOT NULL,
-    progress    INT NOT NULL
+CREATE TABLE IF NOT EXISTS users (
+    username    TEXT NOT NULL UNIQUE PRIMARY KEY,
+    nickname    TEXT NOT NULL,
+    password    TEXT NOT NULL,
+    is_admin    BOOLEAN NOT NULL DEFAULT 'f'
 );
