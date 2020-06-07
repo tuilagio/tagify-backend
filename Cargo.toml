@@ -22,4 +22,9 @@ failure = "0.1.8"
 serde = "1.0.111"
 config = "0.10.1"
 rand = "0.7"
+actix-identity = "0.2.1"
 rust-argon2 = "0.5"
+
+[features]
+# Treat warnings as a build error.
+strict = []

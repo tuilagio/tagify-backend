@@ -4,6 +4,7 @@ use serde::Deserialize;
 pub struct Server {
     pub hostname: String,
     pub port: String,
+    pub key: String
 }
 
 #[derive(Deserialize)]

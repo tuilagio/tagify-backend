@@ -1,5 +1,8 @@
+#![cfg_attr(feature = "strict", deny(warnings))]
+
 use actix_files as fs;
 use actix_web::{middleware::Logger, App, HttpServer};
+use actix_identity::{CookieIdentityPolicy, IdentityService};
 
 use listenfd::ListenFd;
 use std::fs::File;
@@ -15,20 +18,20 @@ mod admin_handlers;
 
 mod models;
 
-
-use crate::handlers::*;
 use crate::admin_handlers::*;
+use crate::handlers::*;
+
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     // Read config
-    let conf = crate::config::MyConfig::new("Settings").unwrap();
+    let conf = crate::config::MyConfig::new("Settings").expect("Could not find Settings file");
 
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
 
     // Create connection to database
-    let client = pool.get().await.expect("Could not connect to database");
+    let client = pool.get().await.expect("Could not connect to postgres database");
 
     // Read schema.sql and create db table
     let mut schema = String::new();
@@ -47,11 +50,17 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
+    let cookie_key = conf.server.key;
     // Register http routes
     let mut server = HttpServer::new(move || {
         App::new()
             // Enable logger
             .wrap(Logger::default())
+            .wrap(IdentityService::new(
+                CookieIdentityPolicy::new(cookie_key.as_bytes())
+                .name("auth-cookie")
+                .secure(false)
+            ))
             // Give every handler access to the db connection pool
             .data(pool.clone())
             // Serve every file in directory from ../dist
@@ -59,6 +68,11 @@ async fn main() -> std::io::Result<()> {
             // Register handlers
             .service(create_admin)
             .service(delete_admin)
+
+            // Login handlers
+            .service(login)
+            .service(logout)
+            .service(get_user)
     });
 
     // Enables us to hot reload the server
