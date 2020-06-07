@@ -1,19 +1,12 @@
-// use crate::models::Todo;
-// use actix_web::Result;
-// use deadpool_postgres::Client;
-// use tokio_pg_mapper::FromTokioPostgresRow;
+use actix_web::Result;
+use tokio_pg_mapper::FromTokioPostgresRow;
+use crate::models::User;
+use crate::errors;
 
-// use crate::errors::UserError;
+pub async fn get_user(client: deadpool_postgres::Client, username: &str) -> Result<User, errors::DBError>{
 
-// pub async fn get_all_todos_db(client: &Client) -> Result<Vec<Todo>, UserError> {
-//     let statement = client.prepare("SELECT * from todos").await.unwrap();
+   // Query data
+   let result = client.query_one("SELECT * FROM users WHERE username = $1", &[&username]).await?;
 
-//     let todos = client
-//         .query(&statement, &[])
-//         .await
-//         .expect("ERROR GETTING TODO")
-//         .iter()
-//         .map(|row| Todo::from_row_ref(row).unwrap())
-//         .collect::<Vec<Todo>>();
-//     Ok(todos)
-// }
+   Ok(User::from_row_ref(&result)?)
+}

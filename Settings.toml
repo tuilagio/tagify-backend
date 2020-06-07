@@ -1,6 +1,7 @@
 [server]
 hostname = "localhost"
 port = "5000"
+key = "geDb76JMcsmxJGkTr28rceAQD4q10T8d"
 
 [postgres]
 user = "example"
