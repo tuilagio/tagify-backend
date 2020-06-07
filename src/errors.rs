@@ -1,19 +1,15 @@
-use actix_web::{
-    HttpResponse,
-    ResponseError,
-    http::header,
-};
+use actix_web::{http::header, HttpResponse, ResponseError};
 use failure::Fail;
 
-use actix_web::http::StatusCode;
 use actix_http::ResponseBuilder;
+use actix_web::http::StatusCode;
 
 #[derive(Fail, Debug)]
 pub enum UserError {
     #[fail(display = "Parsing error on field: {}", field)]
-    BadClientData { field: String  },
+    BadClientData { field: String },
     #[fail(display = "An internal error occured. Try again later")]
-    InternalError
+    InternalError,
 }
 
 impl ResponseError for UserError {
@@ -26,7 +22,7 @@ impl ResponseError for UserError {
     fn status_code(&self) -> StatusCode {
         match *self {
             UserError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            UserError::BadClientData {..} => StatusCode::BAD_REQUEST,
+            UserError::BadClientData { .. } => StatusCode::BAD_REQUEST,
         }
     }
 }
