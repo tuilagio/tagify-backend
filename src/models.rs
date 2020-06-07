@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tokio_pg_mapper_derive::PostgresMapper;
 use log::{ error};
 
@@ -10,7 +10,6 @@ use crate::errors::UserError;
 // used for password hashing
 use argon2::Config;
 use rand::Rng;
-
 
 #[derive(Debug,Serialize, Deserialize, PostgresMapper)]
 #[pg_mapper(table = "users")]
@@ -64,3 +63,4 @@ impl User {
         Ok(true)
     }
 }
+
