@@ -5,6 +5,11 @@ use tokio_pg_mapper_derive::PostgresMapper;
 use argon2::Config;
 use rand::Rng;
 
+#[derive(Serialize)]
+pub struct Status {
+    pub status: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, PostgresMapper)]
 #[pg_mapper(table = "users")]
 pub struct User {

@@ -2,12 +2,11 @@ use crate::errors::UserError;
 use crate::models::User;
 use crate::models::ReceivedUser;
 use actix_web::http::StatusCode;
-use actix_web::{delete, put, web, HttpResponse, Result};
+use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
 use log::{debug, error};
 
-#[put("/create_admin")]
-async fn create_admin(
+pub async fn create_admin(
     pool: web::Data<Pool>,
     data: web::Json<ReceivedUser>,
 ) -> Result<HttpResponse, UserError> {
@@ -50,8 +49,7 @@ async fn create_admin(
     Ok(HttpResponse::new(StatusCode::OK))
 }
 
-#[delete("/delete_admin/{username}")]
-async fn delete_admin(
+pub async fn delete_admin(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
 ) -> Result<HttpResponse, UserError> {
