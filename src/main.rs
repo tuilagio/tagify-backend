@@ -1,8 +1,8 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_web::{middleware::Logger, App, HttpServer};
 use actix_identity::{CookieIdentityPolicy, IdentityService};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 
 use listenfd::ListenFd;
 use std::fs::File;
@@ -21,7 +21,6 @@ mod models;
 use crate::admin_handlers::*;
 use crate::handlers::*;
 
-
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     // Read config
@@ -31,7 +30,10 @@ async fn main() -> std::io::Result<()> {
     let pool = conf.postgres.create_pool(NoTls).unwrap();
 
     // Create connection to database
-    let client = pool.get().await.expect("Could not connect to postgres database");
+    let client = pool
+        .get()
+        .await
+        .expect("Could not connect to postgres database");
 
     // Read schema.sql and create db table
     let mut schema = String::new();
@@ -54,25 +56,48 @@ async fn main() -> std::io::Result<()> {
     // Register http routes
     let mut server = HttpServer::new(move || {
         App::new()
+            // Serve every file in directory from ../dist
+            .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
+            // Give every handler access to the db connection pool
+            .data(pool.clone())
             // Enable logger
             .wrap(Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(cookie_key.as_bytes())
-                .name("auth-cookie")
-                .secure(false)
+                    .name("auth-cookie")
+                    .path("/")
+                    .secure(false),
             ))
-            // Give every handler access to the db connection pool
-            .data(pool.clone())
-            // Serve every file in directory from ../dist
-            .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
-            // Register handlers
-            .service(create_admin)
-            .service(delete_admin)
-
-            // Login handlers
-            .service(login)
-            .service(logout)
-            .service(get_user)
+            //TODO maybe we need to change it :/
+            //limit the maximum amount of data that server will accept
+            .data(web::JsonConfig::default().limit(4096))
+            //normal routes
+            .service(web::resource("/").route(web::get().to(status)))
+            // .configure(routes)
+            .service(
+                web::scope("/api")
+                    //guest endpoints
+                    .service(web::resource("/user_login").route(web::post().to(login)))
+                    .service(web::resource("/user_logout").route(web::post().to(logout)))
+                    //all admin endpoints
+                    .service(
+                        web::scope("/admin")
+                            // .wrap(AdminAuthMiddleware)
+                            .service(
+                                web::resource("/create_admin").route(web::post().to(create_admin)),
+                            )
+                            .service(
+                                web::resource("/delete_admin/{username}/{_:/?}")
+                                    .route(web::delete().to(delete_admin)),
+                            ),
+                    )
+                    //user auth routes
+                    .service(
+                        web::scope("/auth")
+                            // .wrap(AuthMiddleware)
+                            .service(web::resource("/get_user").route(web::get().to(get_user))),
+                    ),
+            )
     });
 
     // Enables us to hot reload the server
