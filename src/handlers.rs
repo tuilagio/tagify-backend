@@ -1,5 +1,5 @@
 use crate::errors::UserError;
-use crate::models::{ReceivedUser, User, SendUser};
+use crate::models::{ReceivedUser, User, SendUser, Nickname, Password};
 use actix_web::http::StatusCode;
 use actix_web::{get, put, web, HttpResponse, Result};
 use deadpool_postgres::Pool;
@@ -8,6 +8,8 @@ use actix_identity::{Identity};
 
 use crate::db;
 use crate::errors;
+
+
 
 #[get("get_user")]
 async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, UserError> {
@@ -81,7 +83,7 @@ async fn login(data: web::Json<ReceivedUser>, pool: web::Data<Pool>, id: Identit
             match e {
             errors::DBError::PostgresError(e) => {
                 error!("Getting user failed: {}", e);
-                return Err(UserError::AuthFail);
+               return Err(UserError::AuthFail);
             },
             errors::DBError::MapperError(e) => {
                 error!("Error occured: {}", e);
@@ -108,3 +110,98 @@ async fn login(data: web::Json<ReceivedUser>, pool: web::Data<Pool>, id: Identit
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
+
+#[put("update_nickname")]
+async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Nickname>) -> Result<HttpResponse, UserError> {
+
+    // Check if logged in
+    let username = match id.identity() {
+        Some(id) => id,
+        None => return Err(UserError::AuthFail)
+    };
+
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(UserError::InternalError);
+        }
+    };
+
+    // Check if nickname is not empty & exists
+    let nickname = match &data.nickname {
+        Some(item) => if item.len() == 0 {
+            return Err(UserError::BadClientData{field: "nickname cannot be empty".to_string()  });
+        }
+        else {
+            item
+        },
+        None => {
+            return Err(UserError::BadClientData{field: "couldn't find nickname".to_string()  });
+        }
+    };
+        
+    
+    let result = client.execute("UPDATE users SET nickname = $1 WHERE username = $2", &[&nickname,&username]).await;
+
+    match result {
+        Err(e) => {
+            error!("Error occured: {}",e );
+            return Err(UserError::InternalError);
+        },
+        Ok(num_updated) => num_updated
+    };
+
+
+    Ok(HttpResponse::new(StatusCode::OK))
+}
+
+#[put("update_password")]
+async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Json<Password>) -> Result<HttpResponse, UserError> {
+
+    // Check if logged in
+    let username = match id.identity() {
+        Some(id) => id,
+        None => return Err(UserError::AuthFail)
+    };
+
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(UserError::InternalError);
+        }
+    };
+
+    //Check if password is not empty 
+    if data.password.len() == 0 {
+        return Err(UserError::BadClientData{field: "password cannot be empty".to_string()});
+    }
+
+    // Check if password and repeatPassword match
+    if data.password.eq(&data.repeat_password) == false{
+        return Err(UserError::BadClientData{field: "password and password repeat don't match".to_string()});
+    }
+        
+    // hash password
+    if let Err(e) = data.hash_password() {
+        error!("Error occured: {}", e);
+        return Err(UserError::InternalError);
+    }
+
+    //execute db query
+    let result = client.execute("UPDATE users SET password = $1 WHERE username = $2", &[&data.password,&username]).await;
+
+    match result {
+        Err(e) => {
+            error!("Error occured: {}",e );
+            return Err(UserError::InternalError);
+        },
+        Ok(num_updated) => num_updated
+    };
+
+
+    Ok(HttpResponse::new(StatusCode::OK))
+}
+
+

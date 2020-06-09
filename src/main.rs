@@ -73,6 +73,10 @@ async fn main() -> std::io::Result<()> {
             .service(login)
             .service(logout)
             .service(get_user)
+
+            
+            .service(update_nickname)
+            .service(update_password)
     });
 
     // Enables us to hot reload the server

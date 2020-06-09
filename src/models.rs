@@ -21,6 +21,17 @@ pub struct ReceivedUser {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Nickname {
+    pub nickname: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Password {
+    pub password: String,
+    pub repeat_password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SendUser {
     pub username: String,
     pub nickname: String,
@@ -49,5 +60,15 @@ impl User {
     #[allow(dead_code)]
     pub fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error> {
         Ok(argon2::verify_encoded(&self.password, password)?)
+    }
+}
+
+impl Password {
+    pub fn hash_password(&mut self) -> Result<(), argon2::Error> {
+        let salt: [u8; 32] = rand::thread_rng().gen();
+        let config = Config::default();
+
+        self.password = argon2::hash_encoded(self.password.as_bytes(), &salt, &config)?;
+        Ok(())
     }
 }
