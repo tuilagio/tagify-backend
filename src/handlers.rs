@@ -1,5 +1,5 @@
 use crate::errors::UserError;
-use crate::models::{ReceivedUser, SendUser,Status, User, Nickname, Password, Hash, ReceivedLoginData};
+use crate::models::{ SendUser,Status, User, Nickname, Password, Hash, ReceivedLoginData};
 use actix_identity::Identity;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result, Responder};
