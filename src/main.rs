@@ -89,6 +89,11 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::resource("/delete_admin/{username}/{_:/?}")
                                     .route(web::delete().to(delete_admin)),
+                            )
+                            // interact with user
+                            .service(
+                                web::resource("/delete_account/{username}/{_:/?}")
+                                    .route(web::delete().to(delete_account)),
                             ),
                     )
                     //user auth routes

@@ -85,3 +85,45 @@ pub async fn delete_admin(
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
+
+
+pub async fn delete_account(
+    pool: web::Data<Pool>,
+    data: web::Path<(String,)>,
+) -> Result<HttpResponse, UserError> {
+
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(UserError::InternalError);
+        }
+    };
+
+    debug!("Account delete debug: {}", data.0);
+    
+    // TODO: Need to be an admin to perform DELETE user. Wait for AuthAdmin middleware
+
+    // TODO: This API endpoint is used for DELETE normal user, use different API for DELETE admin
+
+    // Query data
+    let result = client
+        .execute("DELETE FROM users WHERE username = $1", &[&data.0])
+        .await;
+
+    match result {
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(UserError::InternalError);
+        }
+        Ok(num_updated) => {
+            if num_updated == 0 {
+                return Err(UserError::BadClientData {
+                    field: "user does not exist".to_string(),
+                });
+            }
+        }
+    };
+
+    Ok(HttpResponse::new(StatusCode::OK))
+}
