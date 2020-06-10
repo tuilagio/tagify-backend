@@ -82,7 +82,6 @@ async fn main() -> std::io::Result<()> {
                     //all admin endpoints
                     .service(
                         web::scope("/admin")
-                            // .wrap(AdminAuthMiddleware)
                             .service(
                                 web::resource("/create_admin").route(web::post().to(create_admin)),
                             )
@@ -99,12 +98,12 @@ async fn main() -> std::io::Result<()> {
                     //user auth routes
                     .service(
                         web::scope("/auth")
-                            // .wrap(AuthMiddleware)
-                            .service(web::resource("/get_user").route(web::get().to(get_user))),
+                            .service(web::resource("/update_nickname").route(web::put().to(update_nickname)))
+                            .service(web::resource("/get_user").route(web::get().to(get_user)))
+                            .service(web::resource("/update_password").route(web::put().to(update_password)))
                     ),
             )
     });
-
     // Enables us to hot reload the server
     let mut listenfd = ListenFd::from_env();
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
@@ -115,3 +114,4 @@ async fn main() -> std::io::Result<()> {
 
     server.run().await
 }
+

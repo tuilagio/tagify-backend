@@ -23,6 +23,24 @@ pub struct User {
 pub struct ReceivedUser {
     pub username: String,
     pub password: String,
+    pub repeat_password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ReceivedLoginData {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Nickname {
+    pub nickname: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Password {
+    pub password: String,
+    pub repeat_password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -42,8 +60,22 @@ impl User {
             is_admin: is_admin,
         }
     }
+}
 
-    pub fn hash_password(&mut self) -> Result<(), argon2::Error> {
+
+
+// Hash password, can be implemented for Structs containing .passwort attribut
+pub trait Hash {
+     fn hash_password(&mut self) -> Result<(), argon2::Error>;
+
+    #[allow(dead_code)]
+     fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error>;
+}
+
+//Hash implementation for User & password in one Trait
+
+impl Hash for User {
+    fn hash_password(&mut self) -> Result<(), argon2::Error>{
         let salt: [u8; 32] = rand::thread_rng().gen();
         let config = Config::default();
 
@@ -52,7 +84,22 @@ impl User {
     }
 
     #[allow(dead_code)]
-    pub fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error> {
+     fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error> {
+        Ok(argon2::verify_encoded(&self.password, password)?)
+    }
+}
+
+impl Hash for Password {
+    fn hash_password(&mut self) -> Result<(), argon2::Error>{
+        let salt: [u8; 32] = rand::thread_rng().gen();
+        let config = Config::default();
+
+        self.password = argon2::hash_encoded(self.password.as_bytes(), &salt, &config)?;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+     fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error> {
         Ok(argon2::verify_encoded(&self.password, password)?)
     }
 }
