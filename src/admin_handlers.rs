@@ -1,6 +1,5 @@
 use crate::errors::UserError;
-use crate::models::User;
-use crate::models::ReceivedUser;
+use crate::models::{ReceivedUser, User, Hash};
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
@@ -20,6 +19,20 @@ pub async fn create_admin(
     };
 
     debug!("{:#?}", data);
+
+    //Check if password is not empty
+    if data.password.len() == 0 {
+        return Err(UserError::BadClientData{field: "password field cannot be empty".to_string()});
+    }
+
+    if data.username.len() == 0 {
+        return Err(UserError::BadClientData{field: "username field cannot be empty".to_string()});
+    }
+
+    // Check if password and repeatPassword match
+    if !data.password.eq(&data.repeat_password){
+        return Err(UserError::BadClientData{field: "password and password repeat fields don't match".to_string()});
+    }
 
     let mut admin = User::create_user(&data.username, &data.password, true);
 

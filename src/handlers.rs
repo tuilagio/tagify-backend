@@ -1,5 +1,5 @@
 use crate::errors::UserError;
-use crate::models::{ReceivedUser, SendUser, Status, User, Nickname, Password};
+use crate::models::{ReceivedUser, SendUser,Status, User, Nickname, Password, Hash, ReceivedLoginData};
 use actix_identity::Identity;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result, Responder};
@@ -15,7 +15,7 @@ pub async fn status() -> impl Responder {
     })
 }
 
-#[get("get_user")]
+
 pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, UserError> {
     // Check if logged in
     let username = match id.identity() {
@@ -65,7 +65,7 @@ pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
 }
 
 pub async fn login(
-    data: web::Json<ReceivedUser>,
+    data: web::Json<ReceivedLoginData>,
     pool: web::Data<Pool>,
     id: Identity,
 ) -> Result<HttpResponse, UserError> {
@@ -109,8 +109,8 @@ pub async fn login(
     Ok(HttpResponse::new(StatusCode::OK))
 }
 
-#[put("update_nickname")]
-async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Nickname>) -> Result<HttpResponse, UserError> {
+
+pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Nickname>) -> Result<HttpResponse, UserError> {
 
     // Check if logged in
     let username = match id.identity() {
@@ -154,8 +154,8 @@ async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Ni
     Ok(HttpResponse::new(StatusCode::OK))
 }
 
-#[put("update_password")]
-async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Json<Password>) -> Result<HttpResponse, UserError> {
+
+pub async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Json<Password>) -> Result<HttpResponse, UserError> {
 
     // Check if logged in
     let username = match id.identity() {
@@ -177,7 +177,7 @@ async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Jso
     }
 
     // Check if password and repeatPassword match
-    if data.password.eq(&data.repeat_password) == false{
+    if !data.password.eq(&data.repeat_password){
         return Err(UserError::BadClientData{field: "password and password repeat don't match".to_string()});
     }
 
