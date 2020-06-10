@@ -23,7 +23,7 @@ serde = "1.0.111"
 config = "0.10.1"
 rand = "0.7"
 actix-identity = "0.2.1"
-rust-argon2 = "0.5"
+rust-argon2 = "0.8.2"
 
 [features]
 # Treat warnings as a build error.

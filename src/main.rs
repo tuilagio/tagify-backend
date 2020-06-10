@@ -86,21 +86,29 @@ async fn main() -> std::io::Result<()> {
                                 web::resource("/create_admin").route(web::post().to(create_admin)),
                             )
                             .service(
-                                web::resource("/delete_admin/{username}/{_:/?}")
+                                web::resource("/create_user").route(web::post().to(create_user)),
+                            )
+                            .service(
+                                web::resource("/delete_admin/{username}")
                                     .route(web::delete().to(delete_admin)),
                             )
-                            // interact with user
                             .service(
-                                web::resource("/delete_account/{username}/{_:/?}")
-                                    .route(web::delete().to(delete_account)),
+                                web::resource("/delete_user/{username}/")
+                                    .route(web::delete().to(delete_user)),
                             ),
                     )
                     //user auth routes
                     .service(
                         web::scope("/auth")
-                            .service(web::resource("/update_nickname").route(web::put().to(update_nickname)))
+                            .service(
+                                web::resource("/update_nickname")
+                                    .route(web::put().to(update_nickname)),
+                            )
                             .service(web::resource("/get_user").route(web::get().to(get_user)))
-                            .service(web::resource("/update_password").route(web::put().to(update_password)))
+                            .service(
+                                web::resource("/update_password")
+                                    .route(web::put().to(update_password)),
+                            ),
                     ),
             )
     });
@@ -114,4 +122,3 @@ async fn main() -> std::io::Result<()> {
 
     server.run().await
 }
-
