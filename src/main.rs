@@ -1,7 +1,7 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_identity::{CookieIdentityPolicy, IdentityService};
+use actix_identity::{IdentityService};
 use actix_web::{middleware::Logger, web, App, HttpServer};
 
 use listenfd::ListenFd;
@@ -9,14 +9,18 @@ use std::fs::File;
 use std::io::Read;
 use tokio_postgres::NoTls;
 
+
+
 mod config;
 mod db;
 mod errors;
 mod handlers;
+mod my_cookie_policy;
 
 mod admin_handlers;
 
 mod models;
+
 
 use crate::admin_handlers::*;
 use crate::handlers::*;
@@ -63,7 +67,7 @@ async fn main() -> std::io::Result<()> {
             // Enable logger
             .wrap(Logger::default())
             .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(cookie_key.as_bytes())
+                my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
                     .name("auth-cookie")
                     .path("/")
                     .secure(false),

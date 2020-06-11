@@ -17,6 +17,7 @@ pub async fn create_admin(
         }
     };
 
+    error!("Hello World!");
     debug!("{:#?}", data);
 
     //Check if password is not empty
