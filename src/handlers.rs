@@ -20,7 +20,10 @@ pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpRespons
     // Check if logged in
     let username = match id.identity() {
         Some(id) => id,
-        None => return Err(UserError::AuthFail),
+        None => {
+            error!("Not logged in");
+            return Err(UserError::AuthFail)
+        }
     };
 
     let client = match pool.get().await {
