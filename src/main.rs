@@ -1,15 +1,13 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_identity::{IdentityService};
+use actix_identity::IdentityService;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 
 use listenfd::ListenFd;
 use std::fs::File;
 use std::io::Read;
 use tokio_postgres::NoTls;
-
-
 
 mod config;
 mod db;
@@ -20,7 +18,6 @@ mod my_cookie_policy;
 mod admin_handlers;
 
 mod models;
-
 
 use crate::admin_handlers::*;
 use crate::handlers::*;
@@ -93,11 +90,11 @@ async fn main() -> std::io::Result<()> {
                                 web::resource("/create_user").route(web::post().to(create_user)),
                             )
                             .service(
-                                web::resource("/delete_admin/{username}")
+                                web::resource("/delete_admin/{username}/{_:/?}")
                                     .route(web::delete().to(delete_admin)),
                             )
                             .service(
-                                web::resource("/delete_user/{username}/")
+                                web::resource("/delete_user/{username}/{_:/?}")
                                     .route(web::delete().to(delete_user)),
                             ),
                     )
