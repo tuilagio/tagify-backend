@@ -1,11 +1,11 @@
 use crate::errors::UserError;
 use crate::models::{ SendUser,Status, User, Nickname, Password, Hash, ReceivedLoginData};
-use actix_identity::Identity;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, Result, Responder};
+use actix_web::{web, HttpResponse, Result, Responder, HttpRequest};
 use deadpool_postgres::Pool;
 use log::{debug, error};
 
+use crate::my_identity_service::{Identity, login_user};
 use crate::db;
 use crate::errors;
 
@@ -18,34 +18,8 @@ pub async fn status() -> impl Responder {
 
 pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, UserError> {
     // // Check if logged in
-    let username = match id.identity() {
-        Some(id) => id,
-        None => {
-            error!("Not logged in");
-            return Err(UserError::AuthFail)
-        }
-    };
+    let user= id.identity();
 
-    let client = match pool.get().await {
-        Ok(item) => item,
-        Err(e) => {
-            error!("Error occured: {}", e);
-            return Err(UserError::InternalError);
-        }
-    };
-    let user: User = match db::get_user(client, &username).await {
-        Ok(user) => user,
-        Err(e) => match e {
-            errors::DBError::PostgresError(e) => {
-                error!("Getting user failed: {}", e);
-                return Err(UserError::AuthFail);
-            }
-            errors::DBError::MapperError(e) => {
-                error!("Error occured: {}", e);
-                return Err(UserError::InternalError);
-            }
-        },
-    };
     let send_user = SendUser {
         username: user.username,
         nickname: user.nickname,
@@ -57,9 +31,6 @@ pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpRespons
 
 pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
     // Check if logged in
-    if let None = id.identity() {
-        return Err(UserError::AuthFail);
-    }
 
     id.forget();
 
@@ -69,7 +40,7 @@ pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
 pub async fn login(
     data: web::Json<ReceivedLoginData>,
     pool: web::Data<Pool>,
-    id: Identity,
+    req: HttpRequest
 ) -> Result<HttpResponse, UserError> {
     let client = match pool.get().await {
         Ok(item) => item,
@@ -106,7 +77,8 @@ pub async fn login(
     }
 
     debug!("User {} logged in successfully", user.username);
-    id.remember(user.username.to_owned());
+    login_user(req, user);
+    // id.remember(user);
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
@@ -114,11 +86,12 @@ pub async fn login(
 
 pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Nickname>) -> Result<HttpResponse, UserError> {
 
+    let user = id.identity();
     // Check if logged in
-    let username = match id.identity() {
-        Some(id) => id,
-        None => return Err(UserError::AuthFail)
-    };
+    // let username = match id.identity() {
+    //     Some(id) => id,
+    //     None => return Err(UserError::AuthFail)
+    // };
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -142,7 +115,7 @@ pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Jso
     };
 
 
-    let result = client.execute("UPDATE users SET nickname = $1 WHERE username = $2", &[&nickname,&username]).await;
+    let result = client.execute("UPDATE users SET nickname = $1 WHERE username = $2", &[&nickname,&user.username]).await;
 
     match result {
         Err(e) => {
@@ -160,10 +133,8 @@ pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Jso
 pub async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Json<Password>) -> Result<HttpResponse, UserError> {
 
     // Check if logged in
-    let username = match id.identity() {
-        Some(id) => id,
-        None => return Err(UserError::AuthFail)
-    };
+    let user = id.identity();
+
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -190,7 +161,7 @@ pub async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web:
     }
 
     //execute db query
-    let result = client.execute("UPDATE users SET password = $1 WHERE username = $2", &[&data.password,&username]).await;
+    let result = client.execute("UPDATE users SET password = $1 WHERE username = $2", &[&data.password,&user.username]).await;
 
     match result {
         Err(e) => {

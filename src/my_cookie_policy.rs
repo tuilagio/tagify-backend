@@ -11,6 +11,7 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use serde::{Deserialize, Serialize};
 use actix_web::http::header::{self, HeaderValue};
 use actix_web::{HttpMessage};
+use log::{debug, error};
 
 use crate::models::User;
 
@@ -121,6 +122,7 @@ impl MyCookieIdentityInner {
                 visit_timestamp: None,
             })
         } else {
+            debug!("Returning none!");
             None
         };
         res.or_else(|| {
@@ -239,19 +241,18 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
     type ResponseFuture = Ready<Result<(), Error>>;
 
     fn from_request(&self, req: &mut ServiceRequest) -> Self::Future {
-        ok(self.0.load(req).map(
-            |CookieValue {
-                 identity,
-                 login_timestamp,
-                 ..
-             }| {
-                if self.0.requires_oob_data() {
-                    req.extensions_mut()
-                        .insert(CookieIdentityExtention { login_timestamp });
-                }
-                identity
-            },
-        ))
+        debug!("Executing from request");
+        let cookie = match self.0.load(req) {
+            Some(i) => i,
+            None => panic!("Should not happen"),
+        };
+        debug!("CookieValue: {:?}", cookie);
+
+        if self.0.requires_oob_data() {
+            req.extensions_mut()
+                .insert(CookieIdentityExtention { login_timestamp: cookie.login_timestamp });
+        }
+        ok(Some(cookie.identity))
     }
 
     fn to_response<B>(

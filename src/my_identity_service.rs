@@ -22,6 +22,13 @@ use crate::errors::UserError;
 #[derive(Clone)]
 pub struct Identity(HttpRequest);
 
+pub fn login_user(req: HttpRequest, user:User) {
+    if let Some(id) = req.extensions_mut().get_mut::<IdentityItem>() {
+        id.user = user;
+        id.changed = true;
+    }
+}
+
 impl Identity {
     /// Return the claimed identity of the user associated request or
     /// ``None`` if no identity can be found associated with the request.
@@ -29,13 +36,13 @@ impl Identity {
         Identity::get_identity(&self.0.extensions())
     }
 
-    /// Remember identity.
-    pub fn remember(&self, user:User) {
-        if let Some(id) = self.0.extensions_mut().get_mut::<IdentityItem>() {
-            id.user = user;
-            id.changed = true;
-        }
-    }
+    // /// Remember identity.
+    // pub fn remember(&self, user:User) {
+    //     if let Some(id) = self.0.extensions_mut().get_mut::<IdentityItem>() {
+    //         id.user = user;
+    //         id.changed = true;
+    //     }
+    // }
 
     /// This method is used to 'forget' the current identity on subsequent
     /// requests.

@@ -64,13 +64,7 @@ async fn main() -> std::io::Result<()> {
             .data(pool.clone())
             // Enable logger
             .wrap(Logger::default())
-            .wrap(my_identity_service::IdentityService::new(
-                my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
-                    .name("auth-cookie")
-                    .path("/")
-                    .secure(false),
-                pool.clone(),
-            ))
+
             //TODO maybe we need to change it :/
             //limit the maximum amount of data that server will accept
             .data(web::JsonConfig::default().limit(4096))
@@ -103,6 +97,13 @@ async fn main() -> std::io::Result<()> {
                     //user auth routes
                     .service(
                         web::scope("/auth")
+                            .wrap(my_identity_service::IdentityService::new(
+                                my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
+                                    .name("auth-cookie")
+                                    .path("/")
+                                    .secure(false),
+                                pool.clone(),
+                            ))
                             .service(
                                 web::resource("/update_nickname")
                                     .route(web::put().to(update_nickname)),
