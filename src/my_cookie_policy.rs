@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use actix_identity::{IdentityPolicy};
+use crate::my_identity_service::IdentityPolicy;
 use std::time::{SystemTime};
 use actix_web::cookie::{Cookie, CookieJar, Key, SameSite};
 use std::rc::Rc;
@@ -11,6 +11,8 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use serde::{Deserialize, Serialize};
 use actix_web::http::header::{self, HeaderValue};
 use actix_web::{HttpMessage};
+
+use crate::models::User;
 
 struct MyCookieIdentityInner {
     key: Key,
@@ -254,21 +256,22 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
 
     fn to_response<B>(
         &self,
-        id: Option<String>,
+        user: User,
         changed: bool,
         res: &mut ServiceResponse<B>,
     ) -> Self::ResponseFuture {
         let _ = if changed {
             let login_timestamp = SystemTime::now();
-            self.0.set_cookie(
-                res,
-                id.map(|identity| CookieValue {
-                    identity,
+            let cookie_val = CookieValue {
+                    identity: user.username.clone(),
                     login_timestamp: self.0.login_deadline.map(|_| login_timestamp),
                     visit_timestamp: self.0.visit_deadline.map(|_| login_timestamp),
-                }),
+            };
+            self.0.set_cookie(
+                res,
+                Some(cookie_val)
             )
-        } else if self.0.always_update_cookie() && id.is_some() {
+        } else if self.0.always_update_cookie() {
             let visit_timestamp = SystemTime::now();
             let login_timestamp = if self.0.requires_oob_data() {
                 let CookieIdentityExtention {
@@ -281,7 +284,7 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
             self.0.set_cookie(
                 res,
                 Some(CookieValue {
-                    identity: id.unwrap(),
+                    identity: user.username.clone(),
                     login_timestamp,
                     visit_timestamp: self.0.visit_deadline.map(|_| visit_timestamp),
                 }),

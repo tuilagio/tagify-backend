@@ -405,6 +405,7 @@ dependencies = [
  "actix-http",
  "actix-identity",
  "actix-rt",
+ "actix-service",
  "actix-web",
  "config",
  "deadpool-postgres",

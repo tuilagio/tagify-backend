@@ -1,7 +1,6 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_identity::IdentityService;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 
 use listenfd::ListenFd;
@@ -13,12 +12,14 @@ mod config;
 mod db;
 mod errors;
 mod handlers;
-mod my_cookie_policy;
 
 mod admin_handlers;
+mod my_identity_service;
+mod my_cookie_policy;
 
 mod models;
 
+// use crate::my_identity_service::;
 use crate::admin_handlers::*;
 use crate::handlers::*;
 
@@ -63,11 +64,12 @@ async fn main() -> std::io::Result<()> {
             .data(pool.clone())
             // Enable logger
             .wrap(Logger::default())
-            .wrap(IdentityService::new(
+            .wrap(my_identity_service::IdentityService::new(
                 my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
                     .name("auth-cookie")
                     .path("/")
                     .secure(false),
+                pool.clone(),
             ))
             //TODO maybe we need to change it :/
             //limit the maximum amount of data that server will accept

@@ -17,7 +17,7 @@ pub async fn status() -> impl Responder {
 
 
 pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, UserError> {
-    // Check if logged in
+    // // Check if logged in
     let username = match id.identity() {
         Some(id) => id,
         None => {
@@ -46,7 +46,6 @@ pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpRespons
             }
         },
     };
-
     let send_user = SendUser {
         username: user.username,
         nickname: user.nickname,
