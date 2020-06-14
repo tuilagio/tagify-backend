@@ -16,14 +16,26 @@ pub struct User {
     pub username: String,
     pub nickname: String,
     pub password: String,
-    pub is_admin: bool,
+    pub role: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "users")]
+pub struct InternalUser {
+    pub id: i32,
+    pub username: String,
+    pub nickname: String,
+    pub password: String,
+    pub role: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReceivedUser {
     pub username: String,
+    pub nickname: String,
     pub password: String,
-    pub repeat_password: String,
+    pub role: String,
+    // pub repeat_password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,31 +52,30 @@ pub struct Nickname {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Password {
     pub password: String,
-    pub repeat_password: String,
+    // pub repeat_password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SendUser {
+    id: i32,
     pub username: String,
     pub nickname: String,
-    pub is_admin: bool,
+    pub role: String,
 }
 
 impl User {
     //create User instance without hasing password
-    pub fn create_user(username: &str, password: &str, is_admin: bool) -> User {
+    pub fn create_user(username: &str, nickname: &str, password: &str, role: &str) -> User {
         User {
             username: String::from(username),
-            nickname: String::from(username),
+            nickname: String::from(nickname),
             password: String::from(password),
-            is_admin: is_admin,
+            role: String::from(role),
         }
     }
 }
 
-
-
-// Hash password, can be implemented for Structs containing .passwort attribut
+/// Hash password, can be implemented for Structs containing .passwort attribut
 pub trait Hash {
      fn hash_password(&mut self) -> Result<(), argon2::Error>;
 
@@ -72,9 +83,23 @@ pub trait Hash {
      fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error>;
 }
 
-//Hash implementation for User & password in one Trait
-
+/// Hash implementation for User & password in one Trait
 impl Hash for User {
+    fn hash_password(&mut self) -> Result<(), argon2::Error>{
+        let salt: [u8; 32] = rand::thread_rng().gen();
+        let config = Config::default();
+
+        self.password = argon2::hash_encoded(self.password.as_bytes(), &salt, &config)?;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+     fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error> {
+        Ok(argon2::verify_encoded(&self.password, password)?)
+    }
+}
+
+impl Hash for InternalUser {
     fn hash_password(&mut self) -> Result<(), argon2::Error>{
         let salt: [u8; 32] = rand::thread_rng().gen();
         let config = Config::default();
@@ -103,3 +128,22 @@ impl Hash for Password {
         Ok(argon2::verify_encoded(&self.password, password)?)
     }
 }
+
+/// Album meta data, doesn't include id
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ReceivedAlbumMeta {
+    pub album_name: String,
+    pub owner: i32,
+    // TODO: implement this model
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InternalAlbumMeta {
+    pub id: i32,
+    pub album_name: String,
+    pub owner: i32,
+    // TODO: implement this model
+}
+
+// https://stackoverflow.com/questions/42764016/creating-a-static-const-vecstring
+pub const ROLES: &'static [&'static str] = &["admin", "tagger"];
