@@ -1,6 +1,6 @@
 use crate::errors::UserError;
 use crate::models::{ SendUser,Status, User, Nickname, Password, Hash, ReceivedLoginData};
-use actix_web::http::StatusCode;
+use actix_web::http::{StatusCode};
 use actix_web::{web, HttpResponse, Result, Responder, HttpRequest};
 use deadpool_postgres::Pool;
 use log::{debug, error};
@@ -8,6 +8,7 @@ use log::{debug, error};
 use crate::my_identity_service::{Identity, login_user};
 use crate::db;
 use crate::errors;
+use crate::my_cookie_policy::MyCookieIdentityPolicy;
 
 pub async fn status() -> impl Responder {
     web::HttpResponse::Ok().json(Status {
@@ -16,9 +17,10 @@ pub async fn status() -> impl Responder {
 }
 
 
-pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, UserError> {
-    // // Check if logged in
-    let user= id.identity();
+pub async fn get_user(id: Identity) -> Result<HttpResponse, UserError> {
+
+    // Get user identity
+    let user: User = id.identity();
 
     let send_user = SendUser {
         username: user.username,
@@ -30,9 +32,8 @@ pub async fn get_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpRespons
 }
 
 pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
-    // Check if logged in
 
-    id.forget();
+    id.logout();
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
@@ -40,8 +41,10 @@ pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
 pub async fn login(
     data: web::Json<ReceivedLoginData>,
     pool: web::Data<Pool>,
-    req: HttpRequest
+    req: HttpRequest,
+    cookie_factory: web::Data<MyCookieIdentityPolicy>
 ) -> Result<HttpResponse, UserError> {
+
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -77,21 +80,14 @@ pub async fn login(
     }
 
     debug!("User {} logged in successfully", user.username);
-    login_user(req, user);
-    // id.remember(user);
-
-    Ok(HttpResponse::new(StatusCode::OK))
+    Ok(login_user(req, cookie_factory.get_ref(), user).await)
 }
 
 
 pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Nickname>) -> Result<HttpResponse, UserError> {
 
-    let user = id.identity();
-    // Check if logged in
-    // let username = match id.identity() {
-    //     Some(id) => id,
-    //     None => return Err(UserError::AuthFail)
-    // };
+    // Get user identity
+    let user: User = id.identity();
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -132,8 +128,8 @@ pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Jso
 
 pub async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Json<Password>) -> Result<HttpResponse, UserError> {
 
-    // Check if logged in
-    let user = id.identity();
+    // Get user identity
+    let user: User = id.identity();
 
 
     let client = match pool.get().await {

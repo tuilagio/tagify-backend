@@ -10,11 +10,14 @@ use futures::future::{ok, FutureExt, LocalBoxFuture, Ready};
 
 use actix_web::dev::{Extensions, Payload, ServiceRequest, ServiceResponse};
 use actix_web::error::{Error, Result};
-use actix_web::{FromRequest, HttpMessage, HttpRequest};
+use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse};
+use actix_http::{Response, ResponseBuilder};
+use actix_web::http::{StatusCode};
 use log::{error};
 
 use deadpool_postgres::Pool;
 
+use crate::my_cookie_policy::MyCookieIdentityPolicy;
 use crate::models::User;
 use crate::db::get_user;
 use crate::errors::UserError;
@@ -22,11 +25,26 @@ use crate::errors::UserError;
 #[derive(Clone)]
 pub struct Identity(HttpRequest);
 
-pub fn login_user(req: HttpRequest, user:User) {
-    if let Some(id) = req.extensions_mut().get_mut::<IdentityItem>() {
-        id.user = user;
+pub async fn login_user(req: HttpRequest, cookie_factory: &MyCookieIdentityPolicy, user:User) -> Response {
+
+    let mut resp = ServiceResponse::new(req, HttpResponse::new(StatusCode::OK));
+    if let Some(id) = resp.request().extensions_mut().get_mut::<IdentityItem>() {
+        id.user = Some(user.clone());
         id.changed = true;
     }
+
+    match cookie_factory.to_response(Some(user), true, &mut resp).await {
+        Ok(_) => (),
+        Err(e) => error!("Could not set cookie {}", e),
+    }
+    let login = resp.response();
+
+    let mut resp = ResponseBuilder::new(StatusCode::OK);
+
+    for c in login.cookies() {
+        resp.cookie(c);
+    }
+    resp.finish()
 }
 
 impl Identity {
@@ -36,26 +54,18 @@ impl Identity {
         Identity::get_identity(&self.0.extensions())
     }
 
-    // /// Remember identity.
-    // pub fn remember(&self, user:User) {
-    //     if let Some(id) = self.0.extensions_mut().get_mut::<IdentityItem>() {
-    //         id.user = user;
-    //         id.changed = true;
-    //     }
-    // }
-
     /// This method is used to 'forget' the current identity on subsequent
     /// requests.
-    pub fn forget(&self) {
+    pub fn logout(&self) {
         if let Some(id) = self.0.extensions_mut().get_mut::<IdentityItem>() {
             id.changed = true;
-            id.forget = true;
+            id.user = None;
         }
     }
 
     fn get_identity(extensions: &Extensions) -> User {
         if let Some(id) = extensions.get::<IdentityItem>() {
-            id.user.clone()
+            id.user.as_ref().unwrap().clone()
         } else {
             panic!("user is None, this should not happen");
         }
@@ -63,9 +73,8 @@ impl Identity {
 }
 
 struct IdentityItem {
-    user: User,
+    user: Option<User>,
     changed: bool,
-    forget: bool,
 }
 
 
@@ -111,7 +120,7 @@ pub trait IdentityPolicy: Sized + 'static {
     /// Write changes to response
     fn to_response<B>(
         &self,
-        user: User,
+        user: Option<User>,
         changed: bool,
         response: &mut ServiceResponse<B>,
     ) -> Self::ResponseFuture;
@@ -226,7 +235,7 @@ where
                     };
 
                     req.extensions_mut()
-                        .insert(IdentityItem { user, changed: false, forget: false });
+                        .insert(IdentityItem { user:Some(user), changed: false });
 
                     // https://github.com/actix/actix-web/issues/1263
                     let fut = { srv.borrow_mut().call(req) };

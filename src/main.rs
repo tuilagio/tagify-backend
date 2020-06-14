@@ -57,11 +57,16 @@ async fn main() -> std::io::Result<()> {
     let cookie_key = conf.server.key;
     // Register http routes
     let mut server = HttpServer::new(move || {
+        let cookie_factory =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
+            .name("auth-cookie")
+            .path("/")
+            .secure(false);
         App::new()
             // Serve every file in directory from ../dist
             .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
             // Give every handler access to the db connection pool
             .data(pool.clone())
+            .data(cookie_factory.clone())
             // Enable logger
             .wrap(Logger::default())
 
@@ -75,7 +80,6 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api")
                     //guest endpoints
                     .service(web::resource("/user_login").route(web::post().to(login)))
-                    .service(web::resource("/user_logout").route(web::post().to(logout)))
                     //all admin endpoints
                     .service(
                         web::scope("/admin")
@@ -98,12 +102,10 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/auth")
                             .wrap(my_identity_service::IdentityService::new(
-                                my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
-                                    .name("auth-cookie")
-                                    .path("/")
-                                    .secure(false),
+                                cookie_factory,
                                 pool.clone(),
                             ))
+                            .service(web::resource("/user_logout").route(web::post().to(logout)))
                             .service(
                                 web::resource("/update_nickname")
                                     .route(web::put().to(update_nickname)),
