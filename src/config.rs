@@ -1,13 +1,13 @@
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct Server {
     pub hostname: String,
     pub port: String,
     pub key: String
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct MyConfig {
     pub postgres: deadpool_postgres::Config,
     pub server: Server,

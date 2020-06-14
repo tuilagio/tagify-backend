@@ -54,10 +54,13 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
-    let cookie_key = conf.server.key;
+    let temp = conf.server.key.clone();
+
     // Register http routes
     let mut server = HttpServer::new(move || {
-        let cookie_factory =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key.as_bytes())
+        let cookie_key = temp.as_bytes();
+
+        let cookie_factory =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
             .name("auth-cookie")
             .path("/")
             .secure(false);
@@ -70,9 +73,8 @@ async fn main() -> std::io::Result<()> {
             // Enable logger
             .wrap(Logger::default())
 
-            //TODO maybe we need to change it :/
             //limit the maximum amount of data that server will accept
-            .data(web::JsonConfig::default().limit(4096))
+            .data(web::JsonConfig::default().limit(4096)) // max 4MB json
             //normal routes
             .service(web::resource("/").route(web::get().to(status)))
             // .configure(routes)

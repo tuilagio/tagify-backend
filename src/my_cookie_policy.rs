@@ -9,7 +9,6 @@ use futures::future::{ok, Ready};
 use actix_web::error::{Error, Result};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use serde::{Deserialize, Serialize};
-use actix_web::http::header::{self, HeaderValue};
 use actix_web::{HttpMessage};
 
 use crate::models::User;
@@ -98,15 +97,14 @@ impl MyCookieIdentityInner {
         } else {
             &self.key_v2
         };
-        if add_cookie {
-            jar.private(&key).add(cookie);
-        } else {
-            jar.add_original(cookie.clone());
-            jar.private(&key).remove(cookie);
+        if ! add_cookie {
+            let mut now = time::now();
+            now.tm_year -= 999; // TODO: don't hardcode this
+            cookie.set_expires(now);
         }
+        jar.private(&key).add(cookie);
         for cookie in jar.delta() {
-            let val = HeaderValue::from_str(&cookie.to_string())?;
-            resp.headers_mut().append(header::SET_COOKIE, val);
+            resp.response_mut().add_cookie(cookie).expect("Identity could not set cookie");
         }
         Ok(())
     }
