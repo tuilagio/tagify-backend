@@ -35,7 +35,7 @@ impl ResponseError for UserError {
 }
 
 #[derive(Fail, Debug)]
-pub enum CutomResponseError {
+pub enum HandlerError {
     #[fail(display = "Parsing error on field: {}", field)]
     BadClientDataParse { field: String },
     #[fail(display = "{}", err)]
@@ -46,12 +46,10 @@ pub enum CutomResponseError {
     AuthFail,
     #[fail(display = "{}", message)]
     NotImplemented { message: String },
-    #[fail(display = "{}", message)]
-    WeFuckedUp { message: String },
 }
 
 /* Hin: self.to_string() is the text in fail(display ....) */
-impl ResponseError for CutomResponseError {
+impl ResponseError for HandlerError {
     fn error_response(&self) -> HttpResponse {
         ResponseBuilder::new(self.status_code())
             .set_header(header::CONTENT_TYPE, "application/json; charset=utf-8")
@@ -59,12 +57,11 @@ impl ResponseError for CutomResponseError {
     }
     fn status_code(&self) -> StatusCode {
         match *self {
-            CutomResponseError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            CutomResponseError::BadClientDataParse { .. } => StatusCode::BAD_REQUEST,
-            CutomResponseError::BadClientData { .. } => StatusCode::BAD_REQUEST,
-            CutomResponseError::AuthFail => StatusCode::UNAUTHORIZED,
-            CutomResponseError::NotImplemented { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            CutomResponseError::WeFuckedUp { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            HandlerError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            HandlerError::BadClientDataParse { .. } => StatusCode::BAD_REQUEST,
+            HandlerError::BadClientData { .. } => StatusCode::BAD_REQUEST,
+            HandlerError::AuthFail => StatusCode::UNAUTHORIZED,
+            HandlerError::NotImplemented { .. } => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

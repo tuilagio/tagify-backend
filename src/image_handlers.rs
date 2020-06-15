@@ -1,5 +1,5 @@
 use crate::models::{ Hash, ReceivedUser, User, InternalUser, ReceivedLoginData, ReceivedAlbumMeta, InternalAlbumMeta};
-use crate::errors::{UserError, CutomResponseError};
+use crate::errors::{UserError, HandlerError};
 use crate::utils;
 use crate::db;
 use crate::errors;
@@ -32,10 +32,10 @@ pub async fn upload_image(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
     // data_payload: web::???,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
     println!("{} {}", data.0, data.1);
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'upload_image' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -43,9 +43,9 @@ pub async fn upload_image(
 pub async fn delete_image(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'delete_image' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -53,9 +53,9 @@ pub async fn delete_image(
 pub async fn delete_all_images(
     pool: web::Data<Pool>,
     data: web::Path<(String, )>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'delete_image' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -63,9 +63,9 @@ pub async fn delete_all_images(
 pub async fn get_image(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'get_image' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -74,9 +74,9 @@ pub async fn re_upload_image(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
     // data_payload: web::???,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'re_upload_image' not implemented yet. Remove after done.".to_string(),
     });
 }

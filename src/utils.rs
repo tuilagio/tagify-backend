@@ -1,4 +1,4 @@
-use crate::errors::{UserError, CutomResponseError};
+use crate::errors::{UserError, HandlerError};
 use std::collections::HashMap;
 
 pub fn is_string_numeric(str: String) -> bool {
@@ -12,7 +12,7 @@ pub fn is_string_numeric(str: String) -> bool {
 
 /// take status=tagged&test=true and return dictionary of key-value
 pub fn query_string_to_queries(s: &String) 
--> Result<HashMap<String, String>, CutomResponseError> {
+-> Result<HashMap<String, String>, HandlerError> {
     // TODO: implement this
     let mut dict = HashMap::new();
     dict.insert(

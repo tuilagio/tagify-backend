@@ -1,5 +1,5 @@
 use crate::models::{ Hash, ReceivedUser, User, InternalUser, ReceivedLoginData, ROLES};
-use crate::errors::{UserError, CutomResponseError};
+use crate::errors::{UserError, HandlerError};
 use crate::utils;
 use crate::db;
 use crate::errors;
@@ -76,12 +76,12 @@ pub async fn login(
 
 pub async fn whoami(
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     // let client = match pool.get().await {
     //     Ok(item) => item,
     //     Err(e) => {
     //         error!("Error occured : {}", e);
-    //         return Err(CutomResponseError::InternalError);
+    //         return Err(HandlerError::InternalError);
     //     }
     // };
 
@@ -89,7 +89,7 @@ pub async fn whoami(
     // TODO: implement this. Harded code "2"
     // let user_id: i32 = 2;
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "Not implemented yet. Remove after done.".to_string(),
     });
     /* 
@@ -106,7 +106,7 @@ pub async fn whoami(
         ),
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
     }
     */
@@ -115,13 +115,13 @@ pub async fn whoami(
 pub async fn delete_user(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
@@ -132,7 +132,7 @@ pub async fn delete_user(
     /* Get user id from url parameter */
     // Check if id numberic
     if !utils::is_string_numeric(data.0.clone()) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "User id should be numeric".to_string(),
         });
     }
@@ -152,7 +152,7 @@ pub async fn delete_user(
         ),
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
     }
 }
@@ -160,12 +160,12 @@ pub async fn delete_user(
 pub async fn create_user(
     pool: web::Data<Pool>,
     data: web::Json<ReceivedUser>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
@@ -173,13 +173,13 @@ pub async fn create_user(
 
     //Check if password is not empty
     if data.password.len() == 0 {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "password field cannot be empty".to_string(),
         });
     }
 
     if data.username.len() == 0 {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "username field cannot be empty".to_string(),
         });
     }
@@ -187,11 +187,11 @@ pub async fn create_user(
     // TODO: check if username existed
 
     if data.role.len() == 0 {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "username field cannot be empty".to_string(),
         });
     } else if !(ROLES.iter().any(|&i| i==data.role)) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "User role unvalid".to_string(),
         });
     }
@@ -200,7 +200,7 @@ pub async fn create_user(
 
     if let Err(e) = user.hash_password() {
         error!("Error occured: {}", e);
-        return Err(CutomResponseError::InternalError);
+        return Err(HandlerError::InternalError);
     }
 
     /* Update to db */
@@ -217,7 +217,7 @@ pub async fn create_user(
         ),
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
     }
 }
@@ -225,19 +225,19 @@ pub async fn create_user(
 pub async fn get_user(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
     /* Get user id from url parameter */
     // Check if id numberic
     if !utils::is_string_numeric(data.0.clone()) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "User id should be numeric".to_string(),
         });
     }
@@ -256,7 +256,7 @@ pub async fn get_user(
         ),
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
 
     }
@@ -266,19 +266,19 @@ pub async fn update_user (
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
     data_payload: web::Json<ReceivedUser>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
     /* Get user id from url parameter */
     // Check if id numberic
     if !utils::is_string_numeric(data.0.clone()) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "User id should be numeric".to_string(),
         });
     }
@@ -290,23 +290,23 @@ pub async fn update_user (
         Ok(o_u) => {
             //Check if password is not empty
             if data_payload.password.len() == 0 {
-                return Err(CutomResponseError::BadClientDataParse {
+                return Err(HandlerError::BadClientDataParse {
                     field: "password field cannot be empty".to_string(),
                 });
             }
 
             if data_payload.username != o_u.username{
-                return Err(CutomResponseError::BadClientDataParse {
+                return Err(HandlerError::BadClientDataParse {
                     field: "username can't be change. Sorry".to_string(),
                 });
             }
             
             if data_payload.role.len() == 0 {
-                return Err(CutomResponseError::BadClientDataParse {
+                return Err(HandlerError::BadClientDataParse {
                     field: "username field cannot be empty".to_string(),
                 });
             } else if !(ROLES.iter().any(|&i| i==data_payload.role)) {
-                return Err(CutomResponseError::BadClientDataParse {
+                return Err(HandlerError::BadClientDataParse {
                     field: "User role unvalid".to_string(),
                 });
             }
@@ -318,7 +318,7 @@ pub async fn update_user (
 
             if let Err(e) = user.hash_password() {
                 error!("Error occured : {}", e);
-                return Err(CutomResponseError::InternalError);
+                return Err(HandlerError::InternalError);
             }
             
             /* Everything find. Update to db */
@@ -335,13 +335,13 @@ pub async fn update_user (
                 ),
                 Err(e) => {
                     println!("{:?}", e);
-                    return Err(CutomResponseError::InternalError)
+                    return Err(HandlerError::InternalError)
                 },
             }
         },
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         },
 
     }
@@ -350,19 +350,19 @@ pub async fn update_user (
 pub async fn get_user_albums(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     // let client = match pool.get().await {
     //     Ok(item) => item,
     //     Err(e) => {
     //         error!("Error occured : {}", e);
-    //         return Err(CutomResponseError::InternalError);
+    //         return Err(HandlerError::InternalError);
     //     }
     // };
     
     /* Get user id from url parameter */
     // Check if id numberic
     // if !utils::is_string_numeric(data.0.clone()) {
-    //     return Err(CutomResponseError::BadClientDataParse {
+    //     return Err(HandlerError::BadClientDataParse {
     //         field: "User id should be numeric".to_string(),
     //     });
     // }
@@ -387,12 +387,12 @@ pub async fn get_user_albums(
         ),
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
     }
     */
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "Not implemented yet. Remove after done.".to_string(),
     });
 }

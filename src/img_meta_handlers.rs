@@ -1,5 +1,5 @@
 use crate::models::{ Hash, ReceivedUser, User, InternalUser, ReceivedLoginData, ReceivedAlbumMeta, InternalAlbumMeta};
-use crate::errors::{UserError, CutomResponseError};
+use crate::errors::{UserError, HandlerError};
 use crate::utils;
 use crate::db;
 use crate::errors;
@@ -32,10 +32,10 @@ pub async fn create_meta(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
     // data_payload: web::Json<ReceivedImageMeta>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
     println!("{:?}", data);
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'create_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -43,10 +43,10 @@ pub async fn create_meta(
 pub async fn delete_meta(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
     println!("{:?}", data);
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'delete_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -54,9 +54,9 @@ pub async fn delete_meta(
 pub async fn delete_all_metas(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'delete_all_metas' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -65,7 +65,7 @@ pub async fn get_metas(
     req: HttpRequest,
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
     let temp: String = req.query_string().to_string(); // status=tagged&test=true
     println!("status {} data {:?}", temp, data);
@@ -84,18 +84,18 @@ pub async fn get_metas(
                     } else if status == "tagged" {
                         // TODO: return alltagged image metas
                     } else {
-                        return Err(CutomResponseError::BadClientDataParse {
+                        return Err(HandlerError::BadClientDataParse {
                             field: "'status' should only be 'untagged' or 'tagged'".to_string(),
                         })
                     }
                 },
-                None => return Err(CutomResponseError::InternalError)
+                None => return Err(HandlerError::InternalError)
             }
         },
-        Err(e) => return Err(CutomResponseError::InternalError)
+        Err(e) => return Err(HandlerError::InternalError)
     };
     */
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'get_metas' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -103,9 +103,9 @@ pub async fn get_metas(
 pub async fn get_meta(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'get_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -114,9 +114,9 @@ pub async fn update_meta(
     pool: web::Data<Pool>,
     data: web::Path<(String, String)>,
     // data_payload: web::Json<ReceivedImageMeta>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'update_meta' not implemented yet. Remove after done.".to_string(),
     });
 }

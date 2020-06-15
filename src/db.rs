@@ -3,6 +3,8 @@ use tokio_pg_mapper::FromTokioPostgresRow;
 use crate::models::{User, InternalUser};
 use crate::errors;
 
+// TODO: improve coverage by also returning DBError
+
 pub async fn get_user(client: deadpool_postgres::Client, username: &str) -> Result<User, errors::DBError>{
 
    // Query data

@@ -1,5 +1,5 @@
 use crate::models::{ Hash, ReceivedUser, User, InternalUser, ReceivedLoginData, ReceivedAlbumMeta, InternalAlbumMeta};
-use crate::errors::{UserError, CutomResponseError};
+use crate::errors::{UserError, HandlerError};
 use crate::utils;
 use crate::db;
 use crate::errors;
@@ -15,20 +15,20 @@ use serde_json::{json};
 pub async fn delete_album_meta(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     /* 
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
     // TODO: check delete permission
 
     /* Check if id numberic */
     if !utils::is_string_numeric(data.0.clone()) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "Album id should be numeric".to_string(),
         });
     }
@@ -40,11 +40,11 @@ pub async fn delete_album_meta(
     match result {
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
         Ok(num_updated) => {
             if num_updated == 0 {
-                return Err(CutomResponseError::BadClientData {
+                return Err(HandlerError::BadClientData {
                     // TODO: consider hide sensitive error information to avoid data exploiting
                     err: "Album does not exist".to_string(),
                 });
@@ -55,7 +55,7 @@ pub async fn delete_album_meta(
     Ok(HttpResponse::new(StatusCode::OK))
     */
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'delete_album_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -63,12 +63,12 @@ pub async fn delete_album_meta(
 pub async fn create_album_meta(
     pool: web::Data<Pool>,
     data: web::Json<ReceivedAlbumMeta>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
@@ -97,7 +97,7 @@ pub async fn create_album_meta(
         "thumbnail": ""
       } */
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'create_album_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -105,20 +105,20 @@ pub async fn create_album_meta(
 pub async fn get_album_meta(
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     /* 
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
     // TODO: check delete permission
 
     /* Check if id numberic */
     if !utils::is_string_numeric(data.0.clone()) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "Album id should be numeric".to_string(),
         });
     }
@@ -137,13 +137,13 @@ pub async fn get_album_meta(
         ),
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
 
     }
     */
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'get_album_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
@@ -152,20 +152,20 @@ pub async fn update_album_meta (
     pool: web::Data<Pool>,
     data: web::Path<(String,)>,
     data_payload: web::Json<ReceivedAlbumMeta>,
-) -> Result<HttpResponse, CutomResponseError> {
+) -> Result<HttpResponse, HandlerError> {
     /* 
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(CutomResponseError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
     // TODO: check update permission
 
     /* Check if id numberic */
     if !utils::is_string_numeric(data.0.clone()) {
-        return Err(CutomResponseError::BadClientDataParse {
+        return Err(HandlerError::BadClientDataParse {
             field: "Album id should be numeric".to_string(),
         });
     }
@@ -188,18 +188,18 @@ pub async fn update_album_meta (
                 ),
                 Err(e) => {
                     println!("{:?}", e);
-                    return Err(CutomResponseError::InternalError)
+                    return Err(HandlerError::InternalError)
                 },
             }
         },
         Err(e) => {
             println!("{:?}", e);
-            return Err(CutomResponseError::InternalError)
+            return Err(HandlerError::InternalError)
         },
     }
     */
 
-    return Err(CutomResponseError::NotImplemented {
+    return Err(HandlerError::NotImplemented {
         message: "'update_album_meta' not implemented yet. Remove after done.".to_string(),
     });
 }
