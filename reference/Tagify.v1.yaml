@@ -323,6 +323,108 @@ paths:
         - user
       responses: {}
       operationId: delete-api-user-username
+  /api/album:
+    get:
+      summary: get album with picture and progress
+      tags:
+        - album
+      responses: {}
+      operationId: get-api-album
+      description: get album with some data
+  '/api/user/{username}/password':
+    parameters:
+      - schema:
+          type: string
+        name: username
+        in: path
+        required: true
+    put:
+      summary: change user password
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-user-username-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                repeat_password:
+                  type: string
+      tags:
+        - user
+  '/api/admin/album/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    put:
+      summary: change album meta data
+      tags:
+        - admin
+        - album
+      responses: {}
+      operationId: put-api-admin-album-album_id
+    delete:
+      summary: delete album
+      tags:
+        - admin
+        - album
+      responses: {}
+      operationId: delete-api-admin-album-album_id
+  /api/admin/albums:
+    get:
+      summary: get all albums
+      tags:
+        - admin
+        - album
+      responses: {}
+      operationId: get-api-admin-albums
+  /api/user/albums:
+    get:
+      summary: get my albums
+      tags:
+        - album
+        - user
+      responses: {}
+      operationId: get-api-user-albums
+  '/api/user/album/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get all  my album data
+      tags:
+        - user
+        - album
+      responses: {}
+      operationId: get-api-user-album-album_id
+    put:
+      summary: edit my album data
+      tags:
+        - user
+        - album
+      responses: {}
+      operationId: put-api-user-album-album_id
+    delete:
+      summary: delete my album
+      tags:
+        - user
+        - album
+      responses: {}
+      operationId: delete-api-user-album-album_id
 components:
   schemas: {}
   securitySchemes: {}
