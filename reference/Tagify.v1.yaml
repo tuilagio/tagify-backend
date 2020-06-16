@@ -391,7 +391,7 @@ paths:
       operationId: get-api-admin-albums
   /api/user/albums:
     get:
-      summary: get my albums
+      summary: get all my albums
       tags:
         - album
         - user
@@ -405,7 +405,7 @@ paths:
         in: path
         required: true
     get:
-      summary: get all  my album data
+      summary: get album data (by album_id)
       tags:
         - user
         - album
@@ -425,6 +425,43 @@ paths:
         - album
       responses: {}
       operationId: delete-api-user-album-album_id
+  /api/user/lastalbums:
+    get:
+      summary: get last edited albums
+      tags:
+        - user
+        - album
+      responses: {}
+      operationId: get-api-user-lastalbums
+  /api/album/photos:
+    get:
+      summary: get next 15 photos for anotation
+      tags:
+        - photos
+        - album
+      responses: {}
+      operationId: get-api-album-photos
+  '/api/album/photo/{photo_id}':
+    parameters:
+      - schema:
+          type: string
+        name: photo_id
+        in: path
+        required: true
+    post:
+      summary: sent photo with anotation
+      tags:
+        - album
+        - photos
+      responses: {}
+      operationId: post-api-album-photo-photo_id
+    put:
+      summary: verify photo (second user)
+      tags:
+        - album
+        - photos
+      responses: {}
+      operationId: put-api-album-photo-photo_id
 components:
   schemas: {}
   securitySchemes: {}
