@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Tagify
+  version: '1.0'
+  description: ''
+  contact:
+    name: Karol Rogoza
+  license:
+    name: GNU General Public License v3.0
+    url: 'https://fsf.org'
+servers:
+  - url: 'http://localhost:5000'
+paths:
+  /api/auth/me:
+    get:
+      summary: whoami
+      tags:
+        - Auth
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 'Unauthorized, you need to be logged in'
+      operationId: get-api-auth
+      description: get user information
+    parameters: []
+  /api/auth/login:
+    post:
+      summary: login
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 'Unauthorized, wrong password or user_name'
+      operationId: post-api-auth-login
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+            examples:
+              example:
+                value:
+                  username: user1
+                  password: user1
+        description: user data needed for authentication
+  /api/auth/logout:
+    post:
+      summary: logout
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: OK
+      operationId: post-api-auth-logout
+      description: logout
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+            examples: {}
+          application/xml:
+            schema:
+              type: object
+              properties: {}
+        description: |-
+          {
+
+
+          }
+components:
+  schemas: {}
+  securitySchemes: {}
