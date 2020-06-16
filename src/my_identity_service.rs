@@ -19,8 +19,8 @@ use deadpool_postgres::Pool;
 
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
 use crate::models::User;
-use crate::db::get_user;
-use crate::errors::UserError;
+use crate::db::get_user_by_name;
+use crate::errors::HandlerError;
 
 #[derive(Clone)]
 pub struct Identity(HttpRequest);
@@ -210,7 +210,7 @@ where
                 Ok(item) => item,
                 Err(e) => {
                     error!("Failed to get client from pool: {}", e);
-                    return Ok(req.error_response(UserError::InternalError));
+                    return Ok(req.error_response(HandlerError::InternalError));
                 }
             };
 
@@ -222,15 +222,15 @@ where
                         }
                         None => {
                             error!("Could not extract id from request");
-                            return Ok(req.error_response(UserError::AuthFail));
+                            return Ok(req.error_response(HandlerError::AuthFail));
                         }
                     };
 
-                    let user: User = match get_user(client, &id).await {
+                    let user: User = match get_user_by_name(client, &id).await {
                         Ok(user) => user,
                         Err(e) => {
                             error!("get_user failed {}", e);
-                            return Ok(req.error_response(UserError::AuthFail));
+                            return Ok(req.error_response(HandlerError::AuthFail));
                         }
                     };
 

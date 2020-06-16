@@ -1,6 +1,18 @@
+CREATE TYPE ROLE AS ENUM ('admin', 'tagger');
+
 CREATE TABLE IF NOT EXISTS users (
-    username    TEXT NOT NULL UNIQUE PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
+    username    TEXT UNIQUE NOT NULL,
     nickname    TEXT NOT NULL,
     password    TEXT NOT NULL,
-    is_admin    BOOLEAN NOT NULL DEFAULT 'f'
+    role    ROLE NOT NULL DEFAULT 'tagger'
 );
+
+ALTER TABLE users
+  ADD CONSTRAINT namechk CHECK (char_length(username) <= 64 AND char_length(username) >= 4);
+
+
+ALTER TABLE users
+  ADD CONSTRAINT userchk CHECK (char_length(nickname) <= 64 AND char_length(nickname) >= 4);
+
+
