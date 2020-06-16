@@ -23,7 +23,19 @@ paths:
         '401':
           description: 'Unauthorized, you need to be logged in'
       operationId: get-api-auth
-      description: get user information
+      description: 'get user information (user & admin)'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
     parameters: []
   /api/auth/login:
     post:
@@ -36,17 +48,22 @@ paths:
         '401':
           description: 'Unauthorized, wrong password or user_name'
       operationId: post-api-auth-login
-      description: ''
+      description: 'login (user & admin)'
       requestBody:
         content:
           application/json:
             schema:
               type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
             examples:
               example:
                 value:
                   username: user1
-                  password: user1
+                  password: password
         description: user data needed for authentication
   /api/auth/logout:
     post:
@@ -57,24 +74,21 @@ paths:
         '200':
           description: OK
       operationId: post-api-auth-logout
-      description: logout
+      description: 'logout (user & admin)'
       parameters: []
       requestBody:
         content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-            examples: {}
           application/xml:
             schema:
               type: object
-              properties: {}
-        description: |-
-          {
-
-
-          }
+              properties:
+                username:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
+        description: ''
 components:
   schemas: {}
   securitySchemes: {}
