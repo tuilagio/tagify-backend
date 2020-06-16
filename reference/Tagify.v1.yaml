@@ -1,0 +1,328 @@
+openapi: 3.0.0
+info:
+  title: Tagify
+  version: '1.0'
+  description: ''
+  contact:
+    name: Karol Rogoza
+  license:
+    name: GNU General Public License v3.0
+    url: 'https://fsf.org'
+servers:
+  - url: 'http://localhost:5000'
+paths:
+  /api/auth/me:
+    get:
+      summary: whoami
+      tags:
+        - Auth
+        - user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+        '401':
+          description: 'Unauthorized, you need to be logged in'
+      operationId: get-api-auth
+      description: 'get user information (user & admin)'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
+    parameters: []
+  /api/auth/login:
+    post:
+      summary: login
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 'Unauthorized, wrong password or user_name'
+      operationId: post-api-auth-login
+      description: 'login (user & admin)'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
+                  password: password
+        description: user data needed for authentication
+  /api/auth/logout:
+    post:
+      summary: logout
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: post-api-auth-logout
+      description: 'logout (user & admin)'
+      parameters: []
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
+        description: ''
+  /:
+    get:
+      summary: get server status
+      tags: []
+      responses:
+        '200':
+          description: 'OK, server is working'
+        '404':
+          description: 'server is broken :('
+      operationId: get
+      description: check or server is working
+  '/api/admin/user/{username}':
+    parameters:
+      - schema:
+          type: string
+        name: username
+        in: path
+        required: true
+    get:
+      summary: get user by name
+      tags:
+        - admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+      operationId: get user by username
+      description: Get user by username
+    put:
+      summary: update user data
+      tags:
+        - admin
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-user-id
+      description: change user data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                nicknname:
+                  type: string
+                password:
+                  type: string
+                repeat_password:
+                  type: string
+                is_admin:
+                  type: boolean
+            examples:
+              example_ user:
+                value:
+                  username: user123
+                  nickname: user123
+                  password: new_password
+                  repeat_password: new_password
+                  is_admin: false
+              example_admin:
+                value:
+                  username: admin123
+                  nickname: admin123
+                  password: new_password
+                  repeat_password: new_password
+                  is_admin: true
+    delete:
+      summary: delete user account
+      tags:
+        - admin
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-user-id
+      description: delete user
+  /api/admin/user:
+    post:
+      summary: create new user account
+      tags:
+        - admin
+      responses:
+        '201':
+          description: 'Created, new user is created'
+        '400':
+          description: 'Bad Request, wrong form'
+        '401':
+          description: 'Unauthorized, are u admin?'
+      operationId: post-api-admin-user
+      description: create new user account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                nickname:
+                  type: string
+                password:
+                  type: string
+                repeat_password:
+                  type: string
+                is_admin:
+                  type: boolean
+              required:
+                - username
+                - nickname
+                - password
+                - repeat_password
+                - is_admin
+            examples:
+              example_user:
+                value:
+                  username: user
+                  nickname: user
+                  password: password
+                  repeat_password: password
+                  is_admin: false
+              example_admin:
+                value:
+                  username: admin
+                  nickname: admin
+                  password: password
+                  repeat_password: password
+                  is_admin: true
+  /api/admin/users:
+    get:
+      summary: get all users
+      tags:
+        - admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      username:
+                        type: string
+                      nickname:
+                        type: string
+                      is_admin:
+                        type: boolean
+                  - properties:
+                      username:
+                        type: string
+                      nickname:
+                        type: string
+                      is_admin:
+                        type: boolean
+                  - properties:
+                      username:
+                        type: string
+                      nickname:
+                        type: string
+                      is_admin:
+                        type: boolean
+                type: object
+        '401':
+          description: Unauthorized
+      operationId: get-api-admin-users
+      description: get all users
+  '/api/user/{username}':
+    parameters:
+      - schema:
+          type: string
+        name: username
+        in: path
+        required: true
+    get:
+      summary: get user data
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  nickname:
+                    type: string
+              examples:
+                example:
+                  value:
+                    username: user
+                    nickname: BIG BOB
+        '401':
+          description: Unauthorized
+      operationId: get-api-user-username
+      description: get actual user data
+    put:
+      summary: change user data
+      tags:
+        - user
+      responses: {}
+      operationId: put-api-user-username
+      description: change user nickname or password
+    delete:
+      summary: delete user
+      tags:
+        - user
+      responses: {}
+      operationId: delete-api-user-username
+components:
+  schemas: {}
+  securitySchemes: {}
