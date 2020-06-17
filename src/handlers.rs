@@ -10,6 +10,7 @@ use crate::db;
 use crate::errors;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
 
+
 pub async fn status() -> impl Responder {
     web::HttpResponse::Ok().json(Status {
         status: "server is working :D".to_string(),
@@ -43,7 +44,7 @@ pub async fn login(
     data: web::Json<LoginData>,
     pool: web::Data<Pool>,
     req: HttpRequest,
-    cookie_factory: web::Data<MyCookieIdentityPolicy>
+    cookie_factory: web::Data<MyCookieIdentityPolicy>,
 ) -> Result<HttpResponse, HandlerError> {
 
     let client = match pool.get().await {

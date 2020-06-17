@@ -20,6 +20,7 @@ mod my_cookie_policy;
 mod models;
 
 use crate::handlers::{logout, login, status};
+use models::{ROLES};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -52,6 +53,12 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
+    // Create default admin accounts
+    db::create_user(&client, &conf.default_admin).await.expect("Could not create user account");
+
+    // Create default user accounts
+    db::create_user(&client, &conf.default_user).await.expect("Could not create default user account");
+
     let temp = conf.server.key.clone();
 
     // Register http routes
@@ -59,17 +66,19 @@ async fn main() -> std::io::Result<()> {
         let cookie_key = temp.as_bytes();
 
         let cookie_factory_user =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
-            .name("user-auth-cookie")
+            .name(ROLES[1])
             .path("/")
             .secure(false);
 
-       let cookie_factory_admin =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
-            .name("admin-auth-cookie")
+        let cookie_factory_admin =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
+            .name(ROLES[0])
             .path("/")
             .secure(false);
-
-
         App::new()
+
+            // Give login handler access to cookie factory
+            .data(cookie_factory_user.clone())
+
             // Serve every file in directory from ../dist
             .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
             // Give every handler access to the db connection pool
@@ -84,11 +93,10 @@ async fn main() -> std::io::Result<()> {
             // .configure(routes)
             .service(
                 web::scope("/api")
-                    .service(web::resource("/login").route(web::post().to(login)))
                     //all admin endpoints
+                    .service(web::resource("/login").route(web::post().to(login)))
                     .service(
                         web::scope("/admin")
-                            .data(cookie_factory_admin.clone())
                             .wrap(my_identity_service::IdentityService::new(
                                 cookie_factory_admin,
                                 pool.clone(),
@@ -110,7 +118,6 @@ async fn main() -> std::io::Result<()> {
                     //user auth routes
                     .service(
                         web::scope("/user")
-                            .data(cookie_factory_user.clone())
                             .wrap(my_identity_service::IdentityService::new(
                                 cookie_factory_user,
                                 pool.clone(),

@@ -47,7 +47,7 @@ pub struct SendUser {
     pub role: String, // TODO: Make an Enum out of it
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateUser {
     pub username: String,
     pub password: String,
@@ -127,5 +127,7 @@ impl Hash for CreateUser {
     }
 }
 
+// TODO: Make this a Sql serializable enum
+pub const ROLES: &'static [&'static str] = &["admin", "user"];
 
-pub const ROLES: &'static [&'static str] = &["admin", "tagger"];
+

@@ -18,9 +18,10 @@ use log::{error};
 use deadpool_postgres::Pool;
 
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
-use crate::models::User;
+use crate::models::{User};
 use crate::db::get_user_by_name;
 use crate::errors::HandlerError;
+
 
 #[derive(Clone)]
 pub struct Identity(HttpRequest);
@@ -33,7 +34,9 @@ pub async fn login_user(req: HttpRequest, cookie_factory: &MyCookieIdentityPolic
         id.changed = true;
     }
 
-    match cookie_factory.to_response(Some(user), true, &mut resp).await {
+    let cookie_name = user.role.clone();
+
+    match cookie_factory.to_response(Some(user), true, &cookie_name, &mut resp).await {
         Ok(_) => (),
         Err(e) => error!("Could not set cookie {}", e),
     }
@@ -72,6 +75,7 @@ impl Identity {
     }
 }
 
+#[derive(Debug, Clone)]
 struct IdentityItem {
     user: Option<User>,
     changed: bool,
@@ -122,6 +126,7 @@ pub trait IdentityPolicy: Sized + 'static {
         &self,
         user: Option<User>,
         changed: bool,
+        cookie_name: &str,
         response: &mut ServiceResponse<B>,
     ) -> Self::ResponseFuture;
 }
@@ -234,6 +239,8 @@ where
                         }
                     };
 
+                    let cookie_name = user.role.clone();
+
                     req.extensions_mut()
                         .insert(IdentityItem { user:Some(user), changed: false });
 
@@ -243,7 +250,7 @@ where
                     let id = res.request().extensions_mut().remove::<IdentityItem>();
 
                     if let Some(id) = id {
-                        match backend.to_response(id.user, id.changed, &mut res).await {
+                        match backend.to_response(id.user, id.changed, &cookie_name, &mut res).await {
                             Ok(_) => Ok(res),
                             Err(e) => Ok(res.error_response(e)),
                         }

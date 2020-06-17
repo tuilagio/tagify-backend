@@ -64,6 +64,7 @@ impl MyCookieIdentityInner {
         &self,
         resp: &mut ServiceResponse<B>,
         value: Option<CookieValue>,
+        cookie_name: &str
     ) -> Result<()> {
         let add_cookie = value.is_some();
         let val = value.map(|val| {
@@ -74,7 +75,7 @@ impl MyCookieIdentityInner {
             }
         });
         let mut cookie =
-            Cookie::new(self.name.clone(), val.unwrap_or_else(|| Ok(String::new()))?);
+            Cookie::new(cookie_name.to_owned(), val.unwrap_or_else(|| Ok(String::new()))?);
         cookie.set_path(self.path.clone());
         cookie.set_secure(self.secure);
         cookie.set_http_only(true);
@@ -257,6 +258,7 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
         &self,
         id: Option<User>,
         changed: bool,
+        cookie_name: &str,
         res: &mut ServiceResponse<B>,
     ) -> Self::ResponseFuture {
         let _ = if changed {
@@ -268,6 +270,7 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
                     login_timestamp: self.0.login_deadline.map(|_| login_timestamp),
                     visit_timestamp: self.0.visit_deadline.map(|_| login_timestamp),
                 }),
+                cookie_name
             )
         } else if self.0.always_update_cookie() && id.is_some() {
             let visit_timestamp = SystemTime::now();
@@ -286,6 +289,7 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
                     login_timestamp,
                     visit_timestamp: self.0.visit_deadline.map(|_| visit_timestamp),
                 }),
+                cookie_name
             )
         } else {
             Ok(())

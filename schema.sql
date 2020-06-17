@@ -1,11 +1,14 @@
-CREATE TYPE ROLE AS ENUM ('admin', 'tagger');
 
+DROP TABLE IF EXISTS users;
+/* DROP TYPE IF EXISTS ROLE; */
+
+/* CREATE TYPE ROLE AS ENUM ('admin', 'tagger'); */
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username    TEXT UNIQUE NOT NULL,
     nickname    TEXT NOT NULL,
     password    TEXT NOT NULL,
-    role    ROLE NOT NULL DEFAULT 'tagger'
+    role    TEXT NOT NULL DEFAULT 'tagger'
 );
 
 ALTER TABLE users
