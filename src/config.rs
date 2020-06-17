@@ -1,12 +1,11 @@
-use serde::Deserialize;
 use crate::models::CreateUser;
-
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone)]
 pub struct Server {
     pub hostname: String,
     pub port: String,
-    pub key: String
+    pub key: String,
 }
 
 #[derive(Deserialize, Clone)]
