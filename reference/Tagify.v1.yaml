@@ -302,25 +302,9 @@ paths:
       tags:
         - user
       responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  nickname:
-                    type: string
-              examples:
-                example:
-                  value:
-                    username: user
-                    nickname: BIG BOB
         '401':
           description: Unauthorized
-        '':
+        '200':
           headers: {}
           content:
             application/json:
