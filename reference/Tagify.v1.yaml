@@ -50,18 +50,6 @@ paths:
           description: 'Unauthorized, you need to be logged in'
       operationId: get-api-auth
       description: 'get user information (user & admin)'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-            examples:
-              example:
-                value:
-                  username: user1
     parameters: []
   /api/auth/login:
     post:
@@ -70,7 +58,7 @@ paths:
         '200':
           description: OK
         '401':
-          description: 'Unauthorized, wrong password or user_name'
+          description: 'Unauthorized, wrong password or username'
       operationId: post-api-auth-login
       description: 'login (user & admin)'
       requestBody:
@@ -147,27 +135,41 @@ paths:
               schema:
                 type: object
                 properties:
+                  id:
+                    type: number
                   username:
                     type: string
                   nickname:
                     type: string
-                  id:
-                    type: number
+
                   date_created:
                     type: string
                   last_modify:
                     type: string
+              examples:
+                example:
+                  value:
+                    id: 20
+                    username: user
+                    nickname: BIG BOB
+                    role: tagger
+                    date_created: 20/12/20
+                    last_modified: 21/12/21
+        '401':
+          description: Unauthorized
       operationId: get user by username
       description: Get user by username
     put:
-      summary: update user data
+      summary: change user password
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
         '401':
           description: Unauthorized
       operationId: put-user-id
-      description: change user data
+      description: change user password
       requestBody:
         content:
           application/json:
@@ -181,20 +183,11 @@ paths:
                 repeat_password:
                   type: string
             examples:
-              example_ user:
+              example:
                 value:
-                  username: user123
-                  nickname: user123
-                  password: new_password
-                  repeat_password: new_password
-                  is_admin: false
-              example_admin:
-                value:
-                  username: admin123
-                  nickname: admin123
-                  password: new_password
-                  repeat_password: new_password
-                  is_admin: true
+                  id: 44
+                  password: abc
+                  repeat_password: abc
       tags:
         - 'admin->user'
     delete:
