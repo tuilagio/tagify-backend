@@ -161,8 +161,6 @@ paths:
       description: Get user by username
     put:
       summary: update user data
-      tags:
-        - admin
       responses:
         '200':
           description: OK
@@ -197,10 +195,10 @@ paths:
                   password: new_password
                   repeat_password: new_password
                   is_admin: true
+      tags:
+        - 'admin->user'
     delete:
       summary: delete user account
-      tags:
-        - admin
       responses:
         '200':
           description: OK
@@ -208,6 +206,8 @@ paths:
           description: Unauthorized
       operationId: delete-user-id
       description: delete user
+      tags:
+        - 'admin->user'
   /api/admin/user:
     post:
       summary: create new user account
@@ -437,18 +437,16 @@ paths:
         required: true
     put:
       summary: change album meta data
-      tags:
-        - admin
-        - album
       responses: {}
       operationId: put-api-admin-album-album_id
+      tags:
+        - 'admin->albums'
     delete:
       summary: delete album
-      tags:
-        - admin
-        - album
       responses: {}
       operationId: delete-api-admin-album-album_id
+      tags:
+        - 'admin->albums'
     get:
       summary: admin album endpoint
       operationId: get-api-admin-album-album_id
@@ -507,9 +505,6 @@ paths:
         - 'user->album'
     put:
       summary: edit my album data
-      tags:
-        - user
-        - album
       responses: {}
       operationId: put-api-user-album-album_id
       description: |
@@ -526,11 +521,10 @@ paths:
                   type: string
                 description:
                   type: string
+      tags:
+        - 'user->album'
     delete:
       summary: delete my album
-      tags:
-        - user
-        - album
       responses: {}
       operationId: delete-api-user-album-album_id
       description: delete my own album
@@ -542,6 +536,8 @@ paths:
               properties:
                 album_id:
                   type: string
+      tags:
+        - 'user->album'
     post:
       summary: add extra photo to album
       operationId: post-api-user-album-album_id
@@ -559,6 +555,8 @@ paths:
                   type: number
                 photo:
                   type: string
+      tags:
+        - 'user->album'
   /api/album/photos:
     get:
       summary: get next 15 photos for anotation
