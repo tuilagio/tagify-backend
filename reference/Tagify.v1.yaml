@@ -561,14 +561,6 @@ paths:
                   type: number
                 photo:
                   type: string
-  /api/user/lastalbums:
-    get:
-      summary: get last edited albums
-      tags:
-        - user
-        - album
-      responses: {}
-      operationId: get-api-user-lastalbums
   /api/album/photos:
     get:
       summary: get next 15 photos for anotation
@@ -670,6 +662,10 @@ paths:
                     type: boolean
                   lock_timpe_stamp:
                     type: number
+      tags:
+        - user
+        - album
+        - photos
   /api/user/password:
     put:
       summary: change own password
