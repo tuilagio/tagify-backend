@@ -31,7 +31,7 @@ pub async fn update_user(client: &deadpool_postgres::Client, user: &User) -> Res
     };
 
    let result = client.query_one(
-      "UPDATE users SET nickname=$2, password=$3, role=$4 WHERE id=$5 RETURNING *",
+      "UPDATE users SET nickname=$1, password=$2, role=$3 WHERE id=$4 RETURNING *",
       &[&user.nickname, &hashed_pwd, &user.role, &user.id]).await?;
    Ok(User::from_row_ref(&result)?)
 }

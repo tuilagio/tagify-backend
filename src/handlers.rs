@@ -112,8 +112,24 @@ pub async fn update_user(pool: web::Data<Pool>, id: Identity, data: web::Json<Up
 
     match result {
         Err(e) => {
-            error!("Error occured: {}",e );
-            return Err(HandlerError::InternalError);
+            match e {
+                errors::DBError::PostgresError(e) => {
+                    error!("Getting user failed: {}", e);
+                    return Err(HandlerError::AuthFail);
+                }
+                errors::DBError::MapperError(e) => {
+                    error!("Error occured: {}", e);
+                    return Err(HandlerError::InternalError);
+                }
+                errors::DBError::ArgonError(e) => {
+                    error!("Error occured: {}", e);
+                    return Err(HandlerError::InternalError);
+                }
+                errors::DBError::BadArgs{ err } => {
+                    error!("Error occured: {}", err);
+                    return Err(HandlerError::BadClientData{field: err.to_owned() });
+                }
+            }
         },
         Ok(num_updated) => num_updated
     };
