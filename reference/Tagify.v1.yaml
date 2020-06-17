@@ -428,35 +428,6 @@ paths:
         get album with some data
         get album preview image with completion rate (25 albums)
     parameters: []
-  '/api/user/{username}/password':
-    parameters:
-      - schema:
-          type: string
-        name: username
-        in: path
-        required: true
-    put:
-      summary: change user password
-      responses:
-        '200':
-          description: OK
-        '401':
-          description: Unauthorized
-      operationId: put-api-user-username-password
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-                repeat_password:
-                  type: string
-      tags:
-        - user
   '/api/admin/album/{album_id}':
     parameters:
       - schema:
@@ -478,22 +449,38 @@ paths:
         - album
       responses: {}
       operationId: delete-api-admin-album-album_id
-  /api/admin/albums:
     get:
-      summary: get all albums
-      tags:
-        - admin
-        - album
-      responses: {}
-      operationId: get-api-admin-albums
+      summary: ''
+      operationId: get-api-admin-album-album_id
+      responses:
+        '200':
+          description: OK
+      description: all album info for admin
   /api/user/albums:
     get:
       summary: get all my albums
       tags:
         - album
         - user
-      responses: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: string
+                  preview_phot:
+                    type: string
+                  '?????':
+                    type: string
       operationId: get-api-user-albums
+      description: |-
+        get all my albums
+
+        in db we have album, user_id
   '/api/user/album/{album_id}':
     parameters:
       - schema:
@@ -506,8 +493,18 @@ paths:
       tags:
         - user
         - album
-      responses: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  all album data:
+                    type: string
       operationId: get-api-user-album-album_id
+      description: get all data for my album
     put:
       summary: edit my album data
       tags:
@@ -515,6 +512,20 @@ paths:
         - album
       responses: {}
       operationId: put-api-user-album-album_id
+      description: |
+        edit my album data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: number
+                titile:
+                  type: string
+                description:
+                  type: string
     delete:
       summary: delete my album
       tags:
@@ -522,6 +533,32 @@ paths:
         - album
       responses: {}
       operationId: delete-api-user-album-album_id
+      description: delete my own album
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: string
+    post:
+      summary: add extra photo to album
+      operationId: post-api-user-album-album_id
+      responses:
+        '200':
+          description: OK
+      description: add extra photo to album
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: number
+                photo:
+                  type: string
   /api/user/lastalbums:
     get:
       summary: get last edited albums
@@ -561,14 +598,51 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  '':
+                    type: string
+        '400':
+          description: Bad Requestb timestamp.....
+        '401':
+          description: Unauthorized
       operationId: post-api-album-photo-photo_id
+      description: endpoint for tagging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photo_id:
+                  type: string
+                tag:
+                  type: string
+                coordinates:
+                  type: string
     put:
       summary: verify photo (second user)
       tags:
         - album
         - photos
-      responses: {}
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 'Bad Request, time is out'
+        '401':
+          description: Unauthorized
       operationId: put-api-album-photo-photo_id
+      description: "endpoint for verify\n\n\non backend\n\n           if(verified == false)\n           \n              tagged = false\n              verified = false\n            else\n            \n              tagged true\n              verified true"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photo_id:
+                  type: string
+                verifed:
+                  type: boolean
     get:
       summary: ''
       operationId: get-api-album-album_id-photo-photo_id
@@ -592,6 +666,8 @@ paths:
                     type: boolean
                   tagged:
                     type: boolean
+                  lock_timpe_stamp:
+                    type: number
   /api/user/password:
     put:
       summary: change own password
