@@ -1,7 +1,9 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{middleware::Logger, web, App, HttpServer, Result};
+use actix_files::NamedFile;
+use std::path::PathBuf;
 
 use log::{info};
 use listenfd::ListenFd;
@@ -22,6 +24,11 @@ mod models;
 
 use crate::handlers::{logout, login};
 use models::{ROLES};
+
+async fn index() -> Result<NamedFile> {
+    let path: PathBuf = PathBuf::from("../debug_dist/index.html");
+    Ok(NamedFile::open(path)?)
+}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -89,6 +96,9 @@ async fn main() -> std::io::Result<()> {
 
             // Serve every file in directory from ../dist
             .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
+
+            // Serve index.html
+            .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
             // Enable logger
