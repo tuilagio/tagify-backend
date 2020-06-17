@@ -450,12 +450,14 @@ paths:
       responses: {}
       operationId: delete-api-admin-album-album_id
     get:
-      summary: ''
+      summary: admin album endpoint
       operationId: get-api-admin-album-album_id
       responses:
         '200':
           description: OK
       description: all album info for admin
+      tags:
+        - admin
   /api/user/albums:
     get:
       summary: get all my albums
@@ -644,7 +646,7 @@ paths:
                 verifed:
                   type: boolean
     get:
-      summary: ''
+      summary: tagging endpoint
       operationId: get-api-album-album_id-photo-photo_id
       responses:
         '200':
@@ -764,6 +766,33 @@ paths:
                 type: object
       operationId: get-api-album-album_id-photos
       description: get preview photos form album
+  /api/user/album:
+    post:
+      summary: create new album
+      tags:
+        - user
+        - album
+      responses:
+        '200':
+          description: OK
+      operationId: post-api-user-album
+      description: create new alum as a user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_name:
+                  type: string
+                taggs:
+                  type: array
+                  items:
+                    type: string
+                description:
+                  type: string
+                preview_image:
+                  type: string
 components:
   schemas: {}
   securitySchemes: {}
