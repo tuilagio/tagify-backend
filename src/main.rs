@@ -1,7 +1,6 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware::Logger, web, App, HttpServer};
 
 use listenfd::ListenFd;
@@ -15,9 +14,12 @@ mod errors;
 mod handlers;
 
 mod admin_handlers;
+mod my_identity_service;
+mod my_cookie_policy;
 
 mod models;
 
+// use crate::my_identity_service::;
 use crate::admin_handlers::*;
 use crate::handlers::*;
 
@@ -52,25 +54,27 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
-    let cookie_key = conf.server.key;
+    let temp = conf.server.key.clone();
+
     // Register http routes
     let mut server = HttpServer::new(move || {
+        let cookie_key = temp.as_bytes();
+
+        let cookie_factory =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
+            .name("auth-cookie")
+            .path("/")
+            .secure(false);
         App::new()
             // Serve every file in directory from ../dist
             .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
             // Give every handler access to the db connection pool
             .data(pool.clone())
+            .data(cookie_factory.clone())
             // Enable logger
             .wrap(Logger::default())
-            .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(cookie_key.as_bytes())
-                    .name("auth-cookie")
-                    .path("/")
-                    .secure(false),
-            ))
-            //TODO maybe we need to change it :/
+
             //limit the maximum amount of data that server will accept
-            .data(web::JsonConfig::default().limit(4096))
+            .data(web::JsonConfig::default().limit(4096)) // max 4MB json
             //normal routes
             .service(web::resource("/").route(web::get().to(status)))
             // .configure(routes)
@@ -78,7 +82,6 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api")
                     //guest endpoints
                     .service(web::resource("/user_login").route(web::post().to(login)))
-                    .service(web::resource("/user_logout").route(web::post().to(logout)))
                     //all admin endpoints
                     .service(
                         web::scope("/admin")
@@ -86,21 +89,34 @@ async fn main() -> std::io::Result<()> {
                                 web::resource("/create_admin").route(web::post().to(create_admin)),
                             )
                             .service(
+                                web::resource("/create_user").route(web::post().to(create_user)),
+                            )
+                            .service(
                                 web::resource("/delete_admin/{username}/{_:/?}")
                                     .route(web::delete().to(delete_admin)),
                             )
-                            // interact with user
                             .service(
-                                web::resource("/delete_account/{username}/{_:/?}")
-                                    .route(web::delete().to(delete_account)),
+                                web::resource("/delete_user/{username}/{_:/?}")
+                                    .route(web::delete().to(delete_user)),
                             ),
                     )
                     //user auth routes
                     .service(
                         web::scope("/auth")
-                            .service(web::resource("/update_nickname").route(web::put().to(update_nickname)))
+                            .wrap(my_identity_service::IdentityService::new(
+                                cookie_factory,
+                                pool.clone(),
+                            ))
+                            .service(web::resource("/user_logout").route(web::post().to(logout)))
+                            .service(
+                                web::resource("/update_nickname")
+                                    .route(web::put().to(update_nickname)),
+                            )
                             .service(web::resource("/get_user").route(web::get().to(get_user)))
-                            .service(web::resource("/update_password").route(web::put().to(update_password)))
+                            .service(
+                                web::resource("/update_password")
+                                    .route(web::put().to(update_password)),
+                            ),
                     ),
             )
     });
@@ -114,4 +130,3 @@ async fn main() -> std::io::Result<()> {
 
     server.run().await
 }
-

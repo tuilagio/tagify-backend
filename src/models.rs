@@ -10,7 +10,7 @@ pub struct Status {
     pub status: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PostgresMapper)]
+#[derive(Debug, Clone, Serialize, Deserialize, PostgresMapper)]
 #[pg_mapper(table = "users")]
 pub struct User {
     pub username: String,
