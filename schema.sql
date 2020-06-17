@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     username    TEXT UNIQUE NOT NULL,
     nickname    TEXT NOT NULL,
     password    TEXT NOT NULL,
-    role    TEXT NOT NULL DEFAULT 'tagger',
+    role    TEXT NOT NULL,
     date_created DATE NOT NULL DEFAULT CURRENT_DATE,
     last_modified DATE NOT NULL DEFAULT CURRENT_DATE
 );
