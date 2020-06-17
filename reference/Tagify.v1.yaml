@@ -723,11 +723,16 @@ paths:
                       type: string
       operationId: get-api-album-album_id
       description: get only deta without photos
-  '/api/album/{album_id}/photos':
+  '/api/album/{album_id}/photos{last_photo_index}':
     parameters:
       - schema:
           type: string
         name: album_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: last_photo_index
         in: path
         required: true
     get:
@@ -761,7 +766,11 @@ paths:
                         type: number
                 type: object
       operationId: get-api-album-album_id-photos
-      description: get preview photos form album
+      description: |-
+        get preview photos form album
+
+
+        last_photo_index
   /api/user/album:
     post:
       summary: create new album
