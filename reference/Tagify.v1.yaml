@@ -25,10 +25,27 @@ paths:
               schema:
                 type: object
                 properties:
+                  id:
+                    type: number
                   username:
                     type: string
                   nickname:
                     type: string
+                  role:
+                    type: string
+                  date_created:
+                    type: string
+                  last_modified:
+                    type: string
+              examples:
+                example:
+                  value:
+                    id: 20
+                    username: user
+                    nickname: BIG BOB
+                    role: tagger
+                    date_created: 20/12/20
+                    last_modified: 21/12/21
         '401':
           description: 'Unauthorized, you need to be logged in'
       operationId: get-api-auth
@@ -111,11 +128,11 @@ paths:
           description: 'server is broken :('
       operationId: get
       description: check or server is working
-  '/api/admin/user/{username}':
+  '/api/admin/user/{user_id}':
     parameters:
       - schema:
           type: string
-        name: username
+        name: user_id
         in: path
         required: true
     get:
@@ -133,6 +150,12 @@ paths:
                   username:
                     type: string
                   nickname:
+                    type: string
+                  id:
+                    type: number
+                  date_created:
+                    type: string
+                  last_modify:
                     type: string
       operationId: get user by username
       description: Get user by username
@@ -153,16 +176,12 @@ paths:
             schema:
               type: object
               properties:
-                username:
-                  type: string
-                nicknname:
-                  type: string
+                id:
+                  type: number
                 password:
                   type: string
                 repeat_password:
                   type: string
-                is_admin:
-                  type: boolean
             examples:
               example_ user:
                 value:
@@ -259,6 +278,8 @@ paths:
                         type: string
                       is_admin:
                         type: boolean
+                      id:
+                        type: number
                   - properties:
                       username:
                         type: string
@@ -266,6 +287,8 @@ paths:
                         type: string
                       is_admin:
                         type: boolean
+                      id:
+                        type: number
                   - properties:
                       username:
                         type: string
@@ -273,18 +296,15 @@ paths:
                         type: string
                       is_admin:
                         type: boolean
+                      id:
+                        type: number
                 type: object
         '401':
           description: Unauthorized
       operationId: get-api-admin-users
       description: get all users
-  '/api/user/{username}':
-    parameters:
-      - schema:
-          type: string
-        name: username
-        in: path
-        required: true
+  /api/user:
+    parameters: []
     get:
       summary: get user data
       tags:
@@ -308,6 +328,23 @@ paths:
                     nickname: BIG BOB
         '401':
           description: Unauthorized
+        '':
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  date_created:
+                    type: string
+                  last_modify:
+                    type: string
       operationId: get-api-user-username
       description: get actual user data
     put:
@@ -316,21 +353,81 @@ paths:
         - user
       responses: {}
       operationId: put-api-user-username
-      description: change user nickname or password
+      description: change user nickname
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                '':
+                  type: string
+        description: ''
     delete:
       summary: delete user
       tags:
         - user
-      responses: {}
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
       operationId: delete-api-user-username
-  /api/album:
+      description: delete own account
+  /api/albums:
     get:
       summary: get album with picture and progress
       tags:
         - album
-      responses: {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      album_id:
+                        type: string
+                      album_name:
+                        type: string
+                      numbler_of_photos:
+                        type: number
+                      number_tagged_photos:
+                        type: number
+                      preview_image:
+                        type: string
+                  - properties:
+                      album_id:
+                        type: string
+                      album_name:
+                        type: string
+                      numbler_of_photos:
+                        type: number
+                      number_tagged_photos:
+                        type: number
+                      preview_image:
+                        type: string
+                type: object
+              examples:
+                example:
+                  value:
+                    album_id: 12
+                    alum_name: cats
+                    number_of_photos: 12000
+                    number_tagged_photos: 7000
+                    preview_image: /jhsdi/jkasdjk/cats/123
+          description: OK
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
       operationId: get-api-album
-      description: get album with some data
+      description: |-
+        get album with some data
+        get album preview image with completion rate (25 albums)
+    parameters: []
   '/api/user/{username}/password':
     parameters:
       - schema:
@@ -441,11 +538,16 @@ paths:
         - album
       responses: {}
       operationId: get-api-album-photos
-  '/api/album/photo/{photo_id}':
+  '/api/album/{album_id}photo/{photo_id}':
     parameters:
       - schema:
           type: string
         name: photo_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: album_id
         in: path
         required: true
     post:
@@ -453,7 +555,12 @@ paths:
       tags:
         - album
         - photos
-      responses: {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
       operationId: post-api-album-photo-photo_id
     put:
       summary: verify photo (second user)
@@ -462,6 +569,125 @@ paths:
         - photos
       responses: {}
       operationId: put-api-album-photo-photo_id
+    get:
+      summary: ''
+      operationId: get-api-album-album_id-photo-photo_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo_id:
+                    type: number
+                  actual_tag:
+                    type: string
+                  coordinates:
+                    type: array
+                    items:
+                      type: number
+                  verified:
+                    type: boolean
+                  tagged:
+                    type: boolean
+  /api/user/password:
+    put:
+      summary: change own password
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-user-password
+      description: change own password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                password_repeat:
+                  type: string
+  '/api/album/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get 15 preview photos of album
+      tags:
+        - album
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: string
+                  description:
+                    type: string
+                  number_of_photos:
+                    type: string
+                  number_tagged_photos:
+                    type: string
+                  album_owner_id:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+      operationId: get-api-album-album_id
+      description: get only deta without photos
+  '/api/album/{album_id}/photos':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get next 25 photos from album (preview)
+      tags:
+        - album
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      tagged:
+                        type: boolean
+                      verified:
+                        type: boolean
+                      image_path:
+                        type: string
+                      photo_id:
+                        type: number
+                  - properties:
+                      tagged:
+                        type: boolean
+                      verified:
+                        type: boolean
+                      image_path:
+                        type: string
+                      photo_id:
+                        type: number
+                type: object
+      operationId: get-api-album-album_id-photos
+      description: get preview photos form album
 components:
   schemas: {}
   securitySchemes: {}
