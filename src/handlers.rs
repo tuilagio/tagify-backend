@@ -1,7 +1,7 @@
 use crate::errors::HandlerError;
-use crate::models::{ SendUser,Status, User, UpdateUser, Hash, LoginData};
+use crate::models::{ SendUser, User, UpdateUser, Hash, LoginData};
 use actix_web::http::{StatusCode};
-use actix_web::{web, HttpResponse, Result, Responder, HttpRequest};
+use actix_web::{web, HttpResponse, Result, HttpRequest};
 use deadpool_postgres::Pool;
 use log::{debug, error};
 
@@ -11,16 +11,8 @@ use crate::errors;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
 
 
-pub async fn status() -> impl Responder {
-    web::HttpResponse::Ok().json(Status {
-        status: "server is working :D".to_string(),
-    })
-}
-
-
 pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
 
-    error!("get_user: ");
     // Get user identity
     let user: User = id.identity();
 
@@ -30,7 +22,6 @@ pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
         nickname: user.nickname,
         role: user.role,
     };
-    error!("get_user: {:?}", send_user);
 
     Ok(HttpResponse::build(StatusCode::OK).json(send_user))
 }

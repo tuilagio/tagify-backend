@@ -3,6 +3,7 @@
 use actix_files as fs;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 
+use log::{info};
 use listenfd::ListenFd;
 use std::fs::File;
 use std::io::Read;
@@ -19,7 +20,7 @@ mod my_cookie_policy;
 
 mod models;
 
-use crate::handlers::{logout, login, status};
+use crate::handlers::{logout, login};
 use models::{ROLES};
 
 #[actix_rt::main]
@@ -54,10 +55,17 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Create default admin accounts
-    db::create_user(&client, &conf.default_admin).await.expect("Could not create user account");
+    match db::create_user(&client, &conf.default_admin).await {
+        Ok(_item) => info!("Created default admin account"),
+        Err(_e) => info!("Default user already exists"),
+    }
 
     // Create default user accounts
-    db::create_user(&client, &conf.default_user).await.expect("Could not create default user account");
+    match db::create_user(&client, &conf.default_user).await {
+        Ok(_item) => info!("Created default user"),
+        Err(_e) => info!("Default user already exists"),
+    }
+
 
     let temp = conf.server.key.clone();
 
@@ -88,56 +96,36 @@ async fn main() -> std::io::Result<()> {
 
             //limit the maximum amount of data that server will accept
             .data(web::JsonConfig::default().limit(4096)) // max 4MB json
-            //normal routes
-            .service(web::resource("/").route(web::get().to(status)))
             // .configure(routes)
             .service(
                 web::scope("/api")
-                    //all admin endpoints
-                    .service(web::resource("/login").route(web::post().to(login)))
-                    .service(
-                        web::scope("/admin")
-                            .wrap(my_identity_service::IdentityService::new(
-                                cookie_factory_admin,
-                                pool.clone(),
-                            ))
-                            .service(web::resource("/logout").route(web::post().to(logout)))
-                            .service(
-                                web::resource("/user/{id}")
-                                    .route(web::delete().to(admin_handlers::delete_user)),
-                            )
-                            .service(
-                                web::resource("/user/{id}")
-                                    .route(web::put().to(admin_handlers::update_user)),
-                            )
-                            .service(
-                                web::resource("/user")
-                                    .route(web::post().to(admin_handlers::create_user)),
-                            )
-                            // .service(
-                            //     web::resource("/user/{id}")
-                            //         .route(web::get().to(admin_handlers::get_user)),
-                            // )
-                    )
-                    //user auth routes
-                    .service(
-                        //TODO: More then 3 routes make the last one not accessible
-                        web::scope("/user")
-                            .wrap(my_identity_service::IdentityService::new(
-                                cookie_factory_user,
-                                pool.clone(),
-                            ))
-                            .service(web::resource("/user").route(web::get().to(handlers::get_user)))
-                            .service(web::resource("/logout").route(web::post().to(logout)))
-                            .service(
-                                web::resource("/user")
-                                    .route(web::delete().to(handlers::delete_user)),
-                            )
-                            .service(
-                                web::resource("/user")
-                                    .route(web::put().to(handlers::update_user)),
-                            )
-                    ),
+                //all admin endpoints
+                .service(web::resource("/login").route(web::post().to(login)))
+                .service(
+                    web::scope("/admin")
+                        .wrap(my_identity_service::IdentityService::new(
+                            cookie_factory_admin,
+                            pool.clone(),
+                        ))
+                        .route("/logout", web::delete().to(logout))
+                        .route("/user", web::delete().to(admin_handlers::delete_user))
+                        .route("/user", web::put().to(admin_handlers::update_user))
+                        .route("/user", web::post().to(admin_handlers::create_user))
+                        // .route("/user/{id}", web::get().to(admin_handlers::get_user))
+                )
+                //user auth routes
+                .service(
+                    //TODO: More then 3 routes make the last one not accessible
+                    web::scope("/user")
+                        .wrap(my_identity_service::IdentityService::new(
+                            cookie_factory_user,
+                            pool.clone(),
+                        ))
+                        .route("/logout", web::post().to(logout))
+                        .route("/user", web::get().to(handlers::get_user))
+                        .route("/user", web::delete().to(handlers::delete_user))
+                        .route("/user", web::put().to(handlers::update_user))
+                )
             )
     });
 

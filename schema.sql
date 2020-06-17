@@ -1,5 +1,4 @@
 
-DROP TABLE IF EXISTS users;
 /* DROP TYPE IF EXISTS ROLE; */
 
 /* CREATE TYPE ROLE AS ENUM ('admin', 'tagger'); */
@@ -13,10 +12,12 @@ CREATE TABLE IF NOT EXISTS users (
     last_modified DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
+ALTER TABLE users DROP CONSTRAINT IF EXISTS namechk;
 ALTER TABLE users
   ADD CONSTRAINT namechk CHECK (char_length(username) <= 64 AND char_length(username) >= 4);
 
 
+ALTER TABLE users DROP CONSTRAINT IF EXISTS userchk;
 ALTER TABLE users
   ADD CONSTRAINT userchk CHECK (char_length(nickname) <= 64 AND char_length(nickname) >= 4);
 
