@@ -115,7 +115,7 @@ pub async fn update_user(pool: web::Data<Pool>, id: Identity, data: web::Json<Up
             match e {
                 errors::DBError::PostgresError(e) => {
                     error!("Getting user failed: {}", e);
-                    return Err(HandlerError::AuthFail);
+                    return Err(HandlerError::InternalError);
                 }
                 errors::DBError::MapperError(e) => {
                     error!("Error occured: {}", e);
