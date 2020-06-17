@@ -20,6 +20,7 @@ pub async fn status() -> impl Responder {
 
 pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
 
+    error!("get_user: ");
     // Get user identity
     let user: User = id.identity();
 
@@ -29,6 +30,7 @@ pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
         nickname: user.nickname,
         role: user.role,
     };
+    error!("get_user: {:?}", send_user);
 
     Ok(HttpResponse::build(StatusCode::OK).json(send_user))
 }

@@ -114,14 +114,20 @@ async fn main() -> std::io::Result<()> {
                                 web::resource("/user")
                                     .route(web::post().to(admin_handlers::create_user)),
                             )
+                            // .service(
+                            //     web::resource("/user/{id}")
+                            //         .route(web::get().to(admin_handlers::get_user)),
+                            // )
                     )
                     //user auth routes
                     .service(
+                        //TODO: More then 3 routes make the last one not accessible
                         web::scope("/user")
                             .wrap(my_identity_service::IdentityService::new(
                                 cookie_factory_user,
                                 pool.clone(),
                             ))
+                            .service(web::resource("/user").route(web::get().to(handlers::get_user)))
                             .service(web::resource("/logout").route(web::post().to(logout)))
                             .service(
                                 web::resource("/user")
@@ -130,10 +136,6 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::resource("/user")
                                     .route(web::put().to(handlers::update_user)),
-                            )
-                            .service(
-                                web::resource("/user")
-                                    .route(web::get().to(handlers::get_user)),
                             )
                     ),
             )

@@ -13,7 +13,7 @@ use actix_web::error::{Error, Result};
 use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse};
 use actix_http::{Response, ResponseBuilder};
 use actix_web::http::{StatusCode};
-use log::{error};
+use log::{error, debug};
 
 use deadpool_postgres::Pool;
 
@@ -231,6 +231,7 @@ where
                         }
                     };
 
+                    debug!("Username in cookie is {}", id);
                     let user: User = match get_user_by_name(client, &id).await {
                         Ok(user) => user,
                         Err(e) => {
@@ -239,6 +240,7 @@ where
                         }
                     };
 
+                    debug!("Extracted user is: {:?}", user);
                     let cookie_name = user.role.clone();
 
                     req.extensions_mut()
@@ -246,19 +248,31 @@ where
 
                     // https://github.com/actix/actix-web/issues/1263
                     let fut = { srv.borrow_mut().call(req) };
-                    let mut res = fut.await?;
+                    let mut res = match fut.await {
+                        Ok(i) => i,
+                        Err(e) => {
+                            error!("call failed: {}", e);
+                            panic!("Help");
+                        }
+                    };
                     let id = res.request().extensions_mut().remove::<IdentityItem>();
 
                     if let Some(id) = id {
                         match backend.to_response(id.user, id.changed, &cookie_name, &mut res).await {
                             Ok(_) => Ok(res),
-                            Err(e) => Ok(res.error_response(e)),
+                            Err(e) => {
+                                error!("to_response failed: {}", e);
+                                Ok(res.error_response(e))
+                            },
                         }
                     } else {
                         Ok(res)
                     }
                 }
-                Err(err) => Ok(req.error_response(err)),
+                Err(err) => {
+                    error!("from_request failed: {}", err);
+                    Ok(req.error_response(err))
+                }
             }
         }
         .boxed_local()
