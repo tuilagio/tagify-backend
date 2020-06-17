@@ -141,7 +141,6 @@ paths:
                     type: string
                   nickname:
                     type: string
-
                   date_created:
                     type: string
                   last_modify:
@@ -344,7 +343,11 @@ paths:
       summary: change user data
       tags:
         - user
-      responses: {}
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
       operationId: put-api-user-username
       description: change user nickname
       requestBody:
@@ -355,8 +358,10 @@ paths:
               properties:
                 nickname:
                   type: string
-                '':
-                  type: string
+            examples:
+              example:
+                value:
+                  nickname: big Bobi
         description: ''
     delete:
       summary: delete user
