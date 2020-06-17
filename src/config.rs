@@ -1,4 +1,6 @@
 use serde::Deserialize;
+use crate::models::CreateUser;
+
 
 #[derive(Deserialize, Clone)]
 pub struct Server {
@@ -11,6 +13,8 @@ pub struct Server {
 pub struct MyConfig {
     pub postgres: deadpool_postgres::Config,
     pub server: Server,
+    pub default_admin: CreateUser,
+    pub default_user: CreateUser,
 }
 
 impl MyConfig {

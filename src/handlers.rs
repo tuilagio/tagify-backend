@@ -1,5 +1,5 @@
-use crate::errors::UserError;
-use crate::models::{ SendUser,Status, User, Nickname, Password, Hash, ReceivedLoginData};
+use crate::errors::HandlerError;
+use crate::models::{ SendUser,Status, User, UpdateUser, Hash, LoginData};
 use actix_web::http::{StatusCode};
 use actix_web::{web, HttpResponse, Result, Responder, HttpRequest};
 use deadpool_postgres::Pool;
@@ -10,6 +10,7 @@ use crate::db;
 use crate::errors;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
 
+
 pub async fn status() -> impl Responder {
     web::HttpResponse::Ok().json(Status {
         status: "server is working :D".to_string(),
@@ -17,21 +18,24 @@ pub async fn status() -> impl Responder {
 }
 
 
-pub async fn get_user(id: Identity) -> Result<HttpResponse, UserError> {
+pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
 
+    error!("get_user: ");
     // Get user identity
     let user: User = id.identity();
 
     let send_user = SendUser {
+        id: user.id,
         username: user.username,
         nickname: user.nickname,
-        is_admin: user.is_admin,
+        role: user.role,
     };
+    error!("get_user: {:?}", send_user);
 
     Ok(HttpResponse::build(StatusCode::OK).json(send_user))
 }
 
-pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
+pub async fn logout(id: Identity) -> Result<HttpResponse, HandlerError> {
 
     id.logout();
 
@@ -39,30 +43,38 @@ pub async fn logout(id: Identity) -> Result<HttpResponse, UserError> {
 }
 
 pub async fn login(
-    data: web::Json<ReceivedLoginData>,
+    data: web::Json<LoginData>,
     pool: web::Data<Pool>,
     req: HttpRequest,
-    cookie_factory: web::Data<MyCookieIdentityPolicy>
-) -> Result<HttpResponse, UserError> {
+    cookie_factory: web::Data<MyCookieIdentityPolicy>,
+) -> Result<HttpResponse, HandlerError> {
 
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(UserError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
-    let user: User = match db::get_user(client, &data.username).await {
+    let user: User = match db::get_user_by_name(client, &data.username).await {
         Ok(user) => user,
         Err(e) => match e {
             errors::DBError::PostgresError(e) => {
                 error!("Getting user failed: {}", e);
-                return Err(UserError::AuthFail);
+                return Err(HandlerError::AuthFail);
             }
             errors::DBError::MapperError(e) => {
                 error!("Error occured: {}", e);
-                return Err(UserError::InternalError);
+                return Err(HandlerError::InternalError);
+            }
+            errors::DBError::ArgonError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            errors::DBError::BadArgs{ err } => {
+                error!("Error occured: {}", err);
+                return Err(HandlerError::BadClientData{field: err.to_owned() });
             }
         },
     };
@@ -70,12 +82,12 @@ pub async fn login(
     match user.verify_password(data.password.as_bytes()) {
         Ok(correct) => {
             if !correct {
-                return Err(UserError::AuthFail);
+                return Err(HandlerError::AuthFail);
             }
         }
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(UserError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     }
 
@@ -84,7 +96,7 @@ pub async fn login(
 }
 
 
-pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Json<Nickname>) -> Result<HttpResponse, UserError> {
+pub async fn update_user(pool: web::Data<Pool>, id: Identity, data: web::Json<UpdateUser>) -> Result<HttpResponse, HandlerError> {
 
     // Get user identity
     let user: User = id.identity();
@@ -93,30 +105,24 @@ pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Jso
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(UserError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
-    // Check if nickname is not empty & exists
-    let nickname = match &data.nickname {
-        Some(item) => if item.len() == 0 {
-            return Err(UserError::BadClientData{field: "nickname cannot be empty".to_string()  });
-        }
-        else {
-            item
-        },
-        None => {
-            return Err(UserError::BadClientData{field: "couldn't find nickname".to_string()  });
-        }
+    let new_user = User {
+        id: user.id,
+        username: user.username,
+        nickname: data.nickname.clone(),
+        password: data.password.clone(),
+        role: user.role
     };
 
-
-    let result = client.execute("UPDATE users SET nickname = $1 WHERE username = $2", &[&nickname,&user.username]).await;
+    let result = db::update_user(&client, &new_user).await;
 
     match result {
         Err(e) => {
             error!("Error occured: {}",e );
-            return Err(UserError::InternalError);
+            return Err(HandlerError::InternalError);
         },
         Ok(num_updated) => num_updated
     };
@@ -125,44 +131,25 @@ pub async fn update_nickname(pool: web::Data<Pool>, id: Identity, data: web::Jso
     Ok(HttpResponse::new(StatusCode::OK))
 }
 
-
-pub async fn update_password(pool: web::Data<Pool>, id: Identity, mut data: web::Json<Password>) -> Result<HttpResponse, UserError> {
+pub async fn delete_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, HandlerError> {
 
     // Get user identity
     let user: User = id.identity();
-
 
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(UserError::InternalError);
+            return Err(HandlerError::InternalError);
         }
     };
 
-    //Check if password is not empty
-    if data.password.len() == 0 {
-        return Err(UserError::BadClientData{field: "password cannot be empty".to_string()});
-    }
-
-    // Check if password and repeatPassword match
-    if !data.password.eq(&data.repeat_password){
-        return Err(UserError::BadClientData{field: "password and password repeat don't match".to_string()});
-    }
-
-    // hash password
-    if let Err(e) = data.hash_password() {
-        error!("Error occured: {}", e);
-        return Err(UserError::InternalError);
-    }
-
-    //execute db query
-    let result = client.execute("UPDATE users SET password = $1 WHERE username = $2", &[&data.password,&user.username]).await;
+    let result = db::delete_user(&client, user.id).await;
 
     match result {
         Err(e) => {
             error!("Error occured: {}",e );
-            return Err(UserError::InternalError);
+            return Err(HandlerError::InternalError);
         },
         Ok(num_updated) => num_updated
     };

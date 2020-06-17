@@ -19,9 +19,8 @@ mod my_cookie_policy;
 
 mod models;
 
-// use crate::my_identity_service::;
-use crate::admin_handlers::*;
-use crate::handlers::*;
+use crate::handlers::{logout, login, status};
+use models::{ROLES};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -54,22 +53,36 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
+    // Create default admin accounts
+    db::create_user(&client, &conf.default_admin).await.expect("Could not create user account");
+
+    // Create default user accounts
+    db::create_user(&client, &conf.default_user).await.expect("Could not create default user account");
+
     let temp = conf.server.key.clone();
 
     // Register http routes
     let mut server = HttpServer::new(move || {
         let cookie_key = temp.as_bytes();
 
-        let cookie_factory =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
-            .name("auth-cookie")
+        let cookie_factory_user =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
+            .name(ROLES[1])
+            .path("/")
+            .secure(false);
+
+        let cookie_factory_admin =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
+            .name(ROLES[0])
             .path("/")
             .secure(false);
         App::new()
+
+            // Give login handler access to cookie factory
+            .data(cookie_factory_user.clone())
+
             // Serve every file in directory from ../dist
             .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
             // Give every handler access to the db connection pool
             .data(pool.clone())
-            .data(cookie_factory.clone())
             // Enable logger
             .wrap(Logger::default())
 
@@ -80,46 +93,54 @@ async fn main() -> std::io::Result<()> {
             // .configure(routes)
             .service(
                 web::scope("/api")
-                    //guest endpoints
-                    .service(web::resource("/user_login").route(web::post().to(login)))
                     //all admin endpoints
+                    .service(web::resource("/login").route(web::post().to(login)))
                     .service(
                         web::scope("/admin")
+                            .wrap(my_identity_service::IdentityService::new(
+                                cookie_factory_admin,
+                                pool.clone(),
+                            ))
+                            .service(web::resource("/logout").route(web::post().to(logout)))
                             .service(
-                                web::resource("/create_admin").route(web::post().to(create_admin)),
+                                web::resource("/user/{id}")
+                                    .route(web::delete().to(admin_handlers::delete_user)),
                             )
                             .service(
-                                web::resource("/create_user").route(web::post().to(create_user)),
+                                web::resource("/user/{id}")
+                                    .route(web::put().to(admin_handlers::update_user)),
                             )
                             .service(
-                                web::resource("/delete_admin/{username}/{_:/?}")
-                                    .route(web::delete().to(delete_admin)),
+                                web::resource("/user")
+                                    .route(web::post().to(admin_handlers::create_user)),
                             )
-                            .service(
-                                web::resource("/delete_user/{username}/{_:/?}")
-                                    .route(web::delete().to(delete_user)),
-                            ),
+                            // .service(
+                            //     web::resource("/user/{id}")
+                            //         .route(web::get().to(admin_handlers::get_user)),
+                            // )
                     )
                     //user auth routes
                     .service(
-                        web::scope("/auth")
+                        //TODO: More then 3 routes make the last one not accessible
+                        web::scope("/user")
                             .wrap(my_identity_service::IdentityService::new(
-                                cookie_factory,
+                                cookie_factory_user,
                                 pool.clone(),
                             ))
-                            .service(web::resource("/user_logout").route(web::post().to(logout)))
+                            .service(web::resource("/user").route(web::get().to(handlers::get_user)))
+                            .service(web::resource("/logout").route(web::post().to(logout)))
                             .service(
-                                web::resource("/update_nickname")
-                                    .route(web::put().to(update_nickname)),
+                                web::resource("/user")
+                                    .route(web::delete().to(handlers::delete_user)),
                             )
-                            .service(web::resource("/get_user").route(web::get().to(get_user)))
                             .service(
-                                web::resource("/update_password")
-                                    .route(web::put().to(update_password)),
-                            ),
+                                web::resource("/user")
+                                    .route(web::put().to(handlers::update_user)),
+                            )
                     ),
             )
     });
+
     // Enables us to hot reload the server
     let mut listenfd = ListenFd::from_env();
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
