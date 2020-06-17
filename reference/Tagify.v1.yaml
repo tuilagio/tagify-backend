@@ -15,8 +15,8 @@ paths:
     get:
       summary: whoami
       tags:
-        - Auth
         - user
+        - auth
       responses:
         '200':
           description: OK
@@ -66,8 +66,6 @@ paths:
   /api/auth/login:
     post:
       summary: login
-      tags:
-        - Auth
       responses:
         '200':
           description: OK
@@ -91,11 +89,11 @@ paths:
                   username: user1
                   password: password
         description: user data needed for authentication
+      tags:
+        - auth
   /api/auth/logout:
     post:
       summary: logout
-      tags:
-        - Auth
       responses:
         '200':
           description: OK
@@ -117,6 +115,8 @@ paths:
                 value:
                   username: user1
         description: ''
+      tags:
+        - auth
   /:
     get:
       summary: get server status
@@ -138,7 +138,7 @@ paths:
     get:
       summary: get user by name
       tags:
-        - admin
+        - 'admin->user'
       responses:
         '200':
           description: OK
@@ -211,8 +211,6 @@ paths:
   /api/admin/user:
     post:
       summary: create new user account
-      tags:
-        - admin
       responses:
         '201':
           description: 'Created, new user is created'
@@ -259,11 +257,11 @@ paths:
                   password: password
                   repeat_password: password
                   is_admin: true
+      tags:
+        - 'admin->user'
   /api/admin/users:
     get:
       summary: get all users
-      tags:
-        - admin
       responses:
         '200':
           description: OK
@@ -303,6 +301,8 @@ paths:
           description: Unauthorized
       operationId: get-api-admin-users
       description: get all users
+      tags:
+        - 'admin->user'
   /api/user:
     parameters: []
     get:
@@ -457,13 +457,10 @@ paths:
           description: OK
       description: all album info for admin
       tags:
-        - admin
+        - 'admin->albums'
   /api/user/albums:
     get:
       summary: get all my albums
-      tags:
-        - album
-        - user
       responses:
         '200':
           description: OK
@@ -483,6 +480,8 @@ paths:
         get all my albums
 
         in db we have album, user_id
+      tags:
+        - 'user->album'
   '/api/user/album/{album_id}':
     parameters:
       - schema:
@@ -492,9 +491,6 @@ paths:
         required: true
     get:
       summary: get album data (by album_id)
-      tags:
-        - user
-        - album
       responses:
         '200':
           description: OK
@@ -507,6 +503,8 @@ paths:
                     type: string
       operationId: get-api-user-album-album_id
       description: get all data for my album
+      tags:
+        - 'user->album'
     put:
       summary: edit my album data
       tags:
@@ -663,7 +661,6 @@ paths:
                   lock_timpe_stamp:
                     type: number
       tags:
-        - user
         - album
         - photos
   /api/user/password:
@@ -739,6 +736,7 @@ paths:
       summary: get next 25 photos from album (preview)
       tags:
         - album
+        - photos
       responses:
         '200':
           description: OK
@@ -774,9 +772,6 @@ paths:
   /api/user/album:
     post:
       summary: create new album
-      tags:
-        - user
-        - album
       responses:
         '200':
           description: OK
@@ -798,6 +793,8 @@ paths:
                   type: string
                 preview_image:
                   type: string
+      tags:
+        - 'user->album'
 components:
   schemas: {}
   securitySchemes: {}
