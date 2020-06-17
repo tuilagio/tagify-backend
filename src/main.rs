@@ -125,7 +125,6 @@ async fn main() -> std::io::Result<()> {
                 )
                 //user auth routes
                 .service(
-                    //TODO: More then 3 routes make the last one not accessible
                     web::scope("/user")
                         .wrap(my_identity_service::IdentityService::new(
                             cookie_factory_user,
