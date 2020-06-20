@@ -142,7 +142,7 @@ async fn main() -> std::io::Result<()> {
                                     .route("/{album_id}", web::delete().to(status))
                                     //delete photo from album
                                     .route(
-                                        "/{album_id}/photos/{photo_id",
+                                        "/{album_id}/photos/{photo_id}",
                                         web::delete().to(status),
                                     ),
                             ), //.route("/user/{id}", web::get().to(admin_handlers::get_user))
