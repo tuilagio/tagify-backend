@@ -105,7 +105,7 @@ pub async fn get_users_albums(
 }
 
 pub async fn get_album_by_id(
-    client: deadpool_postgres::Client,
+    client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
     // Query data
@@ -113,5 +113,15 @@ pub async fn get_album_by_id(
         .query_one("SELECT * FROM albums WHERE id = $1", &[&album_id])
         .await?;
 
+    Ok(Album::from_row_ref(&result)?)
+}
+
+pub async fn delete_album(
+    client: &deadpool_postgres::Client,
+    album_id: i32,
+) -> Result<Album, DBError> {
+    let result = client
+        .query_one("DELETE FROM albums WHERE id=$1 RETURNING *", &[&album_id])
+        .await?;
     Ok(Album::from_row_ref(&result)?)
 }
