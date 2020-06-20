@@ -7,6 +7,7 @@ pub struct Album {
     pub id: i32,
     pub title: String,
     pub description: String,
+    pub tags: Vec<String>,
     pub image_number: i32,
     pub tagged_number: i32,
     pub users_id: i32,

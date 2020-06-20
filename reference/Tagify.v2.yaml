@@ -266,36 +266,6 @@ paths:
         name: album_id
         in: path
         required: true
-    get:
-      summary: get album by id
-      tags:
-        - "admin->albums"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  album_id:
-                    type: number
-                  album_name:
-                    type: string
-                  album_tags:
-                    type: array
-                    items:
-                      type: string
-                  photos:
-                    type: number
-                  tagged_photos:
-                    type: number
-                  first_photo:
-                    type: string
-        "401":
-          description: Unauthorized
-      operationId: get-api-admin-albums-album_id
-      description: get album by ID
     delete:
       summary: delete album
       tags:
@@ -336,10 +306,49 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    image_number:
+                      type: string
+                    tagged_number:
+                      type: string
+                    users_id:
+                      type: string
+                    first_photo:
+                      type: string
+              examples:
+                example:
+                  value:
+                    - id: 1
+                      title: "124444323"
+                      description: test123 super album
+                      tags:
+                        - back cat
+                        - white cat
+                        - dog
+                      image_number: 0
+                      tagged_number: 0
+                      users_id: 2
+                      first_photo: default_path
         "401":
           description: Unauthorized
       operationId: get-api-user-albums
-      description: ""
+      description: get own albums
     post:
       summary: create new album
       operationId: post-api-user-albums
@@ -357,6 +366,10 @@ paths:
                     type: string
                   description:
                     type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
                   image_number:
                     type: string
                   tagged_number:
@@ -369,8 +382,12 @@ paths:
                 example:
                   value:
                     id: 2
-                    title: cats
+                    title: "124444323"
                     description: test123 super album
+                    tags:
+                      - back cat
+                      - white cat
+                      - dog
                     image_number: 0
                     tagged_number: 0
                     users_id: 2
@@ -411,17 +428,6 @@ paths:
         name: albums_id
         in: path
         required: true
-    get:
-      summary: get album by id
-      tags:
-        - "user->album"
-      responses:
-        "200":
-          description: OK
-        "401":
-          description: Unauthorized
-      operationId: get-api-user-albums-albums_id
-      description: get album be id
     post:
       summary: add photos to album
       tags:
@@ -516,20 +522,40 @@ paths:
               schema:
                 type: object
                 properties:
-                  album_id:
+                  id:
+                    type: number
+                  title:
                     type: string
-                  album_name:
+                  description:
                     type: string
                   tags:
                     type: array
                     items:
                       type: string
-                  description:
+                  imae_number:
+                    type: number
+                  tagged_number:
+                    type: number
+                  user_id:
+                    type: number
+                  first_photo:
                     type: string
-                  owner:
-                    type: string
+              examples:
+                example:
+                  value:
+                    id: 3
+                    title: "124444323"
+                    description: test123 super album
+                    tags:
+                      - back cat
+                      - white cat
+                      - dog
+                    image_number: 0
+                    tagged_number: 0
+                    users_id: 2
+                    first_photo: default_path
       operationId: get-api-albums-album_id
-      description: get album by id only for prewiew
+      description: get album by id
   "/api/albums/{album_id}/photos/{index}":
     parameters:
       - schema:

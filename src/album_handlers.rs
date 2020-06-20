@@ -33,12 +33,55 @@ pub async fn create_album(
         }
         Ok(item) => item,
     };
-    //add all tags to db
-    //TODO add tags
-
-    //TODO connect tags with ablum
-
     //TODO create album folder on photo_server
+
+    Ok(HttpResponse::build(StatusCode::OK).json(result))
+}
+
+pub async fn get_own_albums(
+    pool: web::Data<Pool>,
+    id: Identity,
+) -> Result<HttpResponse, HandlerError> {
+    let user: User = id.identity();
+
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_users_albums(&client, user.id).await {
+        Err(e) => {
+            error!("Error occured get users albums: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    Ok(HttpResponse::build(StatusCode::OK).json(result))
+}
+
+pub async fn get_album_by_id(
+    pool: web::Data<Pool>,
+    album_id: web::Path<(i32,)>,
+) -> Result<HttpResponse, HandlerError> {
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_album_by_id(client, album_id.0).await {
+        Err(e) => {
+            error!("Error occured get users albums: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
 
     Ok(HttpResponse::build(StatusCode::OK).json(result))
 }
