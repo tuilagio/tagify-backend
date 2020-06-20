@@ -103,3 +103,15 @@ pub async fn get_users_albums(
 
     Ok(result)
 }
+
+pub async fn get_album_by_id(
+    client: deadpool_postgres::Client,
+    album_id: i32,
+) -> Result<Album, DBError> {
+    // Query data
+    let result = client
+        .query_one("SELECT * FROM albums WHERE id = $1", &[&album_id])
+        .await?;
+
+    Ok(Album::from_row_ref(&result)?)
+}

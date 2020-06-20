@@ -228,8 +228,6 @@ async fn main() -> std::io::Result<()> {
                                 web::scope("/albums")
                                     //get all albums
                                     .route("", web::get().to(status))
-                                    //get album be id
-                                    .route("/{album_id}", web::get().to(status))
                                     //change album data (description or name)
                                     .route("/{album_id}", web::put().to(status))
                                     //delete own album by id
@@ -261,8 +259,6 @@ async fn main() -> std::io::Result<()> {
                                     .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
                                     .route("", web::post().to(album_handlers::create_album))
-                                    //get own album by id
-                                    .route("/{album_id}", web::post().to(status))
                                     //change album data (description or name)
                                     .route("/{album_id}", web::put().to(status))
                                     //add photos to album
@@ -290,7 +286,10 @@ async fn main() -> std::io::Result<()> {
                             //get albums for preview (all)
                             .route("", web::get().to(status))
                             //get album by id
-                            .route("/{album_id}", web::get().to(status))
+                            .route(
+                                "/{album_id}{_:/?}",
+                                web::get().to(album_handlers::get_album_by_id),
+                            )
                             //get photos from album (preview)
                             .route("/{album_id}/photos/{photo_id}", web::get().to(status)),
                     ),
