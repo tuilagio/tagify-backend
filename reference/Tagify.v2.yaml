@@ -1,0 +1,170 @@
+openapi: 3.0.0
+info:
+  title: Tagify.v2
+  version: '2.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /api/login:
+    post:
+      summary: Login
+      tags: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+      operationId: post-api-login
+      description: login endpoint for user and admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+  /api/admin/users:
+    get:
+      summary: get all users
+      tags:
+        - 'admin->user'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: number
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+        '401':
+          description: Unauthorized
+      operationId: get-api-admin-users
+      description: get all users from DB
+  /api/admin/user:
+    post:
+      summary: create new user account
+      tags:
+        - 'admin->user'
+      responses:
+        '201':
+          description: Created
+        '401':
+          description: Unauthorized
+      operationId: post-api-admin-user
+      description: create new user account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                nickname:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+  '/api/admin/user/{user_id}':
+    parameters:
+      - schema:
+          type: string
+        name: user_id
+        in: path
+        required: true
+    get:
+      summary: get user bei ID
+      tags:
+        - 'admin->user'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: number
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  albums_id:
+                    type: array
+                    items:
+                      type: number
+                  everything from DB.....:
+                    type: string
+      operationId: get-api-admin-user-user_id
+      description: get user by id with all user data
+    put:
+      summary: change user password
+      tags:
+        - 'admin->user'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-admin-user-user_id
+      description: change user password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+    delete:
+      summary: delete user account
+      tags:
+        - 'admin->user'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-admin-user-user_id
+      description: delete user account
+  /api/user/logout:
+    post:
+      summary: logout as a user
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: post-api-user-logout
+      description: logout as a user
+  /api/admin/logout:
+    post:
+      summary: logout as an admin
+      tags:
+        - admin
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: post-api-admin-logout
+      description: logout as an admin
+components:
+  schemas: {}
