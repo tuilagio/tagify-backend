@@ -119,17 +119,17 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
-    // Create default admin accounts
-    match db::create_user(&client, &conf.default_admin).await {
-        Ok(_item) => info!("Created default admin account"),
-        Err(_e) => info!("Default user already exists"),
-    }
+    // // Create default admin accounts
+    // match db::create_user(&client, &conf.default_admin).await {
+    //     Ok(_item) => info!("Created default admin account"),
+    //     Err(_e) => info!("Default user already exists"),
+    // }
 
-    // Create default user accounts
-    match db::create_user(&client, &conf.default_user).await {
-        Ok(_item) => info!("Created default user"),
-        Err(_e) => info!("Default user already exists"),
-    }
+    // // Create default user accounts
+    // match db::create_user(&client, &conf.default_user).await {
+    //     Ok(_item) => info!("Created default user"),
+    //     Err(_e) => info!("Default user already exists"),
+    // }
 
     let temp = conf.server.key.clone();
 
@@ -288,7 +288,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/albums")
                             //get albums for preview (all)
-                            .route("", web::get().to(status))
+                            .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id
                             .route("/{album_id}", web::get().to(status))
                             //get photos from album (preview)
