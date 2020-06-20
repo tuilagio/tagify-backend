@@ -51,25 +51,21 @@ paths:
           description: Unauthorized
       operationId: get-api-admin-users
       description: get all users from DB
-  /api/admin/user:
     post:
-      summary: create new user account
-      tags:
-        - 'admin->user'
+      summary: create new user
+      operationId: post-api-admin-users
       responses:
         '201':
           description: Created
         '401':
           description: Unauthorized
-      operationId: post-api-admin-user
-      description: create new user account
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                username:
+                user_name:
                   type: string
                 nickname:
                   type: string
@@ -77,6 +73,9 @@ paths:
                   type: string
                 role:
                   type: string
+      tags:
+        - 'admin->user'
+      description: crate new user account
   '/api/admin/user/{user_id}':
     parameters:
       - schema:
