@@ -33,11 +33,6 @@ pub async fn create_album(
         }
         Ok(item) => item,
     };
-    //add all tags to db
-    //TODO add tags
-
-    //TODO connect tags with ablum
-
     //TODO create album folder on photo_server
 
     Ok(HttpResponse::build(StatusCode::OK).json(result))

@@ -349,6 +349,10 @@ paths:
                       type: string
                     description:
                       type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
                     image_number:
                       type: string
                     tagged_number:
@@ -358,7 +362,19 @@ paths:
                     first_photo:
                       type: string
               examples:
-                example: {}
+                example:
+                  value:
+                    - id: 1
+                      title: "124444323"
+                      description: test123 super album
+                      tags:
+                        - back cat
+                        - white cat
+                        - dog
+                      image_number: 0
+                      tagged_number: 0
+                      users_id: 2
+                      first_photo: default_path
         "401":
           description: Unauthorized
       operationId: get-api-user-albums
@@ -380,6 +396,10 @@ paths:
                     type: string
                   description:
                     type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
                   image_number:
                     type: string
                   tagged_number:
@@ -392,8 +412,12 @@ paths:
                 example:
                   value:
                     id: 2
-                    title: cats
+                    title: "124444323"
                     description: test123 super album
+                    tags:
+                      - back cat
+                      - white cat
+                      - dog
                     image_number: 0
                     tagged_number: 0
                     users_id: 2
