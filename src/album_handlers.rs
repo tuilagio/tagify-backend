@@ -27,5 +27,7 @@ pub async fn create_album(
         Ok(item) => item,
     };
 
+    //TODO create album folder on photo_server
+
     Ok(HttpResponse::build(StatusCode::OK).json(result))
 }
