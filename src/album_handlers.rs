@@ -1,4 +1,4 @@
-use crate::album_models::{CreateUser, UpdateUserAdmin, User};
+use crate::album_models::{Album, CreateAlbum};
 use crate::errors::HandlerError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
@@ -19,7 +19,7 @@ pub async fn create_album(
         }
     };
 
-    let result = match db::create_album(&client, &data).await {
+    let result = match db::create_album(&album, &data).await {
         Err(e) => {
             error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
