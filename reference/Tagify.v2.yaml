@@ -67,8 +67,6 @@ paths:
               properties:
                 user_name:
                   type: string
-                nickname:
-                  type: string
                 password:
                   type: string
                 role:
@@ -502,7 +500,7 @@ paths:
                     type: string
       operationId: get-api-albums-album_id
       description: get album by id only for prewiew
-  '/api/albums/{album_id}/photos/{photo_id}':
+  '/api/albums/{album_id}/photos/{index}':
     parameters:
       - schema:
           type: string
@@ -511,7 +509,7 @@ paths:
         required: true
       - schema:
           type: string
-        name: photo_id
+        name: index
         in: path
         required: true
     get:
@@ -529,7 +527,7 @@ paths:
                   '':
                     type: string
       operationId: get-api-albums-album_id-photos-photo_id
-      description: "get photos from album just for preview\n\nresponse:\n  list of links to photo server, number not defined (15-20-30-50) ??????\n  \nfirst call -> photo_id = 0\n\nif you want get more photos from album change photo_id :D\n"
+      description: "get photos from album just for preview\n\nresponse:\n  list of links to photo server, number not defined (15-20-30-50) ??????\n  \nfirst call -> index = 0\n\nif you want get more photos from album change index :D \n"
   '/api/user/tag/{album_id}':
     parameters:
       - schema:
@@ -627,5 +625,49 @@ paths:
                 verify:
                   type: boolean
       description: verify tag
+  '/api/admin/albums/{album_id}/photos/{photo_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: photo_id
+        in: path
+        required: true
+    delete:
+      summary: delete photo from album by id
+      tags:
+        - 'admin->photo'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-admin-albums-album_id-photos-photo_id
+  '/api/user/albums/{album_id}/photos/{photo_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: photo_id
+        in: path
+        required: true
+    delete:
+      summary: delete photo from album
+      tags:
+        - 'user->photo'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-user-albums-album_id-photos-photo_id
 components:
   schemas: {}
