@@ -102,10 +102,10 @@ async fn main() -> std::io::Result<()> {
             .data(web::JsonConfig::default().limit(4096)) // max 4MB json
             // .configure(routes)
             //status
-            .service(web::resource("/status").route(web::get().to(status)))
             .service(
                 web::scope("/api")
                     //all admin endpoints
+                    .service(web::resource("/status").route(web::get().to(status)))
                     .service(web::resource("/login").route(web::post().to(login)))
                     .service(
                         web::scope("/admin")
@@ -129,8 +129,23 @@ async fn main() -> std::io::Result<()> {
                             .route(
                                 "/user/{user_id}",
                                 web::delete().to(admin_handlers::delete_user),
-                            ),
-                        //.route("/user/{id}", web::get().to(admin_handlers::get_user))
+                            )
+                            .service(
+                                web::scope("/albums")
+                                    //get all own albums
+                                    .route("/", web::get().to(status))
+                                    //get album be id
+                                    .route("/{album_id}", web::get().to(status))
+                                    //change album data (description or name)
+                                    .route("/{album_id}", web::put().to(status))
+                                    //delete own album by id
+                                    .route("/{album_id}", web::delete().to(status))
+                                    //delete photo from album
+                                    .route(
+                                        "/{album_id}/photos/{photo_id",
+                                        web::delete().to(status),
+                                    ),
+                            ), //.route("/user/{id}", web::get().to(admin_handlers::get_user))
                     )
                     //user auth routes
                     .service(
@@ -159,7 +174,12 @@ async fn main() -> std::io::Result<()> {
                                     //add photos to album
                                     .route("/{album_id}", web::post().to(status))
                                     //delete own album
-                                    .route("/{album_id}", web::delete().to(status)),
+                                    .route("/{album_id}", web::delete().to(status))
+                                    //delete own album
+                                    .route(
+                                        "/{album_id}/photos/{photo_id}",
+                                        web::delete().to(status),
+                                    ),
                             )
                             .service(
                                 web::scope("/tag")
