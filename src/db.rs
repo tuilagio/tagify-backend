@@ -83,9 +83,8 @@ pub async fn create_album(
     first_photo: String,
 ) -> Result<Album, DBError> {
     let result = client.query_one(
-        "INSERT INTO albums (title, description, tag1, tag2, tag3, users_id, first_photo) VAlUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-        &[&album.title, &album.description, &album.tag1, &album.tag2, &album.tag3, &id, &first_photo]).await?;
-    println!("restlt: {:?}", result);
-
+        "INSERT INTO albums (title, description, users_id, first_photo) VAlUES ($1, $2, $3, $4) RETURNING *",
+        &[&album.title, &album.description, &id, &first_photo]).await?;
+    // println!("restlt: {:?}", result);
     Ok(Album::from_row_ref(&result)?)
 }

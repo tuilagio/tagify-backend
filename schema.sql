@@ -24,9 +24,6 @@ CREATE TABLE IF NOT EXISTS albums (
     id SERIAL PRIMARY KEY,
     title VARCHAR(300) NOT NULL,
     description TEXT,
-    tag1 VARCHAR(100),
-    tag2 VARCHAR(100),
-    tag3 VARCHAR(100),
     image_number INT DEFAULT 0,
     tagged_number INT DEFAULT 0,
     users_id INT NOT NULL,
@@ -57,4 +54,23 @@ CREATE TABLE IF NOT EXISTS image_metas (
     date_created DATE NOT NULL DEFAULT CURRENT_DATE,
     date_modified DATE NOT NULL DEFAULT CURRENT_DATE,
     FOREIGN KEY (albums_id) REFERENCES albums (id)
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(122) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS album_tags (
+    tags_id INT PRIMARY KEY,
+    albums_id INT NOT NULL,
+    FOREIGN KEY (albums_id) REFERENCES albums (id),
+    FOREIGN KEY (tags_id) REFERENCES tags (id)
+);
+
+CREATE TABLE IF NOT EXISTS image_tags (
+    tags_id INT PRIMARY KEY,
+    image_metas_id INT NOT NULL,
+    FOREIGN KEY (tags_id) REFERENCES tags (id),
+    FOREIGN KEY (image_metas_id) REFERENCES image_metas (id)
 );
