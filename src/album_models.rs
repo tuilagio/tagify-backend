@@ -20,6 +20,11 @@ pub struct CreateAlbum {
     pub description: String,
     pub tags: Vec<String>,
 }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UpdateAlbum {
+    pub title: String,
+    pub description: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AlbumTag {
