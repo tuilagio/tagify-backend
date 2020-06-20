@@ -135,8 +135,8 @@ async fn main() -> std::io::Result<()> {
                             )
                             .service(
                                 web::scope("/albums")
-                                    //get all own albums
-                                    .route("/", web::get().to(status))
+                                    //get all albums
+                                    .route("", web::get().to(status))
                                     //get album be id
                                     .route("/{album_id}", web::get().to(status))
                                     //change album data (description or name)
@@ -167,9 +167,9 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/albums")
                                     //get all own albums
-                                    .route("/", web::get().to(status))
+                                    .route("", web::get().to(status))
                                     //create new album
-                                    .route("/", web::post().to(album_handlers::create_album))
+                                    .route("", web::post().to(album_handlers::create_album))
                                     //get own album by id
                                     .route("/{album_id}", web::post().to(status))
                                     //change album data (description or name)
@@ -187,7 +187,7 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/tag")
                                     //get 15 photos for tagging
-                                    .route("/", web::get().to(status))
+                                    .route("", web::get().to(status))
                                     //get own album by id
                                     .route("/{album_id}/action/{photo_id}", web::post().to(status))
                                     //verify tag
@@ -197,7 +197,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/albums")
                             //get albums for preview (all)
-                            .route("/", web::get().to(status))
+                            .route("", web::get().to(status))
                             //get album by id
                             .route("/{album_id}", web::get().to(status))
                             //get photos from album (preview)

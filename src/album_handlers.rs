@@ -21,7 +21,7 @@ pub async fn create_album(
 
     let result = match db::create_album(&album, &data).await {
         Err(e) => {
-            error!("Error occured: {}", e);
+            error!("Error occured after create_album: {}", e);
             return Err(HandlerError::InternalError);
         }
         Ok(item) => item,

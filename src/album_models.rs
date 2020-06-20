@@ -12,7 +12,7 @@ pub struct Album {
     pub tag3: String,
     pub image_number: i32,
     pub tagged_number: i32,
-    pub user_id: i32,
+    pub users_id: i32,
     pub first_photo: String,
 }
 
@@ -23,5 +23,6 @@ pub struct CreateAlbum {
     pub tag1: String,
     pub tag2: String,
     pub tag3: String,
-    pub user_id: i32,
+    pub users_id: i32,
+    pub first_photo: String,
 }
