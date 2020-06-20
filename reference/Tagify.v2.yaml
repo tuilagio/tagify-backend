@@ -356,6 +356,31 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  tag1:
+                    type: string
+                  tag2:
+                    type: string
+                  tag3:
+                    type: string
+                  image_number:
+                    type: number
+                  tagged_number:
+                    type: number
+                  user_id:
+                    type: number
+                  first_photo:
+                    type: string
         '401':
           description: Unauthorized
       tags:
@@ -367,12 +392,24 @@ paths:
             schema:
               type: object
               properties:
-                album_name:
-                  type: string
-                tags:
+                title:
                   type: string
                 description:
                   type: string
+                tag1:
+                  type: string
+                tag2:
+                  type: string
+                tag3:
+                  type: string
+            examples:
+              example-1:
+                value:
+                  title: cats
+                  description: test123 super album
+                  tag1: black cat
+                  tag2: white cat
+                  tag3: dog
     parameters: []
   '/api/user/albums/{albums_id}':
     parameters:
