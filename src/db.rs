@@ -88,3 +88,18 @@ pub async fn create_album(
     // println!("restlt: {:?}", result);
     Ok(Album::from_row_ref(&result)?)
 }
+
+pub async fn get_users_albums(
+    client: &deadpool_postgres::Client,
+    id: i32,
+) -> Result<Vec<Album>, DBError> {
+    let result = client
+        .query("SELECT * FROM albums WHERE users_id = $1", &[&id])
+        .await
+        .expect("ERROR GETTING ALBUMS")
+        .iter()
+        .map(|row| Album::from_row_ref(row).unwrap())
+        .collect::<Vec<Album>>();
+
+    Ok(result)
+}

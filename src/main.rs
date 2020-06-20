@@ -258,7 +258,7 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/albums")
                                     //get all own albums
-                                    .route("", web::get().to(status))
+                                    .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
                                     .route("", web::post().to(album_handlers::create_album))
                                     //get own album by id
