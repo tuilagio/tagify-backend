@@ -427,5 +427,18 @@ paths:
           description: Unauthorized
       operationId: delete-api-user-albums-albums_id
       description: delete album by id
+  /status:
+    get:
+      summary: get server status
+      tags: []
+      responses:
+        '200':
+          description: 'OK, server is working'
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+      operationId: get-status
+      description: get server status
 components:
   schemas: {}
