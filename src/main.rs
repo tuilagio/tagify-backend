@@ -25,9 +25,12 @@ mod models;
 use crate::handlers::{login, logout};
 use models::ROLES;
 
-async fn index() -> Result<NamedFile> {
-    let path: PathBuf = PathBuf::from("../debug_dist/index.html");
-    Ok(NamedFile::open(path)?)
+struct DistPath {
+    path: PathBuf
+}
+
+async fn index(data: web::Data<DistPath>) -> Result<NamedFile> {
+    Ok(NamedFile::open(data.path.clone())?)
 }
 
 #[actix_rt::main]
@@ -77,6 +80,25 @@ async fn main() -> std::io::Result<()> {
 
     // Register http routes
     let mut server = HttpServer::new(move || {
+
+        let serve_file_service: fs::Files;
+        let path_arg: DistPath;
+
+        // Check if in release mode if so use DIST env variable as path for serving frontend
+        if cfg!(debug_assertions) {
+            // If debug binary then hardcode path
+            serve_file_service =fs::Files::new("/app/frontend/debug_dist", "../frontend/debug_dist").show_files_listing();
+            path_arg = DistPath { path: PathBuf::from("../frontend/debug_dist/index.html") };
+
+        } else {
+            // If release binary use DIST env var
+            let dist = std::env::var("DIST").expect("Could not find environment variable DIST");
+            path_arg = DistPath { path: PathBuf::from(dist.clone() + "index.html") };
+            if ! std::path::Path::new(&dist).exists() {
+                panic!("DIST env variable does not point to a valid directory: {}", dist);
+            }
+            serve_file_service = fs::Files::new("/app/frontend/dist", dist).show_files_listing();
+        }
         let cookie_key = temp.as_bytes();
 
         let cookie_factory_user = my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
@@ -89,10 +111,11 @@ async fn main() -> std::io::Result<()> {
             .path("/")
             .secure(false);
         App::new()
+            .data(path_arg)
             // Give login handler access to cookie factory
             .data(cookie_factory_user.clone())
             // Serve every file in directory from ../dist
-            .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
+            .service(serve_file_service)
             // Serve index.html
             .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
