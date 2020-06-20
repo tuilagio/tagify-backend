@@ -1,4 +1,4 @@
-use crate::models::CreateUser;
+use crate::user_models::CreateUser;
 use serde::Deserialize;
 
 #[derive(Deserialize, Clone)]

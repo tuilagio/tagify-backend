@@ -19,8 +19,8 @@ use deadpool_postgres::Pool;
 
 use crate::db::get_user_by_name;
 use crate::errors::HandlerError;
-use crate::models::User;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
+use crate::user_models::User;
 
 #[derive(Clone)]
 pub struct Identity(HttpRequest);
