@@ -1,18 +1,18 @@
 openapi: 3.0.0
 info:
   title: Tagify.v2
-  version: '2.0'
+  version: "2.0"
 servers:
-  - url: 'http://localhost:3000'
+  - url: "http://localhost:3000"
 paths:
   /api/login:
     post:
       summary: Login
       tags: []
       responses:
-        '200':
+        "200":
           description: OK
-        '400':
+        "400":
           description: Bad Request
       operationId: post-api-login
       description: login endpoint for user and admin
@@ -30,9 +30,9 @@ paths:
     get:
       summary: get all users
       tags:
-        - 'admin->user'
+        - "admin->user"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -47,7 +47,7 @@ paths:
                     type: string
                   role:
                     type: string
-        '401':
+        "401":
           description: Unauthorized
       operationId: get-api-admin-users
       description: get all users from DB
@@ -55,9 +55,9 @@ paths:
       summary: create new user
       operationId: post-api-admin-users
       responses:
-        '201':
+        "201":
           description: Created
-        '401':
+        "401":
           description: Unauthorized
       requestBody:
         content:
@@ -72,9 +72,9 @@ paths:
                 role:
                   type: string
       tags:
-        - 'admin->user'
+        - "admin->user"
       description: crate new user account
-  '/api/admin/user/{user_id}':
+  "/api/admin/user/{user_id}":
     parameters:
       - schema:
           type: string
@@ -84,9 +84,9 @@ paths:
     get:
       summary: get user bei ID
       tags:
-        - 'admin->user'
+        - "admin->user"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -112,11 +112,11 @@ paths:
     put:
       summary: change user password
       tags:
-        - 'admin->user'
+        - "admin->user"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: put-api-admin-user-user_id
       description: change user password
@@ -131,11 +131,11 @@ paths:
     delete:
       summary: delete user account
       tags:
-        - 'admin->user'
+        - "admin->user"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: delete-api-admin-user-user_id
       description: delete user account
@@ -145,9 +145,9 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: post-api-user-logout
       description: logout as a user
@@ -157,9 +157,9 @@ paths:
       tags:
         - admin
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: post-api-admin-logout
       description: logout as an admin
@@ -169,7 +169,7 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -186,7 +186,7 @@ paths:
                     type: string
                   albums....... data:
                     type: string
-        '401':
+        "401":
           description: Unauthorized
       operationId: get-api-user-me
       description: get all my data from DB
@@ -195,9 +195,9 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: put-api-user-me
       description: update user nickname
@@ -206,9 +206,9 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: delete-api-user-me
       description: delete my own account
@@ -218,9 +218,9 @@ paths:
       tags:
         - user
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: put-api-user-me-password
       description: change own password
@@ -236,9 +236,9 @@ paths:
     get:
       summary: get all albums
       tags:
-        - 'admin->albums'
+        - "admin->albums"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -247,7 +247,7 @@ paths:
                 properties:
                   album_id:
                     type: number
-                  'album:_name':
+                  "album:_name":
                     type: string
                   photos:
                     type: number
@@ -255,11 +255,11 @@ paths:
                     type: number
                   first_photo:
                     type: string
-        '401':
+        "401":
           description: Unauthorized
       operationId: get-api-admin-albums
       description: get all albums from DB
-  '/api/admin/albums/{album_id}':
+  "/api/admin/albums/{album_id}":
     parameters:
       - schema:
           type: string
@@ -269,9 +269,9 @@ paths:
     get:
       summary: get album by id
       tags:
-        - 'admin->albums'
+        - "admin->albums"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -292,29 +292,29 @@ paths:
                     type: number
                   first_photo:
                     type: string
-        '401':
+        "401":
           description: Unauthorized
       operationId: get-api-admin-albums-album_id
       description: get album by ID
     delete:
       summary: delete album
       tags:
-        - 'admin->albums'
+        - "admin->albums"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: delete-api-admin-albums-album_id
       description: delete album with all photos
     put:
       summary: change album data
       tags:
-        - 'admin->albums'
+        - "admin->albums"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: put-api-admin-albums-album_id
       description: update album data
@@ -332,19 +332,19 @@ paths:
     get:
       summary: get all own albums
       tags:
-        - 'user->album'
+        - "user->album"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: get-api-user-albums
-      description: ''
+      description: ""
     post:
       summary: create new album
       operationId: post-api-user-albums
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -375,10 +375,10 @@ paths:
                     tagged_number: 0
                     users_id: 2
                     first_photo: default_path
-        '401':
+        "401":
           description: Unauthorized
       tags:
-        - 'user->album'
+        - "user->album"
       description: create new album
       requestBody:
         content:
@@ -404,7 +404,7 @@ paths:
                     - white cat
                     - dog
     parameters: []
-  '/api/user/albums/{albums_id}':
+  "/api/user/albums/{albums_id}":
     parameters:
       - schema:
           type: string
@@ -414,44 +414,44 @@ paths:
     get:
       summary: get album by id
       tags:
-        - 'user->album'
+        - "user->album"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: get-api-user-albums-albums_id
       description: get album be id
     post:
       summary: add photos to album
       tags:
-        - 'user->album'
+        - "user->album"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: post-api-user-albums-albums_id
       description: add photos to album
     put:
       summary: change album data
       tags:
-        - 'user->album'
+        - "user->album"
       responses:
-        '200':
+        "200":
           description: OK
-        '201':
+        "201":
           description: Created
       operationId: put-api-user-albums-albums_id
       description: update album name or description
     delete:
       summary: delete album
       tags:
-        - 'user->album'
+        - "user->album"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: delete-api-user-albums-albums_id
       description: delete album by id
@@ -460,11 +460,11 @@ paths:
       summary: get server status
       tags: []
       responses:
-        '200':
-          description: 'OK, server is working'
-        '404':
+        "200":
+          description: "OK, server is working"
+        "404":
           description: Not Found
-        '500':
+        "500":
           description: Internal Server Error
       operationId: get-status
       description: get server status
@@ -476,7 +476,7 @@ paths:
       operationId: get-api-albums
       description: get albums for prewiew (all albums from DB)
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -497,7 +497,7 @@ paths:
                       first_photo:
                         type: string
                 type: object
-  '/api/albums/{album_id}':
+  "/api/albums/{album_id}":
     parameters:
       - schema:
           type: string
@@ -509,7 +509,7 @@ paths:
       tags:
         - album
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -530,7 +530,7 @@ paths:
                     type: string
       operationId: get-api-albums-album_id
       description: get album by id only for prewiew
-  '/api/albums/{album_id}/photos/{index}':
+  "/api/albums/{album_id}/photos/{index}":
     parameters:
       - schema:
           type: string
@@ -547,18 +547,18 @@ paths:
       tags:
         - album
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  '':
+                  "":
                     type: string
       operationId: get-api-albums-album_id-photos-photo_id
       description: "get photos from album just for preview\n\nresponse:\n  list of links to photo server, number not defined (15-20-30-50) ??????\n  \nfirst call -> index = 0\n\nif you want get more photos from album change index :D \n"
-  '/api/user/tag/{album_id}':
+  "/api/user/tag/{album_id}":
     parameters:
       - schema:
           type: string
@@ -568,9 +568,9 @@ paths:
     get:
       summary: get 15 photos for tagging
       tags:
-        - 'user->tag'
+        - "user->tag"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -603,7 +603,7 @@ paths:
                 type: object
       operationId: get-api-user-tag-album_id
       description: get photos for taging (lock 15 photos for 10min)
-  '/api/user/tag/{album_id}/action{photo_id}':
+  "/api/user/tag/{album_id}/action{photo_id}":
     parameters:
       - schema:
           type: string
@@ -618,9 +618,9 @@ paths:
     post:
       summary: set first tag
       tags:
-        - 'user->tag'
+        - "user->tag"
       responses:
-        '200':
+        "200":
           description: OK
       operationId: post-api-user-tag-album_id-action-photo_id
       description: set first tag
@@ -641,9 +641,9 @@ paths:
     put:
       summary: verify tag
       tags:
-        - 'user->tag'
+        - "user->tag"
       responses:
-        '200':
+        "200":
           description: OK
       operationId: put-api-user-tag-album_id-action-photo_id
       requestBody:
@@ -655,7 +655,7 @@ paths:
                 verify:
                   type: boolean
       description: verify tag
-  '/api/admin/albums/{album_id}/photos/{photo_id}':
+  "/api/admin/albums/{album_id}/photos/{photo_id}":
     parameters:
       - schema:
           type: string
@@ -670,14 +670,14 @@ paths:
     delete:
       summary: delete photo from album by id
       tags:
-        - 'admin->photo'
+        - "admin->photo"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: delete-api-admin-albums-album_id-photos-photo_id
-  '/api/user/albums/{album_id}/photos/{photo_id}':
+  "/api/user/albums/{album_id}/photos/{photo_id}":
     parameters:
       - schema:
           type: string
@@ -692,11 +692,11 @@ paths:
     delete:
       summary: delete photo from album
       tags:
-        - 'user->photo'
+        - "user->photo"
       responses:
-        '200':
+        "200":
           description: OK
-        '401':
+        "401":
           description: Unauthorized
       operationId: delete-api-user-albums-album_id-photos-photo_id
 components:
