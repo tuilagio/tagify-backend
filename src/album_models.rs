@@ -30,3 +30,24 @@ pub struct AlbumTag {
 pub struct Tag {
     pub tag: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "albums")]
+pub struct AlbumPreview {
+    pub id: i32,
+    pub title: String,
+    pub description: String,
+    pub first_photo: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlbumsPreview {
+    pub  albums: Vec<AlbumPreview> ,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "image_metas")]
+pub struct PhotoPreview {
+    pub id: i32,
+    pub file_path: String
+}

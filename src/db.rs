@@ -1,4 +1,4 @@
-use crate::album_models::{Album, CreateAlbum};
+use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, PhotoPreview};
 use crate::errors::DBError;
 use crate::user_models::{CreateUser, Hash, User};
 
@@ -88,3 +88,55 @@ pub async fn create_album(
     // println!("restlt: {:?}", result);
     Ok(Album::from_row_ref(&result)?)
 }
+
+// get albums data to preview from DB
+pub async fn get_all_albums(
+    client: deadpool_postgres::Client
+) -> Result<AlbumsPreview, DBError> {
+    let mut albums = AlbumsPreview {
+        albums: Vec::new()
+    };
+    
+    for row in client.query("SELECT id, title, description, first_photo  FROM albums ", &[]).await? {
+        let album = AlbumPreview {
+            id: row.get(0),
+            title: row.get(1),
+            description: row.get(2),
+            first_photo: row.get(3),
+        };
+        albums.albums.push(album);
+    }
+    Ok(albums)
+}
+
+// get all photos from certain album -> sort by date_created
+pub async fn get_photos_from_album(
+    client: deadpool_postgres::Client,
+    id: &i32,
+    index: &i32
+) -> Result<Vec<PhotoPreview>, DBError> {
+    let mut photos = Vec::new();
+
+    let start_position = index * 20;
+    let last_position = &start_position + 20;
+    let mut current_position = 0;
+    
+    for row in client.query("SELECT id, file_path  FROM image_metas WHERE albums_id = $1 ", &[&id]).await? {
+        if &current_position >= &start_position {
+            let photo = PhotoPreview {
+                id: row.get(0),
+                file_path: row.get(1)
+            };
+            photos.push(photo);
+            current_position = current_position + 1;
+            if &current_position >= &last_position {
+                break;
+            }
+        }else {
+            current_position = current_position + 1;
+        }
+    }
+    Ok(photos)
+}
+
+
