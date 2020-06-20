@@ -171,13 +171,15 @@ async fn main() -> std::io::Result<()> {
             .name(ROLES[1])
             .path("/")
             .secure(secure_cookie)
-            .max_age(max_age);
+            .max_age(max_age)
+            .same_site(actix_http::cookie::SameSite::Strict);
 
         let cookie_factory_admin = my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
             .name(ROLES[0])
             .path("/")
             .secure(secure_cookie)
-            .max_age(max_age);
+            .max_age(max_age)
+            .same_site(actix_http::cookie::SameSite::Strict);
         App::new()
             .data(path_arg)
             // Give login handler access to cookie factory
