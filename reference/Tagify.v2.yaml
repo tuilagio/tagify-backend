@@ -440,5 +440,192 @@ paths:
           description: Internal Server Error
       operationId: get-status
       description: get server status
+  /api/albums:
+    get:
+      summary: get albums for preview
+      tags:
+        - album
+      operationId: get-api-albums
+      description: get albums for prewiew (all albums from DB)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      album_id:
+                        type: string
+                      album_name:
+                        type: string
+                      first_photo:
+                        type: string
+                  - properties:
+                      album_id:
+                        type: string
+                      album_name:
+                        type: string
+                      first_photo:
+                        type: string
+                type: object
+  '/api/albums/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get album by ID
+      tags:
+        - album
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: string
+                  album_name:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  description:
+                    type: string
+                  owner:
+                    type: string
+      operationId: get-api-albums-album_id
+      description: get album by id only for prewiew
+  '/api/albums/{album_id}/photos/{photo_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: photo_id
+        in: path
+        required: true
+    get:
+      summary: get photos from album (preview)
+      tags:
+        - album
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '':
+                    type: string
+      operationId: get-api-albums-album_id-photos-photo_id
+      description: "get photos from album just for preview\n\nresponse:\n  list of links to photo server, number not defined (15-20-30-50) ??????\n  \nfirst call -> photo_id = 0\n\nif you want get more photos from album change photo_id :D\n"
+  '/api/user/tag/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get 15 photos for tagging
+      tags:
+        - 'user->tag'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      album_id:
+                        type: number
+                      album_name:
+                        type: string
+                      tags:
+                        type: string
+                  - properties:
+                      photo_id:
+                        type: number
+                      link:
+                        type: string
+                      actual_tag:
+                        type: string
+                      coordinates:
+                        type: array
+                        items:
+                          type: number
+                      verified:
+                        type: boolean
+                      tagged:
+                        type: boolean
+                      lock_time_stamp:
+                        type: number
+                type: object
+      operationId: get-api-user-tag-album_id
+      description: get photos for taging (lock 15 photos for 10min)
+  '/api/user/tag/{album_id}/action{photo_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: photo_id
+        in: path
+        required: true
+    post:
+      summary: set first tag
+      tags:
+        - 'user->tag'
+      responses:
+        '200':
+          description: OK
+      operationId: post-api-user-tag-album_id-action-photo_id
+      description: set first tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: string
+                photo_id:
+                  type: string
+                actual_tag:
+                  type: string
+                coordinates:
+                  type: string
+    put:
+      summary: verify tag
+      tags:
+        - 'user->tag'
+      responses:
+        '200':
+          description: OK
+      operationId: put-api-user-tag-album_id-action-photo_id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verify:
+                  type: boolean
+      description: verify tag
 components:
   schemas: {}
