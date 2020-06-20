@@ -166,5 +166,267 @@ paths:
           description: Unauthorized
       operationId: post-api-admin-logout
       description: logout as an admin
+  /api/user/me:
+    get:
+      summary: get all my data
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  albums....... data:
+                    type: string
+        '401':
+          description: Unauthorized
+      operationId: get-api-user-me
+      description: get all my data from DB
+    put:
+      summary: update my nickname
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-user-me
+      description: update user nickname
+    delete:
+      summary: delete my account
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-user-me
+      description: delete my own account
+  /api/user/me/password:
+    put:
+      summary: change password
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-user-me-password
+      description: change own password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+  /api/admin/albums:
+    get:
+      summary: get all albums
+      tags:
+        - 'admin->albums'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: number
+                  'album:_name':
+                    type: string
+                  photos:
+                    type: number
+                  tagged_photos:
+                    type: number
+                  first_photo:
+                    type: string
+        '401':
+          description: Unauthorized
+      operationId: get-api-admin-albums
+      description: get all albums from DB
+  '/api/admin/albums/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get album by id
+      tags:
+        - 'admin->albums'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: number
+                  album_name:
+                    type: string
+                  album_tags:
+                    type: array
+                    items:
+                      type: string
+                  photos:
+                    type: number
+                  tagged_photos:
+                    type: number
+                  first_photo:
+                    type: string
+        '401':
+          description: Unauthorized
+      operationId: get-api-admin-albums-album_id
+      description: get album by ID
+    delete:
+      summary: delete album
+      tags:
+        - 'admin->albums'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-admin-albums-album_id
+      description: delete album with all photos
+    put:
+      summary: change album data
+      tags:
+        - 'admin->albums'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-admin-albums-album_id
+      description: update album data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_name:
+                  type: string
+                description:
+                  type: string
+  /api/user/albums:
+    get:
+      summary: get all own albums
+      tags:
+        - 'user->album'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: string
+                  description:
+                    type: string
+                  tags:
+                    type: string
+        '401':
+          description: Unauthorized
+      operationId: get-api-user-albums
+    post:
+      summary: create new album
+      operationId: post-api-user-albums
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      tags:
+        - 'user->album'
+      description: create new album
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_name:
+                  type: string
+                tags:
+                  type: string
+                description:
+                  type: string
+    parameters: []
+  '/api/user/albums/{albums_id}':
+    parameters:
+      - schema:
+          type: string
+        name: albums_id
+        in: path
+        required: true
+    get:
+      summary: get album by id
+      tags:
+        - 'user->album'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: get-api-user-albums-albums_id
+      description: get album be id
+    post:
+      summary: add photos to album
+      tags:
+        - 'user->album'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: post-api-user-albums-albums_id
+      description: add photos to album
+    put:
+      summary: change album data
+      tags:
+        - 'user->album'
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+      operationId: put-api-user-albums-albums_id
+      description: update album name or description
+    delete:
+      summary: delete album
+      tags:
+        - 'user->album'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-user-albums-albums_id
+      description: delete album by id
 components:
   schemas: {}
