@@ -89,7 +89,7 @@ pub async fn create_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-//get albums data to preview from DB
+// get albums data to preview from DB
 pub async fn get_all_albums(
     client: deadpool_postgres::Client
 ) -> Result<AlbumsPreview, DBError> {
@@ -108,3 +108,6 @@ pub async fn get_all_albums(
     }
     Ok(albums)
 }
+
+
+

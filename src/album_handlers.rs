@@ -1,4 +1,4 @@
-use crate::album_models::{CreateAlbum, AlbumsPreview };
+use crate::album_models::{CreateAlbum, AlbumsPreview};
 use crate::user_models::{User};
 
 use crate::errors::{HandlerError, DBError};
@@ -45,8 +45,7 @@ pub async fn create_album(
 
 // gets all albums data (id, title, description, first_photo)
 pub async fn get_all_albums(
-    pool: web::Data<Pool>,
-    id: Identity,
+    pool: web::Data<Pool>
 ) -> Result<HttpResponse, HandlerError> {
     
     let client = match pool.get().await {
@@ -61,7 +60,7 @@ pub async fn get_all_albums(
         Ok(albums) => albums,
         Err(e) => match e {
             DBError::PostgresError(e) => {
-                error!("Getting user failed: {}", e);
+                error!("Getting albums failed {}", e);
                 return Err(HandlerError::AuthFail);
             }
             DBError::MapperError(e) => {
@@ -80,7 +79,6 @@ pub async fn get_all_albums(
             }
         },
     };
-
-    Ok(HttpResponse::build(StatusCode::OK).json(albums))
-    
+    Ok(HttpResponse::build(StatusCode::OK).json(albums)) 
 }
+
