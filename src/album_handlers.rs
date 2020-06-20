@@ -1,4 +1,4 @@
-use crate::album_models::{Album, CreateAlbum};
+use crate::album_models::CreateAlbum;
 use crate::errors::HandlerError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
@@ -9,7 +9,7 @@ use crate::db;
 
 pub async fn create_album(
     pool: web::Data<Pool>,
-    data: web::Json<CreateUser>,
+    data: web::Json<CreateAlbum>,
 ) -> Result<HttpResponse, HandlerError> {
     let album = match pool.get().await {
         Ok(item) => item,

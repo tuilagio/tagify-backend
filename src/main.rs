@@ -17,10 +17,13 @@ mod errors;
 mod handlers;
 
 mod admin_handlers;
+mod album_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
 
+mod album_models;
 mod user_models;
+
 use crate::handlers::{login, logout, status};
 use user_models::ROLES;
 
@@ -166,7 +169,7 @@ async fn main() -> std::io::Result<()> {
                                     //get all own albums
                                     .route("/", web::get().to(status))
                                     //create new album
-                                    .route("/", web::post().to(status))
+                                    .route("/", web::post().to(album_handlers::create_album))
                                     //get own album by id
                                     .route("/{album_id}", web::post().to(status))
                                     //change album data (description or name)
