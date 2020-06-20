@@ -139,7 +139,7 @@ async fn main() -> std::io::Result<()> {
         } else {
             // If release binary use DIST env var
             let dist = std::env::var("DIST").expect("Could not find environment variable DIST");
-            path_arg = DistPath { path: PathBuf::from(dist.clone() + "index.html") };
+            path_arg = DistPath { path: PathBuf::from(dist.clone()).join("index.html") };
             if ! std::path::Path::new(&dist).exists() {
                 panic!("DIST env variable does not point to a valid directory: {}", dist);
             }
