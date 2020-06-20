@@ -1,0 +1,769 @@
+openapi: 3.0.0
+info:
+  title: Tagify
+  version: '1.0'
+  description: ''
+  contact:
+    name: Karol Rogoza
+  license:
+    name: GNU General Public License v3.0
+    url: 'https://fsf.org'
+servers:
+  - url: 'http://localhost:5000'
+paths:
+  /api/auth/me:
+    get:
+      summary: whoami
+      tags:
+        - user
+        - auth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  role:
+                    type: string
+                  date_created:
+                    type: string
+                  last_modified:
+                    type: string
+              examples:
+                example:
+                  value:
+                    id: 20
+                    username: user
+                    nickname: BIG BOB
+                    role: tagger
+                    date_created: 20/12/20
+                    last_modified: 21/12/21
+        '401':
+          description: 'Unauthorized, you need to be logged in'
+      operationId: get-api-auth
+      description: 'get user information (user & admin)'
+    parameters: []
+  /api/auth/login:
+    post:
+      summary: login
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 'Unauthorized, wrong password or username'
+      operationId: post-api-auth-login
+      description: 'login (user & admin)'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
+                  password: password
+        description: user data needed for authentication
+      tags:
+        - auth
+  /api/auth/logout:
+    post:
+      summary: logout
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: post-api-auth-logout
+      description: 'logout (user & admin)'
+      parameters: []
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+            examples:
+              example:
+                value:
+                  username: user1
+        description: ''
+      tags:
+        - auth
+  '/api/admin/user/{user_id}':
+    parameters:
+      - schema:
+          type: string
+        name: user_id
+        in: path
+        required: true
+    get:
+      summary: get user by name
+      tags:
+        - 'admin->user'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  date_created:
+                    type: string
+                  last_modify:
+                    type: string
+              examples:
+                example:
+                  value:
+                    id: 20
+                    username: user
+                    nickname: BIG BOB
+                    role: tagger
+                    date_created: 20/12/20
+                    last_modified: 21/12/21
+        '401':
+          description: Unauthorized
+      operationId: get user by username
+      description: Get user by username
+    put:
+      summary: change user password
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+      operationId: put-user-id
+      description: change user password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: number
+                password:
+                  type: string
+                repeat_password:
+                  type: string
+            examples:
+              example:
+                value:
+                  id: 44
+                  password: abc
+                  repeat_password: abc
+      tags:
+        - 'admin->user'
+    delete:
+      summary: delete user account
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-user-id
+      description: delete user
+      tags:
+        - 'admin->user'
+  /api/admin/user:
+    post:
+      summary: create new user account
+      responses:
+        '201':
+          description: 'Created, new user is created'
+        '400':
+          description: 'Bad Request, wrong form'
+        '401':
+          description: 'Unauthorized, are u admin?'
+      operationId: post-api-admin-user
+      description: create new user account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                nickname:
+                  type: string
+                password:
+                  type: string
+                repeat_password:
+                  type: string
+                is_admin:
+                  type: boolean
+              required:
+                - username
+                - nickname
+                - password
+                - repeat_password
+                - is_admin
+            examples:
+              example_user:
+                value:
+                  username: user
+                  nickname: user
+                  password: password
+                  repeat_password: password
+                  is_admin: false
+              example_admin:
+                value:
+                  username: admin
+                  nickname: admin
+                  password: password
+                  repeat_password: password
+                  is_admin: true
+      tags:
+        - 'admin->user'
+  /api/admin/users:
+    get:
+      summary: get all users
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      username:
+                        type: string
+                      nickname:
+                        type: string
+                      is_admin:
+                        type: boolean
+                      id:
+                        type: number
+                  - properties:
+                      username:
+                        type: string
+                      nickname:
+                        type: string
+                      is_admin:
+                        type: boolean
+                      id:
+                        type: number
+                  - properties:
+                      username:
+                        type: string
+                      nickname:
+                        type: string
+                      is_admin:
+                        type: boolean
+                      id:
+                        type: number
+                type: object
+        '401':
+          description: Unauthorized
+      operationId: get-api-admin-users
+      description: get all users
+      tags:
+        - 'admin->user'
+  /api/user:
+    parameters: []
+    get:
+      summary: get user data
+      tags:
+        - user
+      responses:
+        '200':
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  username:
+                    type: string
+                  nickname:
+                    type: string
+                  date_created:
+                    type: string
+                  last_modify:
+                    type: string
+        '401':
+          description: Unauthorized
+      operationId: get-api-user-username
+      description: get actual user data
+    put:
+      summary: change user data
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-user-username
+      description: change user nickname
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+            examples:
+              example:
+                value:
+                  nickname: big Bobi
+        description: ''
+    delete:
+      summary: delete user
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: delete-api-user-username
+      description: delete own account
+  /api/albums:
+    get:
+      summary: get album with picture and progress
+      tags:
+        - album
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      album_id:
+                        type: string
+                      album_name:
+                        type: string
+                      numbler_of_photos:
+                        type: number
+                      number_tagged_photos:
+                        type: number
+                      preview_image:
+                        type: string
+                  - properties:
+                      album_id:
+                        type: string
+                      album_name:
+                        type: string
+                      numbler_of_photos:
+                        type: number
+                      number_tagged_photos:
+                        type: number
+                      preview_image:
+                        type: string
+                type: object
+              examples:
+                example:
+                  value:
+                    album_id: 12
+                    alum_name: cats
+                    number_of_photos: 12000
+                    number_tagged_photos: 7000
+                    preview_image: /jhsdi/jkasdjk/cats/123
+          description: OK
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      operationId: get-api-album
+      description: |-
+        get album with some data
+        get album preview image with completion rate (25 albums)
+    parameters: []
+  '/api/admin/album/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    put:
+      summary: change album meta data
+      responses: {}
+      operationId: put-api-admin-album-album_id
+      tags:
+        - 'admin->albums'
+    delete:
+      summary: delete album
+      responses: {}
+      operationId: delete-api-admin-album-album_id
+      tags:
+        - 'admin->albums'
+    get:
+      summary: admin album endpoint
+      operationId: get-api-admin-album-album_id
+      responses:
+        '200':
+          description: OK
+      description: all album info for admin
+      tags:
+        - 'admin->albums'
+  /api/user/albums:
+    get:
+      summary: get all my albums
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: string
+                  preview_phot:
+                    type: string
+                  '?????':
+                    type: string
+      operationId: get-api-user-albums
+      description: |-
+        get all my albums
+
+        in db we have album, user_id
+      tags:
+        - 'user->album'
+  '/api/user/album/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get album data (by album_id)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  all album data:
+                    type: string
+      operationId: get-api-user-album-album_id
+      description: get all data for my album
+      tags:
+        - 'user->album'
+    put:
+      summary: edit my album data
+      responses: {}
+      operationId: put-api-user-album-album_id
+      description: |
+        edit my album data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: number
+                titile:
+                  type: string
+                description:
+                  type: string
+      tags:
+        - 'user->album'
+    delete:
+      summary: delete my album
+      responses: {}
+      operationId: delete-api-user-album-album_id
+      description: delete my own album
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: string
+      tags:
+        - 'user->album'
+    post:
+      summary: add extra photo to album
+      operationId: post-api-user-album-album_id
+      responses:
+        '200':
+          description: OK
+      description: add extra photo to album
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_id:
+                  type: number
+                photo:
+                  type: string
+      tags:
+        - 'user->album'
+  /api/album/photos:
+    get:
+      summary: get next 15 photos for anotation
+      tags:
+        - photos
+        - album
+      responses: {}
+      operationId: get-api-album-photos
+  '/api/album/{album_id}photo/{photo_id}':
+    parameters:
+      - schema:
+          type: string
+        name: photo_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    post:
+      summary: sent photo with anotation
+      tags:
+        - album
+        - photos
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '':
+                    type: string
+        '400':
+          description: Bad Requestb timestamp.....
+        '401':
+          description: Unauthorized
+      operationId: post-api-album-photo-photo_id
+      description: endpoint for tagging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photo_id:
+                  type: string
+                tag:
+                  type: string
+                coordinates:
+                  type: string
+    put:
+      summary: verify photo (second user)
+      tags:
+        - album
+        - photos
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 'Bad Request, time is out'
+        '401':
+          description: Unauthorized
+      operationId: put-api-album-photo-photo_id
+      description: "endpoint for verify\n\n\non backend\n\n           if(verified == false)\n           \n              tagged = false\n              verified = false\n            else\n            \n              tagged true\n              verified true"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photo_id:
+                  type: string
+                verifed:
+                  type: boolean
+    get:
+      summary: tagging endpoint
+      operationId: get-api-album-album_id-photo-photo_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo_id:
+                    type: number
+                  actual_tag:
+                    type: string
+                  coordinates:
+                    type: array
+                    items:
+                      type: number
+                  verified:
+                    type: boolean
+                  tagged:
+                    type: boolean
+                  lock_timpe_stamp:
+                    type: number
+      tags:
+        - album
+        - photos
+  /api/user/password:
+    put:
+      summary: change own password
+      tags:
+        - user
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+      operationId: put-api-user-password
+      description: change own password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                password_repeat:
+                  type: string
+  '/api/album/{album_id}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+    get:
+      summary: get 15 preview photos of album
+      tags:
+        - album
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album_id:
+                    type: string
+                  description:
+                    type: string
+                  number_of_photos:
+                    type: string
+                  number_tagged_photos:
+                    type: string
+                  album_owner_id:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+      operationId: get-api-album-album_id
+      description: get only deta without photos
+  '/api/album/{album_id}/photos{last_photo_index}':
+    parameters:
+      - schema:
+          type: string
+        name: album_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: last_photo_index
+        in: path
+        required: true
+    get:
+      summary: get next 25 photos from album (preview)
+      tags:
+        - album
+        - photos
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      tagged:
+                        type: boolean
+                      verified:
+                        type: boolean
+                      image_path:
+                        type: string
+                      photo_id:
+                        type: number
+                  - properties:
+                      tagged:
+                        type: boolean
+                      verified:
+                        type: boolean
+                      image_path:
+                        type: string
+                      photo_id:
+                        type: number
+                type: object
+      operationId: get-api-album-album_id-photos
+      description: |-
+        get preview photos form album
+
+
+        last_photo_index
+  /api/user/album:
+    post:
+      summary: create new album
+      responses:
+        '200':
+          description: OK
+      operationId: post-api-user-album
+      description: create new alum as a user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                album_name:
+                  type: string
+                taggs:
+                  type: array
+                  items:
+                    type: string
+                description:
+                  type: string
+                preview_image:
+                  type: string
+      tags:
+        - 'user->album'
+components:
+  schemas: {}
+  securitySchemes: {}
