@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS albums (
     tag1 VARCHAR(100),
     tag2 VARCHAR(100),
     tag3 VARCHAR(100),
-    image_number INT,
+    image_number INT DEFAULT 0,
     tagged_number INT DEFAULT 0,
     users_id INT NOT NULL,
     first_photo TEXT,
