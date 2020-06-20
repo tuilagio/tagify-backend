@@ -230,8 +230,11 @@ async fn main() -> std::io::Result<()> {
                                     .route("", web::get().to(status))
                                     //change album data (description or name)
                                     .route("/{album_id}", web::put().to(status))
-                                    //delete own album by id
-                                    .route("/{album_id}", web::delete().to(status))
+                                    //delete  album by id
+                                    .route(
+                                        "/{album_id}",
+                                        web::delete().to(album_handlers::delete_album_by_id),
+                                    )
                                     //delete photo from album
                                     .route(
                                         "/{album_id}/photos/{photo_id}",
@@ -264,7 +267,10 @@ async fn main() -> std::io::Result<()> {
                                     //add photos to album
                                     .route("/{album_id}", web::post().to(status))
                                     //delete own album
-                                    .route("/{album_id}", web::delete().to(status))
+                                    .route(
+                                        "/{album_id}",
+                                        web::delete().to(album_handlers::delete_album_by_id),
+                                    )
                                     //delete own album
                                     .route(
                                         "/{album_id}/photos/{photo_id}",
