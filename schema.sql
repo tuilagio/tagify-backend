@@ -1,7 +1,6 @@
+/* DROP TYPE IF EXISTS ROLE; /
 
-/* DROP TYPE IF EXISTS ROLE; */
-
-/* CREATE TYPE ROLE AS ENUM ('admin', 'tagger'); */
+/ CREATE TYPE ROLE AS ENUM ('admin', 'tagger'); */
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username    TEXT UNIQUE NOT NULL,
@@ -27,11 +26,10 @@ CREATE TABLE IF NOT EXISTS albums (
     description TEXT,
     image_number INT DEFAULT 0,
     tagged_number INT DEFAULT 0,
+    users_id INT NOT NULL,
+    first_photo TEXT,
     date_created DATE NOT NULL DEFAULT CURRENT_DATE,
     date_modified DATE NOT NULL DEFAULT CURRENT_DATE,
-    users_id INT NOT NULL,
-    thumbnail TEXT,
-    first_photo TEXT,
     FOREIGN KEY (users_id) REFERENCES users (id)
 );
 
@@ -47,13 +45,14 @@ CREATE TABLE IF NOT EXISTS is_tagging_album (
 CREATE TABLE IF NOT EXISTS image_metas (
     id SERIAL PRIMARY KEY,
     albums_id INT NOT NULL,
-    date_created DATE NOT NULL DEFAULT CURRENT_DATE,
-    date_modified DATE NOT NULL DEFAULT CURRENT_DATE,
+    tag VARCHAR(100),
     file_path TEXT NOT NULL,
     locked_at TIMESTAMP ,
     coordinates TEXT NOT NULL,
     verified BOOL DEFAULT FALSE,
     tagged BOOL DEFAULT FALSE,
+    date_created DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_modified DATE NOT NULL DEFAULT CURRENT_DATE,
     FOREIGN KEY (albums_id) REFERENCES albums (id)
 );
 
@@ -75,4 +74,3 @@ CREATE TABLE IF NOT EXISTS image_tags (
     FOREIGN KEY (tags_id) REFERENCES tags (id),
     FOREIGN KEY (image_metas_id) REFERENCES image_metas (id)
 );
-

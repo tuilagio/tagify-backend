@@ -1,5 +1,7 @@
+use crate::album_models::{Album, CreateAlbum};
 use crate::errors::DBError;
-use crate::models::{CreateUser, Hash, User};
+use crate::user_models::{CreateUser, Hash, User};
+
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 
@@ -71,4 +73,18 @@ pub async fn delete_user(
         .query_one("DELETE FROM users WHERE id=$1 RETURNING *", &[&user_id])
         .await?;
     Ok(User::from_row_ref(&result)?)
+}
+
+//albums
+pub async fn create_album(
+    client: &deadpool_postgres::Client,
+    album: &CreateAlbum,
+    id: i32,
+    first_photo: String,
+) -> Result<Album, DBError> {
+    let result = client.query_one(
+        "INSERT INTO albums (title, description, users_id, first_photo) VAlUES ($1, $2, $3, $4) RETURNING *",
+        &[&album.title, &album.description, &id, &first_photo]).await?;
+    // println!("restlt: {:?}", result);
+    Ok(Album::from_row_ref(&result)?)
 }

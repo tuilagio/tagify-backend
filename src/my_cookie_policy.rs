@@ -11,7 +11,7 @@ use std::rc::Rc;
 use std::time::SystemTime;
 use time::Duration;
 
-use crate::models::User;
+use crate::user_models::User;
 
 struct MyCookieIdentityInner {
     key: Key,
