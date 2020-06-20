@@ -294,10 +294,15 @@ paths:
             schema:
               type: object
               properties:
-                album_name:
+                title:
                   type: string
                 description:
                   type: string
+            examples:
+              example:
+                value:
+                  title: "123"
+                  description: "123"
   /api/user/albums:
     get:
       summary: get all own albums
@@ -450,6 +455,21 @@ paths:
           description: Created
       operationId: put-api-user-albums-albums_id
       description: update album name or description
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+            examples:
+              example:
+                value:
+                  title: admin11111
+                  description: ADMIN11111
     delete:
       summary: delete album
       tags:
@@ -461,7 +481,7 @@ paths:
           description: Unauthorized
       operationId: delete-api-user-albums-albums_id
       description: delete album by id
-  /status:
+  /api/status:
     get:
       summary: get server status
       tags: []
@@ -474,6 +494,7 @@ paths:
           description: Internal Server Error
       operationId: get-status
       description: get server status
+    parameters: []
   /api/albums:
     get:
       summary: get albums for preview
