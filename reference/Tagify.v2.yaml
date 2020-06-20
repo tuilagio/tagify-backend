@@ -336,10 +336,33 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    image_number:
+                      type: string
+                    tagged_number:
+                      type: string
+                    users_id:
+                      type: string
+                    first_photo:
+                      type: string
+              examples:
+                example: {}
         '401':
           description: Unauthorized
       operationId: get-api-user-albums
-      description: ''
+      description: get own albums
     post:
       summary: create new album
       operationId: post-api-user-albums
