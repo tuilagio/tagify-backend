@@ -64,7 +64,8 @@ pub trait Hash {
     fn verify_password(&self, password: &[u8]) -> Result<bool, argon2::Error>;
 }
 
-/// Hash implementation for User & password in one Trait
+//Hash implementation for User & password in one Trait
+
 impl Hash for User {
     fn get_hashed_password(&self) -> Result<String, argon2::Error> {
         let salt: [u8; 32] = rand::thread_rng().gen();

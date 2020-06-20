@@ -169,7 +169,7 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
-            /* Enable logger */
+            // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept
             .data(web::JsonConfig::default().limit(4096)) // max 4MB json
