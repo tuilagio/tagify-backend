@@ -1,9 +1,9 @@
 use crate::errors::HandlerError;
-use crate::models::{CreateUser, User, UpdateUserAdmin};
+use crate::models::{CreateUser, UpdateUserAdmin, User};
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
-use log::{error};
+use log::error;
 
 use crate::db;
 
@@ -23,7 +23,7 @@ pub async fn create_user(
         Err(e) => {
             error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
-        },
+        }
         Ok(item) => item,
     };
 
@@ -44,12 +44,12 @@ pub async fn update_user(
     };
 
     let user = match db::get_user(&client, id.0).await {
-        Ok(i) => {
-            i
-        },
+        Ok(i) => i,
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(HandlerError::BadClientData{field: "User id does not exist".to_owned()});
+            return Err(HandlerError::BadClientData {
+                field: "User id does not exist".to_owned(),
+            });
         }
     };
 
@@ -64,7 +64,7 @@ pub async fn update_user(
         Err(e) => {
             error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
-        },
+        }
         Ok(item) => item,
     };
 
@@ -83,7 +83,6 @@ pub async fn delete_user(
         }
     };
 
-
     let result = db::delete_user(&client, data.0).await;
 
     match result {
@@ -91,12 +90,8 @@ pub async fn delete_user(
             error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
         }
-        Ok(_res) => {
-        }
+        Ok(_res) => {}
     };
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
-
-
-

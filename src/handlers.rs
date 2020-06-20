@@ -1,26 +1,16 @@
 use crate::errors::HandlerError;
-use crate::models::{ SendUser,Status, User, UpdateUser, Hash, LoginData};
-use actix_web::http::{StatusCode};
-use actix_web::{web, HttpResponse, Result, Responder, HttpRequest};
+use crate::models::{Hash, LoginData, SendUser, UpdateUser, User};
+use actix_web::http::StatusCode;
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use deadpool_postgres::Pool;
 use log::{debug, error};
 
-use crate::my_identity_service::{Identity, login_user};
 use crate::db;
 use crate::errors;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
-
-
-pub async fn status() -> impl Responder {
-    web::HttpResponse::Ok().json(Status {
-        status: "server is working :D".to_string(),
-    })
-}
-
+use crate::my_identity_service::{login_user, Identity};
 
 pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
-
-    error!("get_user: ");
     // Get user identity
     let user: User = id.identity();
 
@@ -30,13 +20,11 @@ pub async fn get_user(id: Identity) -> Result<HttpResponse, HandlerError> {
         nickname: user.nickname,
         role: user.role,
     };
-    error!("get_user: {:?}", send_user);
 
     Ok(HttpResponse::build(StatusCode::OK).json(send_user))
 }
 
 pub async fn logout(id: Identity) -> Result<HttpResponse, HandlerError> {
-
     id.logout();
 
     Ok(HttpResponse::new(StatusCode::OK))
@@ -48,7 +36,6 @@ pub async fn login(
     req: HttpRequest,
     cookie_factory: web::Data<MyCookieIdentityPolicy>,
 ) -> Result<HttpResponse, HandlerError> {
-
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -72,9 +59,11 @@ pub async fn login(
                 error!("Error occured: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            errors::DBError::BadArgs{ err } => {
+            errors::DBError::BadArgs { err } => {
                 error!("Error occured: {}", err);
-                return Err(HandlerError::BadClientData{field: err.to_owned() });
+                return Err(HandlerError::BadClientData {
+                    field: err.to_owned(),
+                });
             }
         },
     };
@@ -95,9 +84,11 @@ pub async fn login(
     Ok(login_user(req, cookie_factory.get_ref(), user).await)
 }
 
-
-pub async fn update_user(pool: web::Data<Pool>, id: Identity, data: web::Json<UpdateUser>) -> Result<HttpResponse, HandlerError> {
-
+pub async fn update_user(
+    pool: web::Data<Pool>,
+    id: Identity,
+    data: web::Json<UpdateUser>,
+) -> Result<HttpResponse, HandlerError> {
     // Get user identity
     let user: User = id.identity();
 
@@ -114,25 +105,42 @@ pub async fn update_user(pool: web::Data<Pool>, id: Identity, data: web::Json<Up
         username: user.username,
         nickname: data.nickname.clone(),
         password: data.password.clone(),
-        role: user.role
+        role: user.role,
     };
 
     let result = db::update_user(&client, &new_user).await;
 
     match result {
-        Err(e) => {
-            error!("Error occured: {}",e );
-            return Err(HandlerError::InternalError);
+        Err(e) => match e {
+            errors::DBError::PostgresError(e) => {
+                error!("Getting user failed: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            errors::DBError::MapperError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            errors::DBError::ArgonError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            errors::DBError::BadArgs { err } => {
+                error!("Error occured: {}", err);
+                return Err(HandlerError::BadClientData {
+                    field: err.to_owned(),
+                });
+            }
         },
-        Ok(num_updated) => num_updated
+        Ok(num_updated) => num_updated,
     };
-
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
 
-pub async fn delete_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResponse, HandlerError> {
-
+pub async fn delete_user(
+    pool: web::Data<Pool>,
+    id: Identity,
+) -> Result<HttpResponse, HandlerError> {
     // Get user identity
     let user: User = id.identity();
 
@@ -148,12 +156,11 @@ pub async fn delete_user(pool: web::Data<Pool>, id: Identity) -> Result<HttpResp
 
     match result {
         Err(e) => {
-            error!("Error occured: {}",e );
+            error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
-        },
-        Ok(num_updated) => num_updated
+        }
+        Ok(num_updated) => num_updated,
     };
-
 
     Ok(HttpResponse::new(StatusCode::OK))
 }

@@ -4,7 +4,6 @@ use failure::Fail;
 use actix_http::ResponseBuilder;
 use actix_web::http::StatusCode;
 
-
 /*
  * Only to be used in admin_handlers.rs & handlers.rs
  */
@@ -49,7 +48,7 @@ pub enum DBError {
     ArgonError(argon2::Error),
 
     #[fail(display = "Bad argument: {}", err)]
-    BadArgs{err: String}
+    BadArgs { err: String },
 }
 impl From<argon2::Error> for DBError {
     fn from(err: argon2::Error) -> DBError {
@@ -66,4 +65,3 @@ impl From<tokio_pg_mapper::Error> for DBError {
         DBError::MapperError(err)
     }
 }
-

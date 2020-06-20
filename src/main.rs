@@ -1,9 +1,12 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use actix_files as fs;
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_files::NamedFile;
+use actix_web::{middleware::Logger, web, App, HttpServer, Result};
+use std::path::PathBuf;
 
 use listenfd::ListenFd;
+use log::info;
 use std::fs::File;
 use std::io::Read;
 use tokio_postgres::NoTls;
@@ -14,13 +17,21 @@ mod errors;
 mod handlers;
 
 mod admin_handlers;
-mod my_identity_service;
 mod my_cookie_policy;
+mod my_identity_service;
 
 mod models;
 
-use crate::handlers::{logout, login, status};
-use models::{ROLES};
+use crate::handlers::{login, logout};
+use models::ROLES;
+
+struct DistPath {
+    path: PathBuf
+}
+
+async fn index(data: web::Data<DistPath>) -> Result<NamedFile> {
+    Ok(NamedFile::open(data.path.clone())?)
+}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -54,42 +65,65 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Create default admin accounts
-    db::create_user(&client, &conf.default_admin).await.expect("Could not create user account");
+    match db::create_user(&client, &conf.default_admin).await {
+        Ok(_item) => info!("Created default admin account"),
+        Err(_e) => info!("Default user already exists"),
+    }
 
     // Create default user accounts
-    db::create_user(&client, &conf.default_user).await.expect("Could not create default user account");
+    match db::create_user(&client, &conf.default_user).await {
+        Ok(_item) => info!("Created default user"),
+        Err(_e) => info!("Default user already exists"),
+    }
 
     let temp = conf.server.key.clone();
 
     // Register http routes
     let mut server = HttpServer::new(move || {
+
+        let serve_file_service: fs::Files;
+        let path_arg: DistPath;
+
+        // Check if in release mode if so use DIST env variable as path for serving frontend
+        if cfg!(debug_assertions) {
+            // If debug binary then hardcode path
+            serve_file_service =fs::Files::new("/app/frontend/debug_dist", "../frontend/debug_dist").show_files_listing();
+            path_arg = DistPath { path: PathBuf::from("../frontend/debug_dist/index.html") };
+
+        } else {
+            // If release binary use DIST env var
+            let dist = std::env::var("DIST").expect("Could not find environment variable DIST");
+            path_arg = DistPath { path: PathBuf::from(dist.clone() + "index.html") };
+            if ! std::path::Path::new(&dist).exists() {
+                panic!("DIST env variable does not point to a valid directory: {}", dist);
+            }
+            serve_file_service = fs::Files::new("/app/frontend/dist", dist).show_files_listing();
+        }
         let cookie_key = temp.as_bytes();
 
-        let cookie_factory_user =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
+        let cookie_factory_user = my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
             .name(ROLES[1])
             .path("/")
             .secure(false);
 
-        let cookie_factory_admin =  my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
+        let cookie_factory_admin = my_cookie_policy::MyCookieIdentityPolicy::new(cookie_key)
             .name(ROLES[0])
             .path("/")
             .secure(false);
         App::new()
-
+            .data(path_arg)
             // Give login handler access to cookie factory
             .data(cookie_factory_user.clone())
-
             // Serve every file in directory from ../dist
-            .service(fs::Files::new("/app/debug_dist", "../debug_dist").show_files_listing())
+            .service(serve_file_service)
+            // Serve index.html
+            .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
             // Enable logger
             .wrap(Logger::default())
-
             //limit the maximum amount of data that server will accept
             .data(web::JsonConfig::default().limit(4096)) // max 4MB json
-            //normal routes
-            .service(web::resource("/").route(web::get().to(status)))
             // .configure(routes)
             .service(
                 web::scope("/api")
@@ -101,42 +135,23 @@ async fn main() -> std::io::Result<()> {
                                 cookie_factory_admin,
                                 pool.clone(),
                             ))
-                            .service(web::resource("/logout").route(web::post().to(logout)))
-                            .service(
-                                web::resource("/user/{id}")
-                                    .route(web::delete().to(admin_handlers::delete_user)),
-                            )
-                            .service(
-                                web::resource("/user/{id}")
-                                    .route(web::put().to(admin_handlers::update_user)),
-                            )
-                            .service(
-                                web::resource("/user")
-                                    .route(web::post().to(admin_handlers::create_user)),
-                            )
-                            // .service(
-                            //     web::resource("/user/{id}")
-                            //         .route(web::get().to(admin_handlers::get_user)),
-                            // )
+                            .route("/logout", web::delete().to(logout))
+                            .route("/user", web::delete().to(admin_handlers::delete_user))
+                            .route("/user", web::put().to(admin_handlers::update_user))
+                            .route("/user", web::post().to(admin_handlers::create_user)),
+                            // .route("/user/{id}", web::get().to(admin_handlers::get_user))
                     )
                     //user auth routes
                     .service(
-                        //TODO: More then 3 routes make the last one not accessible
                         web::scope("/user")
                             .wrap(my_identity_service::IdentityService::new(
                                 cookie_factory_user,
                                 pool.clone(),
                             ))
-                            .service(web::resource("/user").route(web::get().to(handlers::get_user)))
-                            .service(web::resource("/logout").route(web::post().to(logout)))
-                            .service(
-                                web::resource("/user")
-                                    .route(web::delete().to(handlers::delete_user)),
-                            )
-                            .service(
-                                web::resource("/user")
-                                    .route(web::put().to(handlers::update_user)),
-                            )
+                            .route("/logout", web::post().to(logout))
+                            .route("/user", web::get().to(handlers::get_user))
+                            .route("/user", web::delete().to(handlers::delete_user))
+                            .route("/user", web::put().to(handlers::update_user)),
                     ),
             )
     });
