@@ -20,9 +20,9 @@ mod admin_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
 
-mod models;
+mod user_models;
 use crate::handlers::{login, logout, status};
-use models::ROLES;
+use user_models::ROLES;
 
 async fn index() -> Result<NamedFile> {
     let path: PathBuf = PathBuf::from("../debug_dist/index.html");

@@ -1,5 +1,5 @@
 use crate::errors::HandlerError;
-use crate::models::{Hash, LoginData, SendUser, Status, UpdateUser, User};
+use crate::user_models::{Hash, LoginData, SendUser, Status, UpdateUser, User};
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use deadpool_postgres::Pool;

@@ -1,5 +1,5 @@
 use crate::errors::DBError;
-use crate::models::{CreateUser, Hash, User};
+use crate::user_models::{CreateUser, Hash, User};
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 
