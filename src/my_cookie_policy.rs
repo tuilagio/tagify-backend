@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use actix_identity::{IdentityPolicy};
+use crate::my_identity_service::IdentityPolicy;
 use std::time::{SystemTime};
 use actix_web::cookie::{Cookie, CookieJar, Key, SameSite};
 use std::rc::Rc;
@@ -9,8 +9,9 @@ use futures::future::{ok, Ready};
 use actix_web::error::{Error, Result};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use serde::{Deserialize, Serialize};
-use actix_web::http::header::{self, HeaderValue};
 use actix_web::{HttpMessage};
+
+use crate::models::User;
 
 struct MyCookieIdentityInner {
     key: Key,
@@ -39,6 +40,7 @@ struct CookieIdentityExtention {
     login_timestamp: Option<SystemTime>,
 }
 
+#[derive(Clone)]
 pub struct MyCookieIdentityPolicy(Rc<MyCookieIdentityInner>);
 
 impl MyCookieIdentityInner {
@@ -95,15 +97,14 @@ impl MyCookieIdentityInner {
         } else {
             &self.key_v2
         };
-        if add_cookie {
-            jar.private(&key).add(cookie);
-        } else {
-            jar.add_original(cookie.clone());
-            jar.private(&key).remove(cookie);
+        if ! add_cookie {
+            let mut now = time::now();
+            now.tm_year -= 999; // TODO: don't hardcode this
+            cookie.set_expires(now);
         }
+        jar.private(&key).add(cookie);
         for cookie in jar.delta() {
-            let val = HeaderValue::from_str(&cookie.to_string())?;
-            resp.headers_mut().append(header::SET_COOKIE, val);
+            resp.response_mut().add_cookie(cookie).expect("Identity could not set cookie");
         }
         Ok(())
     }
@@ -252,9 +253,9 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
         ))
     }
 
-    fn to_response<B>(
+  fn to_response<B>(
         &self,
-        id: Option<String>,
+        id: Option<User>,
         changed: bool,
         res: &mut ServiceResponse<B>,
     ) -> Self::ResponseFuture {
@@ -263,7 +264,7 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
             self.0.set_cookie(
                 res,
                 id.map(|identity| CookieValue {
-                    identity,
+                    identity: identity.username,
                     login_timestamp: self.0.login_deadline.map(|_| login_timestamp),
                     visit_timestamp: self.0.visit_deadline.map(|_| login_timestamp),
                 }),
@@ -281,7 +282,7 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
             self.0.set_cookie(
                 res,
                 Some(CookieValue {
-                    identity: id.unwrap(),
+                    identity: id.unwrap().username,
                     login_timestamp,
                     visit_timestamp: self.0.visit_deadline.map(|_| visit_timestamp),
                 }),
@@ -290,6 +291,5 @@ impl IdentityPolicy for MyCookieIdentityPolicy {
             Ok(())
         };
         ok(())
-    }
-}
+    }}
 
