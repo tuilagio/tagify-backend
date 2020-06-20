@@ -1,5 +1,8 @@
 use crate::album_models::CreateAlbum;
+use crate::user_models::User;
+
 use crate::errors::HandlerError;
+use crate::my_identity_service::Identity;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
@@ -10,7 +13,10 @@ use crate::db;
 pub async fn create_album(
     pool: web::Data<Pool>,
     data: web::Json<CreateAlbum>,
+    id: Identity,
 ) -> Result<HttpResponse, HandlerError> {
+    let user: User = id.identity();
+    let first_photo = String::from("default_path");
     let album = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -18,8 +24,7 @@ pub async fn create_album(
             return Err(HandlerError::InternalError);
         }
     };
-
-    let result = match db::create_album(&album, &data).await {
+    let result = match db::create_album(&album, &data, user.id, first_photo).await {
         Err(e) => {
             error!("Error occured after create_album: {}", e);
             return Err(HandlerError::InternalError);

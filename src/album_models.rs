@@ -23,6 +23,4 @@ pub struct CreateAlbum {
     pub tag1: String,
     pub tag2: String,
     pub tag3: String,
-    pub users_id: i32,
-    pub first_photo: String,
 }
