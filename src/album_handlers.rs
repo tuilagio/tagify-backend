@@ -62,3 +62,26 @@ pub async fn get_own_albums(
 
     Ok(HttpResponse::build(StatusCode::OK).json(result))
 }
+
+pub async fn get_album_by_id(
+    pool: web::Data<Pool>,
+    album_id: web::Path<(i32,)>,
+) -> Result<HttpResponse, HandlerError> {
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_album_by_id(client, album_id.0).await {
+        Err(e) => {
+            error!("Error occured get users albums: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    Ok(HttpResponse::build(StatusCode::OK).json(result))
+}
