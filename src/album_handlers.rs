@@ -1,7 +1,9 @@
-use crate::album_models::{CreateAlbum, UpdateAlbum};
-use crate::user_models::User;
 
-use crate::errors::HandlerError;
+use crate::album_models::{CreateAlbum, AlbumsPreview, UpdateAlbum};
+use crate::user_models::{User};
+
+
+use crate::errors::{HandlerError, DBError};
 use crate::my_identity_service::Identity;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
@@ -86,13 +88,12 @@ pub async fn get_album_by_id(
     Ok(HttpResponse::build(StatusCode::OK).json(result))
 }
 
-pub async fn delete_album_by_id(
-    pool: web::Data<Pool>,
-    album_id: web::Path<(i32,)>,
-    id: Identity,
-) -> Result<HttpResponse, HandlerError> {
-    let user: User = id.identity();
 
+// gets all albums data (id, title, description, first_photo)
+pub async fn get_all_albums(
+    pool: web::Data<Pool>
+) -> Result<HttpResponse, HandlerError> {
+    
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -100,6 +101,48 @@ pub async fn delete_album_by_id(
             return Err(HandlerError::InternalError);
         }
     };
+
+    let albums: AlbumsPreview = match db::get_all_albums(client).await {
+        Ok(albums) => albums,
+        Err(e) => match e {
+            DBError::PostgresError(e) => {
+                error!("Getting albums failed {}", e);
+                return Err(HandlerError::AuthFail);
+            }
+            DBError::MapperError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            DBError::ArgonError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            DBError::BadArgs { err } => {
+                error!("Error occured: {}", err);
+                return Err(HandlerError::BadClientData {
+                    field: err.to_owned(),
+                });
+            }
+        },
+    };
+    Ok(HttpResponse::build(StatusCode::OK).json(albums)) 
+}
+
+
+  pub async fn delete_album_by_id(
+    pool: web::Data<Pool>,
+    album_id: web::Path<(i32,)>,
+    id: Identity,
+) -> Result<HttpResponse, HandlerError> {
+    let user: User = id.identity();
+  
+    let client = match pool.get().await {
+          Ok(item) => item,
+          Err(e) => {
+              error!("Error occured: {}", e);
+              return Err(HandlerError::InternalError);
+          }
+      };
 
     let result = match db::get_album_by_id(&client, album_id.0).await {
         Err(e) => {

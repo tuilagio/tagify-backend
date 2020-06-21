@@ -1,4 +1,6 @@
-use crate::album_models::{Album, CreateAlbum, UpdateAlbum};
+
+use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum};
+
 use crate::errors::DBError;
 use crate::user_models::{CreateUser, Hash, User};
 
@@ -89,6 +91,27 @@ pub async fn create_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
+
+// get albums data to preview from DB
+pub async fn get_all_albums(
+    client: deadpool_postgres::Client
+) -> Result<AlbumsPreview, DBError> {
+    let mut albums = AlbumsPreview {
+        albums: Vec::new()
+    };
+    
+    for row in client.query("SELECT id, title, description, first_photo  FROM albums ", &[]).await? {
+        let album = AlbumPreview {
+            id: row.get(0),
+            title: row.get(1),
+            description: row.get(2),
+            first_photo: row.get(3),
+        };
+        albums.albums.push(album);
+    }
+    Ok(albums)
+}
+
 pub async fn get_users_albums(
     client: &deadpool_postgres::Client,
     id: i32,
@@ -116,6 +139,7 @@ pub async fn get_album_by_id(
     Ok(Album::from_row_ref(&result)?)
 }
 
+
 pub async fn delete_album(
     client: &deadpool_postgres::Client,
     album_id: i32,
@@ -139,3 +163,4 @@ pub async fn update_album(
         .await?;
     Ok(Album::from_row_ref(&result)?)
 }
+
