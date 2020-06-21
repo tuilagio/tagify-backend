@@ -7,6 +7,7 @@ pub struct Album {
     pub id: i32,
     pub title: String,
     pub description: String,
+    pub tags: Vec<String>,
     pub image_number: i32,
     pub tagged_number: i32,
     pub users_id: i32,
@@ -18,6 +19,11 @@ pub struct CreateAlbum {
     pub title: String,
     pub description: String,
     pub tags: Vec<String>,
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UpdateAlbum {
+    pub title: String,
+    pub description: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
