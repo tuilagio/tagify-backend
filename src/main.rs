@@ -258,9 +258,9 @@ async fn main() -> std::io::Result<()> {
                             .route("/me", web::get().to(handlers::get_user))
                             .route("/me", web::delete().to(handlers::delete_user))
                             //update only nickname
-                            .route("/me", web::put().to(handlers::update_user))
+                            .route("/me", web::put().to(handlers::update_user_nickname))
                             //update password
-                            .route("/me/password", web::put().to(status))
+                            .route("/me/password", web::put().to(handlers::update_user_password))
                             .service(
                                 web::scope("/albums")
                                     //get all own albums

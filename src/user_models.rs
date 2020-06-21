@@ -34,6 +34,16 @@ pub struct UpdateUser {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateUserPassword {
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateUserNickname {
+    pub nickname: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginData {
     pub username: String,
     pub password: String,
