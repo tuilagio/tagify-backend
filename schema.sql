@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS albums (
     id SERIAL PRIMARY KEY,
     title VARCHAR(300) NOT NULL,
     description TEXT,
+    tags VARCHAR(100) [],
     image_number INT DEFAULT 0,
     tagged_number INT DEFAULT 0,
     users_id INT NOT NULL,
