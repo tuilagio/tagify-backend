@@ -50,6 +50,38 @@ pub async fn update_user(client: &deadpool_postgres::Client, user: &User) -> Res
     Ok(User::from_row_ref(&result)?)
 }
 
+pub async fn update_user_nickname(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+
+    let result = client
+        .query_one(
+            "UPDATE users SET nickname=$1 WHERE id=$2 RETURNING *",
+            &[&user.nickname, &user.id],
+        )
+        .await?;
+    Ok(User::from_row_ref(&result)?)
+}
+
+pub async fn update_user_password(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+    if user.password.len() < 4 {
+        return Err(DBError::BadArgs {
+            err: "Password is too short".to_owned(),
+        });
+    }
+
+    let hashed_pwd = match user.get_hashed_password() {
+        Ok(item) => item,
+        Err(e) => return Err(DBError::ArgonError(e)),
+    };
+
+    let result = client
+        .query_one(
+            "UPDATE users SET  password=$1 WHERE id=$2 RETURNING *",
+            &[&hashed_pwd, &user.id],
+        )
+        .await?;
+    Ok(User::from_row_ref(&result)?)
+}
+
 pub async fn create_user(
     client: &deadpool_postgres::Client,
     user: &CreateUser,
