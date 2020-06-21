@@ -119,17 +119,19 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
-    // // Create default admin accounts
-    // match db::create_user(&client, &conf.default_admin).await {
-    //     Ok(_item) => info!("Created default admin account"),
-    //     Err(_e) => info!("Default user already exists"),
-    // }
+
+
+     // Create default admin accounts
+     match db::create_user(&client, &conf.default_admin).await {
+         Ok(_item) => info!("Created default admin account"),
+         Err(_e) => info!("Default user already exists"),
+     }
 
     // // Create default user accounts
-    // match db::create_user(&client, &conf.default_user).await {
-    //     Ok(_item) => info!("Created default user"),
-    //     Err(_e) => info!("Default user already exists"),
-    // }
+     match db::create_user(&client, &conf.default_user).await {
+         Ok(_item) => info!("Created default user"),
+         Err(_e) => info!("Default user already exists"),
+     }
 
     let temp = conf.server.key.clone();
 
@@ -207,7 +209,7 @@ async fn main() -> std::io::Result<()> {
                                 cookie_factory_admin,
                                 pool.clone(),
                             ))
-                            .route("/logout", web::delete().to(logout))
+                            .route("/logout", web::post().to(logout))
                             //get all users
                             .route("/users", web::get().to(status))
                             //create new user account
@@ -228,12 +230,16 @@ async fn main() -> std::io::Result<()> {
                                 web::scope("/albums")
                                     //get all albums
                                     .route("", web::get().to(status))
-                                    //get album be id
-                                    .route("/{album_id}", web::get().to(status))
                                     //change album data (description or name)
-                                    .route("/{album_id}", web::put().to(status))
-                                    //delete own album by id
-                                    .route("/{album_id}", web::delete().to(status))
+                                    .route(
+                                        "/{album_id}",
+                                        web::put().to(album_handlers::update_album_by_id),
+                                    )
+                                    //delete  album by id
+                                    .route(
+                                        "/{album_id}",
+                                        web::delete().to(album_handlers::delete_album_by_id),
+                                    )
                                     //delete photo from album
                                     .route(
                                         "/{album_id}/photos/{photo_id}",
@@ -258,17 +264,21 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/albums")
                                     //get all own albums
-                                    .route("", web::get().to(status))
+                                    .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
                                     .route("", web::post().to(album_handlers::create_album))
-                                    //get own album by id
-                                    .route("/{album_id}", web::post().to(status))
                                     //change album data (description or name)
-                                    .route("/{album_id}", web::put().to(status))
+                                    .route(
+                                        "/{album_id}",
+                                        web::put().to(album_handlers::update_album_by_id),
+                                    )
                                     //add photos to album
                                     .route("/{album_id}", web::post().to(status))
                                     //delete own album
-                                    .route("/{album_id}", web::delete().to(status))
+                                    .route(
+                                        "/{album_id}",
+                                        web::delete().to(album_handlers::delete_album_by_id),
+                                    )
                                     //delete own album
                                     .route(
                                         "/{album_id}/photos/{photo_id}",
@@ -290,7 +300,10 @@ async fn main() -> std::io::Result<()> {
                             //get albums for preview (all)
                             .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id
-                            .route("/{album_id}", web::get().to(status))
+                            .route(
+                                "/{album_id}{_:/?}",
+                                web::get().to(album_handlers::get_album_by_id),
+                            )
                             //get photos from album (preview)
                             .route("/{album_id}/photos/{index}", web::get().to(album_handlers::get_photos_from_album)),
                     ),
