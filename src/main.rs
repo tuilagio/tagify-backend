@@ -188,6 +188,7 @@ async fn main() -> std::io::Result<()> {
             .service(serve_file_service)
             // Serve index.html
             .route("/", web::get().to(index))
+            .route("/.*", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
             // Enable logger
