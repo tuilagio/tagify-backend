@@ -39,7 +39,8 @@ pub struct LoginData {
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "users")]
 pub struct SendUser {
     pub id: i32,
     pub username: String,

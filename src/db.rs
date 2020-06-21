@@ -3,7 +3,7 @@
 use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, PhotoPreview};
 
 use crate::errors::DBError;
-use crate::user_models::{CreateUser, Hash, User};
+use crate::user_models::{CreateUser, Hash, User, SendUser};
 
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
@@ -196,3 +196,16 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
+pub async fn get_all_users(
+    client: &deadpool_postgres::Client,
+) -> Result<Vec<SendUser>, DBError> {
+    let result = client
+        .query("SELECT id, username, nickname, role FROM users ", &[])
+        .await
+        .expect("ERROR GETTING USERS")
+        .iter()
+        .map(|row| SendUser::from_row_ref(row).unwrap())
+        .collect::<Vec<SendUser>>();
+
+    Ok(result)
+}
