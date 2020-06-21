@@ -51,3 +51,10 @@ pub struct AlbumsPreview {
     pub  albums: Vec<AlbumPreview> ,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "image_metas")]
+pub struct PhotoPreview {
+    pub id: i32,
+    pub file_path: String
+}
+

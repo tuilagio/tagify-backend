@@ -119,6 +119,8 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
+
+
      // Create default admin accounts
      match db::create_user(&client, &conf.default_admin).await {
          Ok(_item) => info!("Created default admin account"),
@@ -303,7 +305,7 @@ async fn main() -> std::io::Result<()> {
                                 web::get().to(album_handlers::get_album_by_id),
                             )
                             //get photos from album (preview)
-                            .route("/{album_id}/photos/{photo_id}", web::get().to(status)),
+                            .route("/{album_id}/photos/{index}", web::get().to(album_handlers::get_photos_from_album)),
                     ),
             )
     });
