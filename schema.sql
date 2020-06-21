@@ -57,21 +57,7 @@ CREATE TABLE IF NOT EXISTS image_metas (
     FOREIGN KEY (albums_id) REFERENCES albums (id)
 );
 
-CREATE TABLE IF NOT EXISTS tags (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(122) NOT NULL
-);
 
-CREATE TABLE IF NOT EXISTS album_tags (
-    tags_id INT PRIMARY KEY,
-    albums_id INT NOT NULL,
-    FOREIGN KEY (albums_id) REFERENCES albums (id),
-    FOREIGN KEY (tags_id) REFERENCES tags (id)
-);
 
-CREATE TABLE IF NOT EXISTS image_tags (
-    tags_id INT PRIMARY KEY,
-    image_metas_id INT NOT NULL,
-    FOREIGN KEY (tags_id) REFERENCES tags (id),
-    FOREIGN KEY (image_metas_id) REFERENCES image_metas (id)
-);
+
+

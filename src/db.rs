@@ -3,7 +3,7 @@
 use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, PhotoPreview};
 
 use crate::errors::DBError;
-use crate::user_models::{CreateUser, Hash, User};
+use crate::user_models::{CreateUser, Hash, User, SendUser};
 
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
@@ -45,6 +45,38 @@ pub async fn update_user(client: &deadpool_postgres::Client, user: &User) -> Res
         .query_one(
             "UPDATE users SET nickname=$1, password=$2, role=$3 WHERE id=$4 RETURNING *",
             &[&user.nickname, &hashed_pwd, &user.role, &user.id],
+        )
+        .await?;
+    Ok(User::from_row_ref(&result)?)
+}
+
+pub async fn update_user_nickname(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+
+    let result = client
+        .query_one(
+            "UPDATE users SET nickname=$1 WHERE id=$2 RETURNING *",
+            &[&user.nickname, &user.id],
+        )
+        .await?;
+    Ok(User::from_row_ref(&result)?)
+}
+
+pub async fn update_user_password(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+    if user.password.len() < 4 {
+        return Err(DBError::BadArgs {
+            err: "Password is too short".to_owned(),
+        });
+    }
+
+    let hashed_pwd = match user.get_hashed_password() {
+        Ok(item) => item,
+        Err(e) => return Err(DBError::ArgonError(e)),
+    };
+
+    let result = client
+        .query_one(
+            "UPDATE users SET  password=$1 WHERE id=$2 RETURNING *",
+            &[&hashed_pwd, &user.id],
         )
         .await?;
     Ok(User::from_row_ref(&result)?)
@@ -196,3 +228,16 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
+pub async fn get_all_users(
+    client: &deadpool_postgres::Client,
+) -> Result<Vec<SendUser>, DBError> {
+    let result = client
+        .query("SELECT id, username, nickname, role FROM users ", &[])
+        .await
+        .expect("ERROR GETTING USERS")
+        .iter()
+        .map(|row| SendUser::from_row_ref(row).unwrap())
+        .collect::<Vec<SendUser>>();
+
+    Ok(result)
+}

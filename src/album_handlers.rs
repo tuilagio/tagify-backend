@@ -76,6 +76,7 @@ pub async fn get_album_by_id(
         }
     };
 
+    // TODO ERROR album with this id does not exists
     let result = match db::get_album_by_id(&client, album_id.0).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
@@ -143,7 +144,8 @@ pub async fn get_photos_from_album(
             return Err(HandlerError::InternalError);
         }
     };
-    
+
+    // TODO catch error if album with id does not exists
   let result = match db::get_photos_from_album(client, &data.0, &data.1).await {
         Err(e) => {
             error!("Error occured : {}", e);
@@ -151,7 +153,7 @@ pub async fn get_photos_from_album(
         }
         Ok(item) => item,
     };
-  
+
    Ok(HttpResponse::build(StatusCode::OK).json(result)) 
     
 }
