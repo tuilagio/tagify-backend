@@ -1,4 +1,6 @@
-use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview};
+
+use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum};
+
 use crate::errors::DBError;
 use crate::user_models::{CreateUser, Hash, User};
 
@@ -126,7 +128,7 @@ pub async fn get_users_albums(
 }
 
 pub async fn get_album_by_id(
-    client: deadpool_postgres::Client,
+    client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
     // Query data
@@ -134,6 +136,31 @@ pub async fn get_album_by_id(
         .query_one("SELECT * FROM albums WHERE id = $1", &[&album_id])
         .await?;
 
+    Ok(Album::from_row_ref(&result)?)
+}
+
+
+pub async fn delete_album(
+    client: &deadpool_postgres::Client,
+    album_id: i32,
+) -> Result<Album, DBError> {
+    let result = client
+        .query_one("DELETE FROM albums WHERE id=$1 RETURNING *", &[&album_id])
+        .await?;
+    Ok(Album::from_row_ref(&result)?)
+}
+
+pub async fn update_album(
+    client: &deadpool_postgres::Client,
+    album_id: i32,
+    album: &UpdateAlbum,
+) -> Result<Album, DBError> {
+    let result = client
+        .query_one(
+            "UPDATE albums SET title=$1, description=$2 WHERE id=$3 RETURNING *",
+            &[&album.title, &album.description, &album_id],
+        )
+        .await?;
     Ok(Album::from_row_ref(&result)?)
 }
 

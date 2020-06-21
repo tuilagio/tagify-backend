@@ -1,5 +1,7 @@
-use crate::album_models::{CreateAlbum, AlbumsPreview};
+
+use crate::album_models::{CreateAlbum, AlbumsPreview, UpdateAlbum};
 use crate::user_models::{User};
+
 
 use crate::errors::{HandlerError, DBError};
 use crate::my_identity_service::Identity;
@@ -75,7 +77,7 @@ pub async fn get_album_by_id(
         }
     };
 
-    let result = match db::get_album_by_id(client, album_id.0).await {
+    let result = match db::get_album_by_id(&client, album_id.0).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
             return Err(HandlerError::InternalError);
@@ -85,6 +87,7 @@ pub async fn get_album_by_id(
 
     Ok(HttpResponse::build(StatusCode::OK).json(result))
 }
+
 
 // gets all albums data (id, title, description, first_photo)
 pub async fn get_all_albums(
@@ -125,3 +128,79 @@ pub async fn get_all_albums(
     Ok(HttpResponse::build(StatusCode::OK).json(albums)) 
 }
 
+
+  pub async fn delete_album_by_id(
+    pool: web::Data<Pool>,
+    album_id: web::Path<(i32,)>,
+    id: Identity,
+) -> Result<HttpResponse, HandlerError> {
+    let user: User = id.identity();
+  
+    let client = match pool.get().await {
+          Ok(item) => item,
+          Err(e) => {
+              error!("Error occured: {}", e);
+              return Err(HandlerError::InternalError);
+          }
+      };
+
+    let result = match db::get_album_by_id(&client, album_id.0).await {
+        Err(e) => {
+            error!("Error occured get users albums: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    if user.id == result.users_id || user.role == "admin" {
+        println!("usunie album");
+        match db::delete_album(&client, album_id.0).await {
+            Err(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            Ok(result) => result,
+        };
+    } else {
+        //TODO ERROR you are not owner of this album
+    }
+    Ok(HttpResponse::new(StatusCode::OK))
+}
+
+pub async fn update_album_by_id(
+    pool: web::Data<Pool>,
+    album_id: web::Path<(i32,)>,
+    id: Identity,
+    data: web::Json<UpdateAlbum>,
+) -> Result<HttpResponse, HandlerError> {
+    let user: User = id.identity();
+
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_album_by_id(&client, album_id.0).await {
+        Err(e) => {
+            error!("Error occured get users albums: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    if user.id == result.users_id || user.role == "admin" {
+        match db::update_album(&client, album_id.0, &data).await {
+            Err(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            Ok(num_updated) => num_updated,
+        };
+    } else {
+        //TODO ERROR you are not owner of this album
+    }
+    Ok(HttpResponse::new(StatusCode::OK))
+}
