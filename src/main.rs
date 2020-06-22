@@ -20,6 +20,8 @@ mod admin_handlers;
 mod album_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
+mod photo_handler;
+mod utils;
 
 mod album_models;
 mod user_models;
@@ -131,6 +133,13 @@ async fn main() -> std::io::Result<()> {
         Err(_e) => info!("Default user already exists"),
     }
 
+    // Create data folder tagify_data. Default: in code base folder
+    let tagify_data_path = conf.tagify_data.path;
+    let tagify_albums_path = format!("{}/albums/", &tagify_data_path);
+    // println!("tagify_albums_path {}", tagify_albums_path);
+    let result = std::fs::create_dir_all(&tagify_albums_path)?;
+    // TODO: Dont know how to check for error
+
     let temp = conf.server.key.clone();
 
     // Register http routes
@@ -190,6 +199,10 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
+            // Data path
+            // .data(tagify_data_path.clone())
+            // Albums path
+            .data(tagify_albums_path.clone())
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept
@@ -234,6 +247,12 @@ async fn main() -> std::io::Result<()> {
                                     .route("/{album_id}", web::put().to(status))
                                     //delete own album by id
                                     .route("/{album_id}", web::delete().to(status))
+                                    /////////////////////////////////////
+                                    .route("/{album_id}/photos", web::post().to(admin_handlers::post_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::get().to(admin_handlers::get_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::put().to(admin_handlers::put_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::delete().to(admin_handlers::delete_photo))
+                                    ////////////////////////////////////////
                                     //delete photo from album
                                     .route(
                                         "/{album_id}/photos/{photo_id}",

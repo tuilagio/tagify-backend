@@ -54,6 +54,12 @@ pub struct CreateUser {
     pub nickname: String,
     pub role: String, // TODO: Make an Enum out of it
 }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateImageMeta {
+    pub albums_id: i32,
+    pub file_path: String,
+    pub coordinates: String,
+}
 
 // Hash password, can be implemented for Structs containing .passwort attribut
 pub trait Hash {

@@ -1,9 +1,10 @@
 use crate::album_models::{Album, CreateAlbum};
 use crate::errors::DBError;
-use crate::user_models::{CreateUser, Hash, User};
+use crate::user_models::{CreateUser, Hash, User, CreateImageMeta};
 
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
+use log::{error, info};
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -87,4 +88,63 @@ pub async fn create_album(
         &[&album.title, &album.description, &id, &first_photo]).await?;
     // println!("restlt: {:?}", result);
     Ok(Album::from_row_ref(&result)?)
+}
+
+pub async fn create_image_meta (
+    client: &deadpool_postgres::Client,
+    image_meta: &CreateImageMeta,
+) -> Result<bool, DBError> {
+    let result = client.query_one(
+        "insert into image_metas (albums_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
+        &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates]).await?;
+    // println!("restlt: {:?}", result);
+    Ok(true)
+}
+
+pub async fn check_album_exist_by_id (
+    client: &deadpool_postgres::Client,
+    album_id: &i32,
+) -> bool {
+    let result = client.query_one(
+        "SELECT * FROM albums WHERE id=$1", &[&album_id]).await;
+    // println!("restlt: {:?}", result);
+    match result {
+        Ok(row) => return true,
+        Err(e) => return false,
+    }
+}
+
+pub async fn get_next_file_name_in_db (
+    client: &deadpool_postgres::Client,
+    album_id: &i32,
+) -> u32 {
+
+    let mut next: u32 = 1;
+    //
+    let result = client.query(
+        "SELECT * FROM image_metas WHERE albums_id = $1 ORDER BY file_path DESC", &[&album_id]).await;
+    match result {
+        Ok(rows) => {
+            if rows.len() == 0{
+                info!("Album {} has no photo in db", album_id);
+            } else {
+                let k = rows.len() -1;
+                for i in 0..k {
+                    let file_path: String = rows[i].get(4);
+                    // println!("{:?}", file_path);
+                    let vec: Vec<&str> = file_path.split(".").collect();
+                    let last_file_name: &str = vec[0];
+                    if last_file_name.parse::<u32>().is_ok() {
+                        let current: u32 = last_file_name.parse().unwrap();
+                        next = current +1;
+                        break;
+                    }
+                }
+            }
+        },
+        Err(e) => {
+            error!("Error getting get_next_file_name_in_db: {:?}", e);
+        },
+    }
+    return next;
 }
