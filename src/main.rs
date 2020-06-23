@@ -189,7 +189,6 @@ async fn main() -> std::io::Result<()> {
             // Serve every file in directory from ../dist
             .service(serve_file_service)
             // Serve index.html
-            .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
             // Enable logger
@@ -307,7 +306,10 @@ async fn main() -> std::io::Result<()> {
                             //get photos from album (preview)
                             .route("/{album_id}/photos/{index}", web::get().to(album_handlers::get_photos_from_album)),
                     ),
+
             )
+            .route("/", web::get().to(index))
+            .route("/.*", web::get().to(index))
     });
 
     // Enables us to hot reload the server
