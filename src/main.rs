@@ -194,9 +194,11 @@ async fn main() -> std::io::Result<()> {
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept
-            .data(web::JsonConfig::default().limit(4096)) // max 4MB json
-            // .configure(routes)
-            //status
+            .app_data(web::JsonConfig::default()
+                .limit(4096)
+                .error_handler(|err, _req| {
+                    actix_web::error::ErrorBadRequest(err)
+                }))
             .service(
                 web::scope("/api")
                     //all admin endpoints
