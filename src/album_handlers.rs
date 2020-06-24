@@ -5,9 +5,9 @@ use crate::user_models::{User};
 use crate::errors::{HandlerError, DBError};
 use crate::my_identity_service::Identity;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{web, HttpResponse, Result, Error};
 use deadpool_postgres::Pool;
-use log::error;
+use log::{error, info};
 
 use crate::db;
 
@@ -15,6 +15,7 @@ pub async fn create_album(
     pool: web::Data<Pool>,
     data: web::Json<CreateAlbum>,
     id: Identity,
+    tagify_albums_path: web::Data<String,>,
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
     let first_photo = String::from("default_path");
@@ -32,9 +33,18 @@ pub async fn create_album(
             error!("Error occured after create_album: {}", e);
             return Err(HandlerError::InternalError);
         }
-        Ok(item) => item,
+        Ok(album) => {
+            //TODO create album folder on photo_server
+            let path = format!("{}{}", tagify_albums_path.to_string(), &album.id);
+            match std::fs::create_dir_all(&path) {
+                Ok(_) => info!("Created folder for album with id={}", &album.id),
+                Err(e) => {
+                    error!("Error creating folder for album with id={}: {:?}", &album.id, e);
+                    return Err(HandlerError::InternalError);
+                }
+            }
+        },
     };
-    //TODO create album folder on photo_server
 
     Ok(HttpResponse::build(StatusCode::OK).json(result))
 }

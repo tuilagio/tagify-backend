@@ -137,7 +137,6 @@ async fn main() -> std::io::Result<()> {
     // Create data folder tagify_data. Default: in code base folder
     let tagify_data_path = conf.tagify_data.path;
     let tagify_albums_path = format!("{}/albums/", &tagify_data_path);
-    // println!("tagify_albums_path {}", tagify_albums_path);
     let result = std::fs::create_dir_all(&tagify_albums_path)?;
     // TODO: Dont know how to check for error
 
@@ -248,9 +247,7 @@ async fn main() -> std::io::Result<()> {
                                     //delete own album by id
                                     .route("/{album_id}", web::delete().to(status))
                                     /////////////////////////////////////
-                                    .route("/{album_id}/photos", web::post().to(admin_handlers::post_photo))
                                     .route("/{album_id}/photos/{photo_id}", web::get().to(admin_handlers::get_photo))
-                                    .route("/{album_id}/photos/{photo_id}", web::put().to(admin_handlers::put_photo))
                                     .route("/{album_id}/photos/{photo_id}", web::delete().to(admin_handlers::delete_photo))
                                     ////////////////////////////////////////
                                     .route(

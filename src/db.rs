@@ -140,6 +140,28 @@ pub async fn create_image_meta (
     Ok(true)
 }
 
+pub async fn update_image_meta (
+    client: &deadpool_postgres::Client,
+    image_meta: &CreateImageMeta,
+    image_id: &i32,
+) -> Result<bool, DBError> {
+    let result = client.query_one(
+        "UPDATE image_metas SET albums_id=$1, file_path=$2, coordinates=$3 WHERE id=$4 RETURNING *",
+        &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates, &image_id]).await?;
+    // println!("restlt: {:?}", result);
+    Ok(true)
+}
+
+pub async fn delete_image_meta (
+    client: &deadpool_postgres::Client,
+    image_meta_id: &i32,
+) -> Result<bool, DBError> {
+    let result = client.query_one(
+        "DELETE FROM image_metas WHERE id=$1 RETURNING *",
+        &[&image_meta_id]).await?;
+    Ok(true)
+}
+
 pub async fn check_album_exist_by_id (
     client: &deadpool_postgres::Client,
     album_id: &i32,
@@ -167,7 +189,7 @@ pub async fn get_image_filenames_of_album_with_id (
                 info!("Album {} has no photo in db", album_id);
             } else {
                 for row in rows {
-                    let filename: String = row.get(4);
+                    let filename: String = row.get(3);
                     filenames_db.push(filename);
                 }
             }
@@ -244,7 +266,7 @@ pub async fn get_image_file_path_with_id (
                 info!("Image with id {} not found in db", image_id);
             } else {
                 for row in rows {
-                    file_path = row.get(4);
+                    file_path = row.get(3);
                     break;
                 }
             }
