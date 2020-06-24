@@ -127,22 +127,37 @@ pub async fn post_photo(
     // Check user has right to write: No need to do here because admin path
     
     while let Ok(Some(mut field)) = payload.try_next().await {
+        /* 
         // Get new filename base on data folder:
         let mut filename_folder: u32 = utils::get_next_file_name_in_folder(&album_path);
         // Get new filename base on db:
         let mut filename_db: u32 = db::get_next_file_name_in_db(&client, &album_id.0).await;
         println!("{} {} {}", album_path, filename_folder, filename_db);
-        let mut filename_u32: u32 = if filename_db>filename_folder {
+        let mut new_filename: String = if filename_db>filename_folder {
             filename_db
         } else {
             filename_folder
         };
+ */
+
+        // let filenames_folder = utils::get_filenames_in_folder(&album_path);
+        // let filenames_db = db::get_image_filenames_of_album_with_id(&client, &album_id.0);
+        let new_filename = utils::calculate_next_filename_image(
+            &utils::get_filenames_in_folder(&album_path), 
+            &db::get_image_filenames_of_album_with_id(&client, &album_id.0).await
+        );
+
         let content_type = field.content_disposition().unwrap();
         let filename_original = content_type.get_filename().unwrap();
         let filename_clean = sanitize_filename::sanitize(&filename_original);
         let vec: Vec<&str> = filename_clean.split(".").collect();
+        if vec.len() < 2 {
+            info!("Filename {} in payload has no extension. Skip.", filename_original);
+            continue;
+        }
         let file_extension = vec[vec.len()-1];
-        let filepath = format!("{}{}.{}", album_path, filename_u32, file_extension);
+        let new_filename_with_ext = format!("{}.{}", new_filename, file_extension);
+        let filepath = format!("{}{}", album_path, new_filename_with_ext);
         println!("filepath: {}", filepath);
         // File::create is blocking operation, use threadpool
         // Write file
@@ -166,12 +181,12 @@ pub async fn post_photo(
         match db::create_image_meta(
             &client, 
             &CreateImageMeta{
-                albums_id: album_id.0, 
+                albums_id: album_id.0.clone(), 
                 coordinates: "".to_string(),
-                file_path: format!("{}.{}", filename_u32, file_extension),
+                file_path: new_filename_with_ext.clone(),
             }
         ).await {
-            Ok(ok) => info!("Write to db success"),
+            Ok(_) => info!("Write meta data for {} to db success under {}", filename_original, &new_filename_with_ext),
             Err(e) => {
                 error!("Write file meta to db failed: {:?}", e);
                 return Err(HandlerError::InternalError);

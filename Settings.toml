@@ -19,7 +19,7 @@ role = "user"
 user = "example"
 password = "example"
 dbname = "example"
-host = "192.168.234.247"
+host = "192.168.1.12"
 port = "5432"
 
 [tagify_data]

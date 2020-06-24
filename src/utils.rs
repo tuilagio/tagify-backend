@@ -112,7 +112,7 @@ pub fn get_filenames_in_folder(folder_path: &str) -> Vec<String> {
 }
 
 pub fn calculate_next_filename_image (
-    filenames_folder: &Vec<&str>, filenames_db: &Vec<&str>
+    filenames_folder: &Vec<String>, filenames_db: &Vec<String>
 ) -> String {
     let mut max_i: u32 = 0;
     
