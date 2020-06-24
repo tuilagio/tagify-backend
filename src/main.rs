@@ -20,7 +20,6 @@ mod admin_handlers;
 mod album_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
-mod photo_handler;
 mod utils;
 
 mod album_models;

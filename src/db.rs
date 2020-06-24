@@ -148,3 +148,29 @@ pub async fn get_next_file_name_in_db (
     }
     return next;
 }
+
+pub async fn get_image_filenames_of_album_with_id (
+    client: &deadpool_postgres::Client,
+    album_id: &i32,
+) -> Vec<String> {
+
+    let mut filenames_db = Vec::new();
+    let result = client.query(
+        "SELECT * FROM image_metas WHERE albums_id = $1 ORDER BY file_path DESC", &[&album_id]).await;
+    match result {
+        Ok(rows) => {
+            if rows.len() == 0{
+                info!("Album {} has no photo in db", album_id);
+            } else {
+                for row in rows {
+                    let filename: String = row.get(4);
+                    filenames_db.push(filename);
+                }
+            }
+        },
+        Err(e) => {
+            error!("Error get_image_filenames_of_album_with_id: {:?}", e);
+        },
+    }
+    return filenames_db;
+}

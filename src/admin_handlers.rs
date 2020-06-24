@@ -128,11 +128,11 @@ pub async fn post_photo(
     
     while let Ok(Some(mut field)) = payload.try_next().await {
         // Get new filename base on data folder:
-        let filename_folder: u32 = utils::get_next_file_name_in_folder(&album_path);
+        let mut filename_folder: u32 = utils::get_next_file_name_in_folder(&album_path);
         // Get new filename base on db:
-        let filename_db: u32 = db::get_next_file_name_in_db(&client, &album_id.0).await;
+        let mut filename_db: u32 = db::get_next_file_name_in_db(&client, &album_id.0).await;
         println!("{} {} {}", album_path, filename_folder, filename_db);
-        let filename_u32: u32 = if filename_db>filename_folder {
+        let mut filename_u32: u32 = if filename_db>filename_folder {
             filename_db
         } else {
             filename_folder
