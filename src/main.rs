@@ -120,8 +120,6 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
-
-
      // Create default admin accounts
      match db::create_user(&client, &conf.default_admin).await {
          Ok(_item) => info!("Created default admin account"),
@@ -137,8 +135,13 @@ async fn main() -> std::io::Result<()> {
     // Create data folder tagify_data. Default: in code base folder
     let tagify_data_path = conf.tagify_data.path;
     let tagify_albums_path = format!("{}/albums/", &tagify_data_path);
-    let result = std::fs::create_dir_all(&tagify_albums_path)?;
-    // TODO: Dont know how to check for error
+
+    match std::fs::create_dir_all(&tagify_albums_path) {
+        Ok(_) => info!("Created data folder under{}", &tagify_albums_path),
+        Err(e) => {
+            error!("Error creating folder for album with id={}: {:?}", &tagify_albums_path, e);
+        }
+    }
 
     let temp = conf.server.key.clone();
 
