@@ -105,46 +105,30 @@ pub async fn delete_user(
 pub async fn post_photo(
     pool: web::Data<Pool>,
     tagify_albums_path: web::Data<String,>,
-    album_id: web::Path<(i32,)>,
+    parameters: web::Path<(i32,)>,
     mut payload: Multipart,
-    // data: web::Json<CreateUser>,
 ) -> Result<HttpResponse, HandlerError> {
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
-            // return Err();
             return Err(HandlerError::InternalError);
         }
     };
-    let album_path = format!("{}{}/", tagify_albums_path.to_string(), album_id.0);
-
+    let album_id = parameters.0;
+    let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
     // Check album exist
-    if !std::path::Path::new(&album_path).exists() || !db::check_album_exist_by_id(&client, &album_id.0).await {
-        error!("Error occured : album with id={} not found on disk", album_id.0);
+    if !std::path::Path::new(&album_path).exists() || !db::check_album_exist_by_id(&client, &album_id).await {
+        error!("Error occured : album with id={} not found on disk", &album_id);
         return Err(HandlerError::InternalError);
     }
     // Check user has right to write: No need to do here because admin path
     
     while let Ok(Some(mut field)) = payload.try_next().await {
-        /* 
-        // Get new filename base on data folder:
-        let mut filename_folder: u32 = utils::get_next_file_name_in_folder(&album_path);
-        // Get new filename base on db:
-        let mut filename_db: u32 = db::get_next_file_name_in_db(&client, &album_id.0).await;
-        println!("{} {} {}", album_path, filename_folder, filename_db);
-        let mut new_filename: String = if filename_db>filename_folder {
-            filename_db
-        } else {
-            filename_folder
-        };
- */
 
-        // let filenames_folder = utils::get_filenames_in_folder(&album_path);
-        // let filenames_db = db::get_image_filenames_of_album_with_id(&client, &album_id.0);
         let new_filename = utils::calculate_next_filename_image(
             &utils::get_filenames_in_folder(&album_path), 
-            &db::get_image_filenames_of_album_with_id(&client, &album_id.0).await
+            &db::get_image_filenames_of_album_with_id(&client, &album_id).await
         );
 
         let content_type = field.content_disposition().unwrap();
@@ -172,7 +156,6 @@ pub async fn post_photo(
                 Ok(item) => item,
                 Err(e) => {
                     error!("Error occured : {}", e);
-                    // return Err();
                     return Err(HandlerError::InternalError);
                 }
             }
@@ -181,7 +164,7 @@ pub async fn post_photo(
         match db::create_image_meta(
             &client, 
             &CreateImageMeta{
-                albums_id: album_id.0.clone(), 
+                albums_id: album_id.clone(), 
                 coordinates: "".to_string(),
                 file_path: new_filename_with_ext.clone(),
             }
@@ -199,27 +182,81 @@ pub async fn post_photo(
 
 pub async fn put_photo(
     pool: web::Data<Pool>,
-    // data: web::Json<CreateUser>,
+    tagify_albums_path: web::Data<String,>,
     parameters: web::Path<(i32, i32)>,
+    mut payload: Multipart,
 ) -> Result<HttpResponse, HandlerError> {
-    // let client = match pool.get().await {
-    //     Ok(item) => item,
-    //     Err(e) => {
-    //         error!("Error occured : {}", e);
-    //         return Err(HandlerError::InternalError);
-    //     }
-    // };
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured : {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+    let album_id = parameters.0;
+    let image_id = parameters.1;
+    let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
+    // Check album exist
+    if !std::path::Path::new(&album_path).exists() || !db::check_album_exist_by_id(&client, &album_id).await {
+        error!("Error occured : album with id={} not found on disk", &album_id);
+        return Err(HandlerError::InternalError);
+    }
+    // Check user has right to write: No need to do here because admin path
+    
+    while let Ok(Some(mut field)) = payload.try_next().await {
 
-    // let result = match db::create_user(&client, &data).await {
-    //     Err(e) => {
-    //         error!("Error occured: {}", e);
-    //         return Err(HandlerError::InternalError);
-    //     }
-    //     Ok(item) => item,
-    // };
-    println!("create_photo");
+        let new_filename = utils::calculate_next_filename_image(
+            &utils::get_filenames_in_folder(&album_path), 
+            &db::get_image_filenames_of_album_with_id(&client, &album_id).await
+        );
 
-    Ok(HttpResponse::build(StatusCode::OK).json("result"))
+        let content_type = field.content_disposition().unwrap();
+        let filename_original = content_type.get_filename().unwrap();
+        let filename_clean = sanitize_filename::sanitize(&filename_original);
+        let vec: Vec<&str> = filename_clean.split(".").collect();
+        if vec.len() < 2 {
+            info!("Filename {} in payload has no extension. Skip.", filename_original);
+            continue;
+        }
+        let file_extension = vec[vec.len()-1];
+        let new_filename_with_ext = format!("{}.{}", new_filename, file_extension);
+        let filepath = format!("{}{}", album_path, new_filename_with_ext);
+        println!("filepath: {}", filepath);
+        // File::create is blocking operation, use threadpool
+        // Write file
+        let mut f = web::block(|| std::fs::File::create(filepath))
+            .await
+            .unwrap();
+        // Field in turn is stream of *Bytes* object
+        while let Some(chunk) = field.next().await {
+            let data = chunk.unwrap();
+            // filesystem operations are blocking, we have to use threadpool
+            f = match web::block(move || f.write_all(&data).map(|_| f)).await {
+                Ok(item) => item,
+                Err(e) => {
+                    error!("Error occured : {}", e);
+                    return Err(HandlerError::InternalError);
+                }
+            }
+        }
+        // Write to db
+        match db::create_image_meta(
+            &client, 
+            &CreateImageMeta{
+                albums_id: album_id.clone(), 
+                coordinates: "".to_string(),
+                file_path: new_filename_with_ext.clone(),
+            }
+        ).await {
+            Ok(_) => info!("Write meta data for {} to db success under {}", filename_original, &new_filename_with_ext),
+            Err(e) => {
+                error!("Write file meta to db failed: {:?}", e);
+                return Err(HandlerError::InternalError);
+            }
+        };
+
+    }
+    Ok(HttpResponse::build(StatusCode::OK).json("Success write file(s)"))
 }
 
 pub async fn get_photo(

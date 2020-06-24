@@ -34,12 +34,23 @@ pub struct UpdateUser {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateUserPassword {
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateUserNickname {
+    pub nickname: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginData {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "users")]
 pub struct SendUser {
     pub id: i32,
     pub username: String,
@@ -54,9 +65,19 @@ pub struct CreateUser {
     pub nickname: String,
     pub role: String, // TODO: Make an Enum out of it
 }
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateImageMeta {
     pub albums_id: i32,
+    pub file_path: String,
+    pub coordinates: String,
+}
+#[derive(Debug, Serialize, Deserialize, Clone, PostgresMapper)]
+#[pg_mapper(table = "image_metas")]
+pub struct ImageMeta {
+    pub id: i32,
+    pub albums_id: i32,
+    pub tag: String,
     pub file_path: String,
     pub coordinates: String,
 }
