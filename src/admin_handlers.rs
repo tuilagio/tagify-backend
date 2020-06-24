@@ -95,3 +95,27 @@ pub async fn delete_user(
 
     Ok(HttpResponse::new(StatusCode::OK))
 }
+
+// get api/admin/users -> get all users data
+// should i also list admin ?
+pub async fn get_all_users(
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, HandlerError> {
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured : {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_all_users(&client).await {
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    Ok(HttpResponse::build(StatusCode::OK).json(result))
+}

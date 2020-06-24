@@ -1,6 +1,9 @@
-use crate::album_models::{Album, CreateAlbum, UpdateAlbum};
+
+
+use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, PhotoPreview};
+
 use crate::errors::DBError;
-use crate::user_models::{CreateUser, Hash, User};
+use crate::user_models::{CreateUser, Hash, User, SendUser};
 
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
@@ -42,6 +45,38 @@ pub async fn update_user(client: &deadpool_postgres::Client, user: &User) -> Res
         .query_one(
             "UPDATE users SET nickname=$1, password=$2, role=$3 WHERE id=$4 RETURNING *",
             &[&user.nickname, &hashed_pwd, &user.role, &user.id],
+        )
+        .await?;
+    Ok(User::from_row_ref(&result)?)
+}
+
+pub async fn update_user_nickname(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+
+    let result = client
+        .query_one(
+            "UPDATE users SET nickname=$1 WHERE id=$2 RETURNING *",
+            &[&user.nickname, &user.id],
+        )
+        .await?;
+    Ok(User::from_row_ref(&result)?)
+}
+
+pub async fn update_user_password(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+    if user.password.len() < 4 {
+        return Err(DBError::BadArgs {
+            err: "Password is too short".to_owned(),
+        });
+    }
+
+    let hashed_pwd = match user.get_hashed_password() {
+        Ok(item) => item,
+        Err(e) => return Err(DBError::ArgonError(e)),
+    };
+
+    let result = client
+        .query_one(
+            "UPDATE users SET  password=$1 WHERE id=$2 RETURNING *",
+            &[&hashed_pwd, &user.id],
         )
         .await?;
     Ok(User::from_row_ref(&result)?)
@@ -89,6 +124,58 @@ pub async fn create_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
+// get albums data to preview from DB
+pub async fn get_all_albums(
+    client: deadpool_postgres::Client
+) -> Result<AlbumsPreview, DBError> {
+    let mut albums = AlbumsPreview {
+        albums: Vec::new()
+    };
+    
+    for row in client.query("SELECT id, title, description, first_photo  FROM albums ", &[]).await? {
+        let album = AlbumPreview {
+            id: row.get(0),
+            title: row.get(1),
+            description: row.get(2),
+            first_photo: row.get(3),
+        };
+        albums.albums.push(album);
+    }
+    Ok(albums)
+}
+
+
+// get all photos from certain album -> sort by date_created
+pub async fn get_photos_from_album(
+    client: deadpool_postgres::Client,
+    id: &i32,
+    index: &i32
+) -> Result<Vec<PhotoPreview>, DBError> {
+    let mut photos = Vec::new();
+
+    let start_position = index * 20;
+    let last_position = &start_position + 20;
+    let mut current_position = 0;
+    
+    for row in client.query("SELECT id, file_path  FROM image_metas WHERE albums_id = $1 ", &[&id]).await? {
+        if &current_position >= &start_position {
+            let photo = PhotoPreview {
+                id: row.get(0),
+                file_path: row.get(1)
+            };
+            photos.push(photo);
+            current_position = current_position + 1;
+            if &current_position >= &last_position {
+                break;
+            }
+        }else {
+            current_position = current_position + 1;
+        }
+    }
+    Ok(photos)
+}
+
+
 pub async fn get_users_albums(
     client: &deadpool_postgres::Client,
     id: i32,
@@ -116,6 +203,7 @@ pub async fn get_album_by_id(
     Ok(Album::from_row_ref(&result)?)
 }
 
+
 pub async fn delete_album(
     client: &deadpool_postgres::Client,
     album_id: i32,
@@ -138,4 +226,18 @@ pub async fn update_album(
         )
         .await?;
     Ok(Album::from_row_ref(&result)?)
+}
+
+pub async fn get_all_users(
+    client: &deadpool_postgres::Client,
+) -> Result<Vec<SendUser>, DBError> {
+    let result = client
+        .query("SELECT id, username, nickname, role FROM users ", &[])
+        .await
+        .expect("ERROR GETTING USERS")
+        .iter()
+        .map(|row| SendUser::from_row_ref(row).unwrap())
+        .collect::<Vec<SendUser>>();
+
+    Ok(result)
 }

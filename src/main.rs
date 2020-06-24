@@ -119,17 +119,19 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
-    // Create default admin accounts
-    match db::create_user(&client, &conf.default_admin).await {
-        Ok(_item) => info!("Created default admin account"),
-        Err(_e) => info!("Default user already exists"),
-    }
 
-    // Create default user accounts
-    match db::create_user(&client, &conf.default_user).await {
-        Ok(_item) => info!("Created default user"),
-        Err(_e) => info!("Default user already exists"),
-    }
+
+     // Create default admin accounts
+     match db::create_user(&client, &conf.default_admin).await {
+         Ok(_item) => info!("Created default admin account"),
+         Err(_e) => info!("Default user already exists"),
+     }
+
+    // // Create default user accounts
+     match db::create_user(&client, &conf.default_user).await {
+         Ok(_item) => info!("Created default user"),
+         Err(_e) => info!("Default user already exists"),
+     }
 
     let temp = conf.server.key.clone();
 
@@ -187,7 +189,6 @@ async fn main() -> std::io::Result<()> {
             // Serve every file in directory from ../dist
             .service(serve_file_service)
             // Serve index.html
-            .route("/", web::get().to(index))
             // Give every handler access to the db connection pool
             .data(pool.clone())
             // Enable logger
@@ -209,7 +210,7 @@ async fn main() -> std::io::Result<()> {
                             ))
                             .route("/logout", web::post().to(logout))
                             //get all users
-                            .route("/users", web::get().to(status))
+                            .route("/users", web::get().to(admin_handlers::get_all_users))
                             //create new user account
                             .route("/users", web::post().to(admin_handlers::create_user))
                             //get user by id
@@ -256,9 +257,9 @@ async fn main() -> std::io::Result<()> {
                             .route("/me", web::get().to(handlers::get_user))
                             .route("/me", web::delete().to(handlers::delete_user))
                             //update only nickname
-                            .route("/me", web::put().to(handlers::update_user))
+                            .route("/me", web::put().to(handlers::update_user_nickname))
                             //update password
-                            .route("/me/password", web::put().to(status))
+                            .route("/me/password", web::put().to(handlers::update_user_password))
                             .service(
                                 web::scope("/albums")
                                     //get all own albums
@@ -296,16 +297,19 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/albums")
                             //get albums for preview (all)
-                            .route("", web::get().to(status))
+                            .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id
                             .route(
                                 "/{album_id}{_:/?}",
                                 web::get().to(album_handlers::get_album_by_id),
                             )
                             //get photos from album (preview)
-                            .route("/{album_id}/photos/{photo_id}", web::get().to(status)),
+                            .route("/{album_id}/photos/{index}", web::get().to(album_handlers::get_photos_from_album)),
                     ),
+
             )
+            .route("/", web::get().to(index))
+            .route("/.*", web::get().to(index))
     });
 
     // Enables us to hot reload the server
