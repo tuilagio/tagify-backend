@@ -288,10 +288,16 @@ async fn main() -> std::io::Result<()> {
                                     //delete own album
                                     .route("/{album_id}", web::delete().to(status))
                                     //delete own album
-                                    .route(
-                                        "/{album_id}/photos/{photo_id}",
-                                        web::delete().to(status),
-                                    ),
+                                    // .route(
+                                    //     "/{album_id}/photos/{photo_id}",
+                                    //     web::delete().to(status),
+                                    // ),
+                                    /////////////////////////////////////
+                                    .route("/{album_id}/photos", web::post().to(admin_handlers::post_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::get().to(admin_handlers::get_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::put().to(admin_handlers::put_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::delete().to(admin_handlers::delete_photo))
+                                    ////////////////////////////////////////
                             )
                             .service(
                                 web::scope("/tag")
