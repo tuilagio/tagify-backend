@@ -9,11 +9,17 @@ pub struct Server {
 }
 
 #[derive(Deserialize, Clone)]
+pub struct TagifyData {
+    pub path: String,
+}
+
+#[derive(Deserialize, Clone)]
 pub struct MyConfig {
     pub postgres: deadpool_postgres::Config,
     pub server: Server,
     pub default_admin: CreateUser,
     pub default_user: CreateUser,
+    pub tagify_data: TagifyData,
 }
 
 impl MyConfig {

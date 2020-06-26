@@ -1,12 +1,17 @@
 
 
-use crate::album_models::{Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, PhotoPreview};
-
+use crate::album_models::{
+    Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, 
+    PhotoPreview
+};
 use crate::errors::DBError;
-use crate::user_models::{CreateUser, Hash, User, SendUser};
+use crate::user_models::{
+    CreateUser, Hash, User, CreateImageMeta
+};
 
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
+use log::{error, info};
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -124,6 +129,81 @@ pub async fn create_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
+pub async fn create_image_meta (
+    client: &deadpool_postgres::Client,
+    image_meta: &CreateImageMeta,
+) -> Result<bool, DBError> {
+    let _result = client.query_one(
+        "insert into image_metas (albums_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
+        &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates]).await?;
+    // println!("restlt: {:?}", result);
+    Ok(true)
+}
+
+pub async fn update_image_meta (
+    client: &deadpool_postgres::Client,
+    image_meta: &CreateImageMeta,
+    image_id: &i32,
+) -> Result<bool, DBError> {
+    let _result = client.query_one(
+        "UPDATE image_metas SET albums_id=$1, file_path=$2, coordinates=$3 WHERE id=$4 RETURNING *",
+        &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates, &image_id]).await?;
+    // println!("restlt: {:?}", result);
+    Ok(true)
+}
+
+pub async fn delete_image_meta (
+    client: &deadpool_postgres::Client,
+    image_meta_id: &i32,
+) -> Result<bool, DBError> {
+    let _result = client.query_one(
+        "DELETE FROM image_metas WHERE id=$1 RETURNING *",
+        &[&image_meta_id]).await?;
+    Ok(true)
+}
+
+pub async fn check_album_exist_by_id (
+    client: &deadpool_postgres::Client,
+    album_id: &i32,
+) -> bool {
+    let result = client.query_one(
+        "SELECT * FROM albums WHERE id=$1", &[&album_id]).await;
+    // println!("restlt: {:?}", result);
+    match result {
+        Ok(_row) => return true,
+        Err(e) => {
+            error!("Error check_album_exist_by_id: {:?}", e);
+            return false;
+        },
+    }
+}
+
+pub async fn get_image_filenames_of_album_with_id (
+    client: &deadpool_postgres::Client,
+    album_id: &i32,
+) -> Vec<String> {
+
+    let mut filenames_db: Vec<String> = Vec::new();
+    let result = client.query(
+        "SELECT * FROM image_metas WHERE albums_id = $1 ORDER BY file_path DESC", &[&album_id]).await;
+    match result {
+        Ok(rows) => {
+            if rows.len() == 0{
+                info!("Album {} has no photo in db", album_id);
+            } else {
+                for row in rows {
+                    let filename: String = row.get(3);
+                    filenames_db.push(filename);
+                }
+            }
+        },
+        Err(e) => {
+            error!("Error get_image_filenames_of_album_with_id: {:?}", e);
+        },
+    }
+    return filenames_db;
+}
+
 // get albums data to preview from DB
 pub async fn get_all_albums(
     client: deadpool_postgres::Client
@@ -175,6 +255,32 @@ pub async fn get_photos_from_album(
     Ok(photos)
 }
 
+pub async fn get_image_file_path_with_id (
+    client: &deadpool_postgres::Client,
+    image_id: &i32,
+) -> String {
+
+    let mut file_path = "".to_string();
+    let result = client.query(
+        "SELECT * FROM image_metas WHERE id = $1", &[&image_id]).await;
+    match result {
+        Ok(rows) => {
+            if rows.len() == 0{
+                info!("Image with id {} not found in db", image_id);
+            } else {
+                for row in rows {
+                    file_path = row.get(3);
+                    break;
+                }
+            }
+        },
+        Err(e) => {
+            error!("Error get_image_file_path_with_id: {:?}", e);
+        },
+    }
+    return file_path;
+}
+
 
 pub async fn get_users_albums(
     client: &deadpool_postgres::Client,
@@ -199,7 +305,7 @@ pub async fn get_album_by_id(
     let result = client
         .query_one("SELECT * FROM albums WHERE id = $1", &[&album_id])
         .await?;
-
+    println!("get_album_by_id {:?}", result);
     Ok(Album::from_row_ref(&result)?)
 }
 
@@ -228,16 +334,16 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-pub async fn get_all_users(
-    client: &deadpool_postgres::Client,
-) -> Result<Vec<SendUser>, DBError> {
-    let result = client
-        .query("SELECT id, username, nickname, role FROM users ", &[])
-        .await
-        .expect("ERROR GETTING USERS")
-        .iter()
-        .map(|row| SendUser::from_row_ref(row).unwrap())
-        .collect::<Vec<SendUser>>();
+// pub async fn get_all_users(
+//     client: &deadpool_postgres::Client,
+// ) -> Result<Vec<SendUser>, DBError> {
+//     let result = client
+//         .query("SELECT id, username, nickname, role FROM users ", &[])
+//         .await
+//         .expect("ERROR GETTING USERS")
+//         .iter()
+//         .map(|row| SendUser::from_row_ref(row).unwrap())
+//         .collect::<Vec<SendUser>>();
 
-    Ok(result)
-}
+//     Ok(result)
+// }

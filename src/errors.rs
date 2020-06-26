@@ -15,6 +15,8 @@ pub enum HandlerError {
     InternalError,
     #[fail(display = "You are not logged in")]
     AuthFail,
+    #[fail(display = "Permission denied: {}", err_message)]
+    PermissionDenied { err_message: String },
 }
 
 impl ResponseError for HandlerError {
@@ -29,6 +31,7 @@ impl ResponseError for HandlerError {
             HandlerError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             HandlerError::BadClientData { .. } => StatusCode::BAD_REQUEST,
             HandlerError::AuthFail => StatusCode::UNAUTHORIZED,
+            HandlerError::PermissionDenied { .. } => StatusCode::UNAUTHORIZED,
         }
     }
 }
