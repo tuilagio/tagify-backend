@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 use std::fs;
+use log::{/* error, */ info};
 
 // pub fn validate_role(role: &str) -> bool {
 //     let mut is_role = false;
@@ -68,16 +69,16 @@ pub fn calculate_next_filename_image (
     }
     fn_db_num.sort();
 
-    let mut next_filename = "0".to_string();
     let mut free_slots: Vec<u32> = vec![0; usize::try_from(max_i).unwrap() + 1];
- 
     for num in fn_folder_num {
         free_slots[ usize::try_from(num).unwrap()] = 1;
     }
     for num in fn_db_num {
         free_slots[ usize::try_from(num).unwrap()] = 1;
     }
-
+    
+    let mut next_filename = "0".to_string();
+    info!("Searching for first available photo name, default {} ...", next_filename);
     for i in 1..max_i {
         if free_slots[usize::try_from(i).unwrap()] == 0 {
             // filename can be this number

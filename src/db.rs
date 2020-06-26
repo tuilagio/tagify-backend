@@ -6,7 +6,7 @@ use crate::album_models::{
 };
 use crate::errors::DBError;
 use crate::user_models::{
-    CreateUser, Hash, User, CreateImageMeta, SendUser
+    CreateUser, Hash, User, CreateImageMeta
 };
 
 use actix_web::Result;
@@ -133,7 +133,7 @@ pub async fn create_image_meta (
     client: &deadpool_postgres::Client,
     image_meta: &CreateImageMeta,
 ) -> Result<bool, DBError> {
-    let result = client.query_one(
+    let _result = client.query_one(
         "insert into image_metas (albums_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
         &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates]).await?;
     // println!("restlt: {:?}", result);
@@ -145,7 +145,7 @@ pub async fn update_image_meta (
     image_meta: &CreateImageMeta,
     image_id: &i32,
 ) -> Result<bool, DBError> {
-    let result = client.query_one(
+    let _result = client.query_one(
         "UPDATE image_metas SET albums_id=$1, file_path=$2, coordinates=$3 WHERE id=$4 RETURNING *",
         &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates, &image_id]).await?;
     // println!("restlt: {:?}", result);
@@ -156,7 +156,7 @@ pub async fn delete_image_meta (
     client: &deadpool_postgres::Client,
     image_meta_id: &i32,
 ) -> Result<bool, DBError> {
-    let result = client.query_one(
+    let _result = client.query_one(
         "DELETE FROM image_metas WHERE id=$1 RETURNING *",
         &[&image_meta_id]).await?;
     Ok(true)
@@ -170,8 +170,11 @@ pub async fn check_album_exist_by_id (
         "SELECT * FROM albums WHERE id=$1", &[&album_id]).await;
     // println!("restlt: {:?}", result);
     match result {
-        Ok(row) => return true,
-        Err(e) => return false,
+        Ok(_row) => return true,
+        Err(e) => {
+            error!("Error check_album_exist_by_id: {:?}", e);
+            return false;
+        },
     }
 }
 
@@ -331,16 +334,16 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-pub async fn get_all_users(
-    client: &deadpool_postgres::Client,
-) -> Result<Vec<SendUser>, DBError> {
-    let result = client
-        .query("SELECT id, username, nickname, role FROM users ", &[])
-        .await
-        .expect("ERROR GETTING USERS")
-        .iter()
-        .map(|row| SendUser::from_row_ref(row).unwrap())
-        .collect::<Vec<SendUser>>();
+// pub async fn get_all_users(
+//     client: &deadpool_postgres::Client,
+// ) -> Result<Vec<SendUser>, DBError> {
+//     let result = client
+//         .query("SELECT id, username, nickname, role FROM users ", &[])
+//         .await
+//         .expect("ERROR GETTING USERS")
+//         .iter()
+//         .map(|row| SendUser::from_row_ref(row).unwrap())
+//         .collect::<Vec<SendUser>>();
 
-    Ok(result)
-}
+//     Ok(result)
+// }
