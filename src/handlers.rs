@@ -1,6 +1,6 @@
 use crate::errors::HandlerError;
 use crate::user_models::{
-    Hash, LoginData, SendUser, Status, UpdateUser, 
+    Hash, LoginData, SendUser, Status, 
     UpdateUserPassword, User, CreateImageMeta, UpdateUserNickname
 };
 use actix_web::http::StatusCode;
@@ -17,7 +17,6 @@ use std::io::Write;
 use std::fs;
 
 use actix_multipart::Multipart;
-use actix_web::{middleware, /* web, */ App, Error, /* HttpResponse, */ HttpServer};
 use futures::{StreamExt, TryStreamExt};
 use log::{debug, error, info};
 use actix_files::NamedFile;

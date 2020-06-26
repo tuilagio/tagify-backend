@@ -5,7 +5,7 @@ use crate::user_models::{User};
 use crate::errors::{HandlerError, DBError};
 use crate::my_identity_service::Identity;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, Result, Error};
+use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
 use log::{error, info};
 

@@ -6,7 +6,7 @@ use crate::album_models::{
 };
 use crate::errors::DBError;
 use crate::user_models::{
-    CreateUser, Hash, User, ImageMeta, CreateImageMeta, SendUser
+    CreateUser, Hash, User, CreateImageMeta, SendUser
 };
 
 use actix_web::Result;

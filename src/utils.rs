@@ -1,13 +1,5 @@
-// use crate::models::Roles;
-use std::io::Write;
-
-use actix_multipart::Multipart;
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
-use futures::{StreamExt, TryStreamExt};
 use std::convert::TryFrom;
-use std::path::Path;
 use std::fs;
-use log::{error, info};
 
 // pub fn validate_role(role: &str) -> bool {
 //     let mut is_role = false;

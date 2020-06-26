@@ -1,18 +1,13 @@
 use crate::errors::HandlerError;
-use crate::user_models::{CreateUser, UpdateUserAdmin, User, CreateImageMeta};
+use crate::user_models::{CreateUser, UpdateUserAdmin, User};
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
 use log::{error, info};
 
 use crate::db;
-use crate::utils;
-use std::io::Write;
 use std::fs;
 
-use actix_multipart::Multipart;
-use actix_web::{middleware, /* web, */ App, Error, /* HttpResponse, */ HttpServer};
-use futures::{StreamExt, TryStreamExt};
 use actix_files::NamedFile;
 use std::path::PathBuf;
 
