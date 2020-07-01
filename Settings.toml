@@ -21,3 +21,6 @@ password = "example"
 dbname = "example"
 host = "localhost"
 port = "5432"
+
+[tagify_data]
+path = "./tagify_data"

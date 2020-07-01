@@ -66,6 +66,22 @@ pub struct CreateUser {
     pub role: String, // TODO: Make an Enum out of it
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateImageMeta {
+    pub albums_id: i32,
+    pub file_path: String,
+    pub coordinates: String,
+}
+#[derive(Debug, Serialize, Deserialize, Clone, PostgresMapper)]
+#[pg_mapper(table = "image_metas")]
+pub struct ImageMeta {
+    pub id: i32,
+    pub albums_id: i32,
+    pub tag: String,
+    pub file_path: String,
+    pub coordinates: String,
+}
+
 // Hash password, can be implemented for Structs containing .passwort attribut
 pub trait Hash {
     fn hash_password(&mut self) -> Result<(), argon2::Error>;

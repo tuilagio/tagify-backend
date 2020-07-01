@@ -20,6 +20,7 @@ mod admin_handlers;
 mod album_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
+mod utils;
 
 mod album_models;
 mod user_models;
@@ -119,8 +120,6 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
-
-
      // Create default admin accounts
      match db::create_user(&client, &conf.default_admin).await {
          Ok(_item) => info!("Created default admin account"),
@@ -132,6 +131,17 @@ async fn main() -> std::io::Result<()> {
          Ok(_item) => info!("Created default user"),
          Err(_e) => info!("Default user already exists"),
      }
+
+    // Create data folder tagify_data. Default: in code base folder
+    let tagify_data_path = conf.tagify_data.path;
+    let tagify_albums_path = format!("{}/albums/", &tagify_data_path);
+
+    match std::fs::create_dir_all(&tagify_albums_path) {
+        Ok(_) => info!("Created data folder under{}", &tagify_albums_path),
+        Err(e) => {
+            error!("Error creating folder for album with id={}: {:?}", &tagify_albums_path, e);
+        }
+    }
 
     let temp = conf.server.key.clone();
 
@@ -191,6 +201,10 @@ async fn main() -> std::io::Result<()> {
             // Serve index.html
             // Give every handler access to the db connection pool
             .data(pool.clone())
+            // Data path
+            // .data(tagify_data_path.clone())
+            // Albums path
+            .data(tagify_albums_path.clone())
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept
@@ -212,7 +226,7 @@ async fn main() -> std::io::Result<()> {
                             ))
                             .route("/logout", web::post().to(logout))
                             //get all users
-                            .route("/users", web::get().to(admin_handlers::get_all_users))
+                            // .route("/users", web::get().to(admin_handlers::get_all_users))
                             //create new user account
                             .route("/users", web::post().to(admin_handlers::create_user))
                             //get user by id
@@ -232,6 +246,13 @@ async fn main() -> std::io::Result<()> {
                                     //get all albums
                                     .route("", web::get().to(status))
                                     //change album data (description or name)
+                                    .route("/{album_id}", web::put().to(status))
+                                    //delete own album by id
+                                    .route("/{album_id}", web::delete().to(status))
+                                    /////////////////////////////////////
+                                    .route("/{album_id}/photos/{photo_id}", web::get().to(admin_handlers::get_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::delete().to(admin_handlers::delete_photo))
+                                    ////////////////////////////////////////
                                     .route(
                                         "/{album_id}",
                                         web::put().to(album_handlers::update_album_by_id),
@@ -281,10 +302,16 @@ async fn main() -> std::io::Result<()> {
                                         web::delete().to(album_handlers::delete_album_by_id),
                                     )
                                     //delete own album
-                                    .route(
-                                        "/{album_id}/photos/{photo_id}",
-                                        web::delete().to(status),
-                                    ),
+                                    // .route(
+                                    //     "/{album_id}/photos/{photo_id}",
+                                    //     web::delete().to(status),
+                                    // ),
+                                    /////////////////////////////////////
+                                    .route("/{album_id}/photos", web::post().to(handlers::post_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::get().to(handlers::get_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::put().to(handlers::put_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::delete().to(handlers::delete_photo))
+                                    ////////////////////////////////////////
                             )
                             .service(
                                 web::scope("/tag")
