@@ -195,7 +195,7 @@ async fn main() -> std::io::Result<()> {
             .same_site(actix_http::cookie::SameSite::Strict);
         App::new()
             // Compress middlware
-            .wrap(middleware::Compress::new(actix_web::http::ContentEncoding::Br))
+            .wrap(middleware::Compress::default())
             .data(path_arg)
             // Give login handler access to cookie factory
             .data(cookie_factory_user.clone())
