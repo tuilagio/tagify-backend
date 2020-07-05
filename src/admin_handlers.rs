@@ -117,7 +117,7 @@ pub async fn get_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: "Id of image not found in db".to_string()
@@ -179,7 +179,7 @@ pub async fn delete_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: "Id of image not found in db".to_string()

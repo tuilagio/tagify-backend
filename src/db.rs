@@ -255,14 +255,15 @@ pub async fn get_photos_from_album(
     Ok(photos)
 }
 
-pub async fn get_image_file_path_with_id (
+pub async fn get_image_file_path_with_id_from_album (
     client: &deadpool_postgres::Client,
+    album_id: &i32,
     image_id: &i32,
 ) -> String {
 
     let mut file_path = "".to_string();
     let result = client.query(
-        "SELECT * FROM image_metas WHERE id = $1", &[&image_id]).await;
+        "SELECT * FROM image_metas WHERE id = $1 AND album_id = $2", &[&image_id, &album_id]).await;
     match result {
         Ok(rows) => {
             if rows.len() == 0{
