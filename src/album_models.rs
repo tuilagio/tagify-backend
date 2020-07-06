@@ -58,3 +58,13 @@ pub struct PhotoPreview {
     pub file_path: String
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TagPhoto {
+    pub tag: String,
+    pub coordinates: String
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VerifyPhoto {
+    pub verified: bool
+}
