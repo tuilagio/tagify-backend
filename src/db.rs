@@ -2,7 +2,7 @@
 
 use crate::album_models::{
     Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, 
-    PhotoPreview
+    PhotoPreview, TagPhoto
 };
 use crate::errors::DBError;
 use crate::user_models::{
@@ -347,3 +347,46 @@ pub async fn update_album(
 
 //     Ok(result)
 // }
+
+// tag photo + set coordinats
+pub async fn tag_photo_by_id(
+    client: deadpool_postgres::Client,
+    id: &i32,
+    photo_data: &TagPhoto
+) -> Result<bool, DBError> {
+    
+    client
+        .query(
+            "UPDATE image_metas SET tag = $1, coordinates = $2, tagged = true WHERE id = $3 ",
+            &[&photo_data.tag, &photo_data.coordinates, &id],
+        )
+        .await?;
+
+    Ok(true)
+}
+
+// verify photo ( if true => set verify true, else delete tag and coordinates & set both verified and tagged as false)
+pub async fn verify_photo_by_id(
+    client: deadpool_postgres::Client,
+    id: &i32,
+    verified: bool
+) -> Result<bool, DBError> {
+    
+    if verified {
+        client
+        .query(
+            "UPDATE image_metas SET verified = true WHERE id = $1 ",
+            &[ &id],
+        )
+        .await?;
+    } else {
+        client
+        .query(
+            "UPDATE image_metas SET tag = '', coordinates = '', tagged = false, verified = false WHERE id = $1 ",
+            &[ &id],
+        )
+        .await?;
+    }
+    
+    Ok(true)
+}
