@@ -2,7 +2,7 @@
 
 use crate::album_models::{
     Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, 
-    PhotoPreview, TagPhoto
+    PhotoPreview, TagPhoto, PhotoToTag
 };
 use crate::errors::DBError;
 use crate::user_models::{
@@ -12,6 +12,9 @@ use crate::user_models::{
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use log::{error, info};
+
+use chrono::offset::Utc;
+use chrono::{DateTime, TimeZone, NaiveDateTime};
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -389,4 +392,40 @@ pub async fn verify_photo_by_id(
     }
     
     Ok(true)
+}
+
+//get photos for tagging
+pub async fn get_photos_for_tagging(
+    client: deadpool_postgres::Client,
+    id: &i32
+) -> Result<Vec<PhotoToTag>, DBError> {
+    let mut photos = Vec::new();
+
+    let current_time = Utc::now().timestamp();
+    let offset: i64 = 20; // 15 min in sec
+    
+    
+    for row in client.query("SELECT id, file_path, locked_at, tagged  FROM image_metas WHERE albums_id = $1 AND verified = false ", &[&id]).await? {
+        let locked_at = row.get(2);
+        if (&locked_at + &offset) <= current_time || locked_at == 0 {
+            let photo_timestamp = Utc::now();
+
+            let photo = PhotoToTag {
+                id: row.get(0),
+                file_path: row.get(1),
+                tagged: row.get(3),
+                //timestamp: photo_timestamp
+            };
+            
+            client.query("UPDATE image_metas SET locked_at = $2 WHERE id = $1 ", &[&id, &photo_timestamp.timestamp()]).await?;
+
+            photos.push(photo);
+            if photos.len() >= 20 {
+                break;
+            }
+        }
+           
+        
+    }
+    Ok(photos)
 }

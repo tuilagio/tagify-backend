@@ -11,6 +11,10 @@ use log::{error, info};
 
 use crate::db;
 
+use chrono::offset::Utc;
+use chrono::{DateTime, TimeZone, NaiveDateTime};
+
+
 pub async fn create_album(
     pool: web::Data<Pool>,
     data: web::Json<CreateAlbum>,
@@ -304,4 +308,33 @@ pub async fn verify_photo_by_id(
     };
 
    Ok(HttpResponse::build(StatusCode::OK).json(result)) 
+}
+
+// get next 20 photos for tagging 
+pub async fn get_photos_for_tagging(
+    pool: web::Data<Pool>,
+    data : web::Path<(i32, )>
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    
+    
+  let result = match db::get_photos_for_tagging(client, &data.0).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
+  
+    
 }

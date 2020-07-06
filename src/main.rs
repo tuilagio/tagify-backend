@@ -319,7 +319,7 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/tag")
                                     //get 15 photos for tagging
-                                    .route("/{album_id}", web::get().to(status))
+                                    .route("/{album_id}", web::get().to(album_handlers::get_photos_for_tagging))
                                     //tag album
                                     .route("/action/{photo_id}", web::put().to(album_handlers::tag_photo_by_id))
                                     //verify tag
