@@ -2,7 +2,7 @@
 
 use actix_files as fs;
 use actix_files::NamedFile;
-use actix_web::{middleware::Logger, web, App, HttpServer, Result};
+use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result};
 use std::path::PathBuf;
 
 use listenfd::ListenFd;
@@ -20,6 +20,7 @@ mod admin_handlers;
 mod album_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
+mod utils;
 
 mod album_models;
 mod user_models;
@@ -48,10 +49,11 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let mut conf_path = PathBuf::new();
-
+    let settings_path;
     // If debug build, use execution directory
     if cfg!(debug_assertions) {
         conf_path.push(".");
+        settings_path = conf_path.join("Settings");
     } else {
         // Check if CONFIG_DIR environment variable is available
         let conf_base =
@@ -63,11 +65,11 @@ async fn main() -> std::io::Result<()> {
                 conf_path.to_str().unwrap()
             );
         }
+        settings_path = conf_path.join("Deploy_Settings");
     }
     info!("CONFIG_DIR points to: {}", conf_path.to_str().unwrap());
 
     // Read config
-    let settings_path = conf_path.join("Settings");
     let conf = match crate::config::MyConfig::new(settings_path.to_str().unwrap()) {
         Ok(i) => i,
         Err(e) => {
@@ -119,8 +121,6 @@ async fn main() -> std::io::Result<()> {
     let ip = conf.server.hostname + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
-
-
      // Create default admin accounts
      match db::create_user(&client, &conf.default_admin).await {
          Ok(_item) => info!("Created default admin account"),
@@ -132,6 +132,17 @@ async fn main() -> std::io::Result<()> {
          Ok(_item) => info!("Created default user"),
          Err(_e) => info!("Default user already exists"),
      }
+
+    // Create data folder tagify_data. Default: in code base folder
+    let tagify_data_path = conf.tagify_data.path;
+    let tagify_albums_path = format!("{}/albums/", &tagify_data_path);
+
+    match std::fs::create_dir_all(&tagify_albums_path) {
+        Ok(_) => info!("Created data folder under{}", &tagify_albums_path),
+        Err(e) => {
+            error!("Error creating folder for album with id={}: {:?}", &tagify_albums_path, e);
+        }
+    }
 
     let temp = conf.server.key.clone();
 
@@ -183,6 +194,8 @@ async fn main() -> std::io::Result<()> {
             .max_age(max_age)
             .same_site(actix_http::cookie::SameSite::Strict);
         App::new()
+            // Compress middlware
+            .wrap(middleware::Compress::default())
             .data(path_arg)
             // Give login handler access to cookie factory
             .data(cookie_factory_user.clone())
@@ -191,12 +204,18 @@ async fn main() -> std::io::Result<()> {
             // Serve index.html
             // Give every handler access to the db connection pool
             .data(pool.clone())
+            // Data path
+            // .data(tagify_data_path.clone())
+            // Albums path
+            .data(tagify_albums_path.clone())
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept
-            .data(web::JsonConfig::default().limit(4096)) // max 4MB json
-            // .configure(routes)
-            //status
+            .app_data(web::JsonConfig::default()
+                .limit(4096)
+                .error_handler(|err, _req| {
+                    actix_web::error::ErrorBadRequest(err)
+                }))
             .service(
                 web::scope("/api")
                     //all admin endpoints
@@ -210,7 +229,7 @@ async fn main() -> std::io::Result<()> {
                             ))
                             .route("/logout", web::post().to(logout))
                             //get all users
-                            .route("/users", web::get().to(admin_handlers::get_all_users))
+                            // .route("/users", web::get().to(admin_handlers::get_all_users))
                             //create new user account
                             .route("/users", web::post().to(admin_handlers::create_user))
                             //get user by id
@@ -230,6 +249,13 @@ async fn main() -> std::io::Result<()> {
                                     //get all albums
                                     .route("", web::get().to(status))
                                     //change album data (description or name)
+                                    .route("/{album_id}", web::put().to(status))
+                                    //delete own album by id
+                                    .route("/{album_id}", web::delete().to(status))
+                                    /////////////////////////////////////
+                                    .route("/{album_id}/photos/{photo_id}", web::get().to(admin_handlers::get_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::delete().to(admin_handlers::delete_photo))
+                                    ////////////////////////////////////////
                                     .route(
                                         "/{album_id}",
                                         web::put().to(album_handlers::update_album_by_id),
@@ -279,10 +305,16 @@ async fn main() -> std::io::Result<()> {
                                         web::delete().to(album_handlers::delete_album_by_id),
                                     )
                                     //delete own album
-                                    .route(
-                                        "/{album_id}/photos/{photo_id}",
-                                        web::delete().to(status),
-                                    ),
+                                    // .route(
+                                    //     "/{album_id}/photos/{photo_id}",
+                                    //     web::delete().to(status),
+                                    // ),
+                                    /////////////////////////////////////
+                                    .route("/{album_id}/photos", web::post().to(handlers::post_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::get().to(handlers::get_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::put().to(handlers::put_photo))
+                                    .route("/{album_id}/photos/{photo_id}", web::delete().to(handlers::delete_photo))
+                                    ////////////////////////////////////////
                             )
                             .service(
                                 web::scope("/tag")
@@ -310,14 +342,20 @@ async fn main() -> std::io::Result<()> {
             )
             .route("/", web::get().to(index))
             .route("/.*", web::get().to(index))
-    });
+    }).workers(conf.server.threads);
 
     // Enables us to hot reload the server
     let mut listenfd = ListenFd::from_env();
-    server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
-        server.listen(l)?
-    } else {
-        server.bind(ip)?
+    server = match listenfd.take_tcp_listener(0) {
+        Ok(l) => {
+            match l {
+                Some(i) => server.listen(i).expect("Listening failed"),
+                None => server.bind(ip).expect("Binding failed")
+            }
+        }
+        Err(err) => {
+            panic!("Could not take tcp listener: {}", err);
+        }
     };
 
     server.run().await

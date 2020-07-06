@@ -6,6 +6,12 @@ pub struct Server {
     pub hostname: String,
     pub port: String,
     pub key: String,
+    pub threads: usize
+}
+
+#[derive(Deserialize, Clone)]
+pub struct TagifyData {
+    pub path: String,
 }
 
 #[derive(Deserialize, Clone)]
@@ -14,6 +20,7 @@ pub struct MyConfig {
     pub server: Server,
     pub default_admin: CreateUser,
     pub default_user: CreateUser,
+    pub tagify_data: TagifyData,
 }
 
 impl MyConfig {
