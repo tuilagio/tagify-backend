@@ -1,3 +1,4 @@
 target/
 Deploy_Settings.toml
+certs
 tagify_data/
