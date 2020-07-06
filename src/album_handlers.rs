@@ -20,7 +20,7 @@ pub async fn create_album(
     let user: User = id.identity();
     let first_photo = String::from("default_path");
 
-    let album = match pool.get().await {
+    let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
@@ -28,7 +28,7 @@ pub async fn create_album(
         }
     };
     //create album without tags
-    let result = match db::create_album(&album, &data, user.id, first_photo).await {
+    let result = match db::create_album(&client, &data, user.id, first_photo).await {
         Err(e) => {
             error!("Error occured after create_album: {}", e);
             return Err(HandlerError::InternalError);
@@ -43,6 +43,7 @@ pub async fn create_album(
                     return Err(HandlerError::InternalError);
                 }
             }
+            album
         },
     };
 
