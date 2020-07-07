@@ -1,5 +1,5 @@
 
-use crate::album_models::{CreateAlbum, AlbumsPreview, UpdateAlbum};
+use crate::album_models::{CreateAlbum, AlbumsPreview, UpdateAlbum, TagPhoto, VerifyPhoto};
 use crate::user_models::{User};
 
 use crate::errors::{HandlerError, DBError};
@@ -249,4 +249,59 @@ pub async fn update_album_by_id(
         //TODO ERROR you are not owner of this album
     }
     Ok(HttpResponse::new(StatusCode::OK))
+}
+
+// tag photo + set coordinates
+pub async fn tag_photo_by_id(
+    pool: web::Data<Pool>,
+    data_id : web::Path<(i32,)>,
+    data: web::Json<TagPhoto>,
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    
+  let result = match db::tag_photo_by_id(client, &data_id.0, &data).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
+    
+}
+
+// verify_photo
+pub async fn verify_photo_by_id(
+    pool: web::Data<Pool>,
+    data_id : web::Path<(i32,)>,
+    data: web::Json<VerifyPhoto>,
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+  
+  let result = match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
 }
