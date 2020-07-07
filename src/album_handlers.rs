@@ -267,16 +267,22 @@ pub async fn tag_photo_by_id(
     };
 
     
-  let result = match db::tag_photo_by_id(client, &data_id.0, &data).await {
+     match db::tag_photo_by_id(client, &data_id.0, &data).await {
         Err(e) => {
             error!("Error occured : {}", e);
               return Err(HandlerError::InternalError);
         }
-        Ok(item) => item,
+        Ok(item) => match item {
+            true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
+            false => {
+                error!("Error occured : timeout");
+                return Err(HandlerError::BadClientData {
+                    field: "timeout".to_string()
+                });
+            }
+        }
     };
-
-   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
-    
+ 
 }
 
 // verify_photo
@@ -295,7 +301,41 @@ pub async fn verify_photo_by_id(
     };
 
   
-  let result = match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
+     match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => match item {
+            true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
+            false => {
+                error!("Error occured : timeout");
+                return Err(HandlerError::BadClientData {
+                    field: "timeout".to_string()
+                });
+            }
+        }
+    };
+
+}
+
+// get next 20 photos for tagging 
+pub async fn get_photos_for_tagging(
+    pool: web::Data<Pool>,
+    data : web::Path<(i32, )>
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    
+    
+  let result = match db::get_photos_for_tagging(client, &data.0).await {
         Err(e) => {
             error!("Error occured : {}", e);
               return Err(HandlerError::InternalError);
@@ -304,4 +344,6 @@ pub async fn verify_photo_by_id(
     };
 
    Ok(HttpResponse::build(StatusCode::OK).json(result)) 
+  
+    
 }
