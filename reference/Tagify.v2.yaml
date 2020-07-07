@@ -101,7 +101,7 @@ paths:
                     type: string
                   role:
                     type: string
-                  albums_id:
+                  album_id:
                     type: array
                     items:
                       type: number
@@ -426,11 +426,11 @@ paths:
                     - white cat
                     - dog
     parameters: []
-  "/api/user/albums/{albums_id}":
+  "/api/user/albums/{album_id}":
     parameters:
       - schema:
           type: string
-        name: albums_id
+        name: album_id
         in: path
         required: true
     post:
@@ -442,7 +442,7 @@ paths:
           description: OK
         "401":
           description: Unauthorized
-      operationId: post-api-user-albums-albums_id
+      operationId: post-api-user-albums-album_id
       description: add photos to album
     put:
       summary: change album data
@@ -453,7 +453,7 @@ paths:
           description: OK
         "201":
           description: Created
-      operationId: put-api-user-albums-albums_id
+      operationId: put-api-user-albums-album_id
       description: update album name or description
       requestBody:
         content:
@@ -479,7 +479,7 @@ paths:
           description: OK
         "401":
           description: Unauthorized
-      operationId: delete-api-user-albums-albums_id
+      operationId: delete-api-user-albums-album_id
       description: delete album by id
   /api/status:
     get:
