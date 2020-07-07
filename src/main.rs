@@ -229,7 +229,7 @@ async fn main() -> std::io::Result<()> {
                             ))
                             .route("/logout", web::post().to(logout))
                             //get all users
-                            // .route("/users", web::get().to(admin_handlers::get_all_users))
+                            .route("/users", web::get().to(admin_handlers::get_all_users))
                             //create new user account
                             .route("/users", web::post().to(admin_handlers::create_user))
                             //get user by id
