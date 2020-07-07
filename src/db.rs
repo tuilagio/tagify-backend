@@ -134,8 +134,8 @@ pub async fn create_image_meta (
     image_meta: &CreateImageMeta,
 ) -> Result<bool, DBError> {
     let _result = client.query_one(
-        "insert into image_metas (albums_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
-        &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates]).await?;
+        "insert into image_metas (album_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
+        &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates]).await?;
     // println!("restlt: {:?}", result);
     Ok(true)
 }
@@ -146,8 +146,8 @@ pub async fn update_image_meta (
     image_id: &i32,
 ) -> Result<bool, DBError> {
     let _result = client.query_one(
-        "UPDATE image_metas SET albums_id=$1, file_path=$2, coordinates=$3 WHERE id=$4 RETURNING *",
-        &[&image_meta.albums_id, &image_meta.file_path, &image_meta.coordinates, &image_id]).await?;
+        "UPDATE image_metas SET album_id=$1, file_path=$2, coordinates=$3 WHERE id=$4 RETURNING *",
+        &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates, &image_id]).await?;
     // println!("restlt: {:?}", result);
     Ok(true)
 }
@@ -185,7 +185,7 @@ pub async fn get_image_filenames_of_album_with_id (
 
     let mut filenames_db: Vec<String> = Vec::new();
     let result = client.query(
-        "SELECT * FROM image_metas WHERE albums_id = $1 ORDER BY file_path DESC", &[&album_id]).await;
+        "SELECT * FROM image_metas WHERE album_id = $1 ORDER BY file_path DESC", &[&album_id]).await;
     match result {
         Ok(rows) => {
             if rows.len() == 0{
@@ -237,7 +237,7 @@ pub async fn get_photos_from_album(
     let last_position = &start_position + 20;
     let mut current_position = 0;
     
-    for row in client.query("SELECT id, file_path  FROM image_metas WHERE albums_id = $1 ", &[&id]).await? {
+    for row in client.query("SELECT id, file_path  FROM image_metas WHERE album_id = $1 ", &[&id]).await? {
         if &current_position >= &start_position {
             let photo = PhotoPreview {
                 id: row.get(0),
@@ -255,14 +255,15 @@ pub async fn get_photos_from_album(
     Ok(photos)
 }
 
-pub async fn get_image_file_path_with_id (
+pub async fn get_image_file_path_with_id_from_album (
     client: &deadpool_postgres::Client,
+    album_id: &i32,
     image_id: &i32,
 ) -> String {
 
     let mut file_path = "".to_string();
     let result = client.query(
-        "SELECT * FROM image_metas WHERE id = $1", &[&image_id]).await;
+        "SELECT * FROM image_metas WHERE id = $1 AND album_id = $2", &[&image_id, &album_id]).await;
     match result {
         Ok(rows) => {
             if rows.len() == 0{
