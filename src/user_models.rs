@@ -68,7 +68,7 @@ pub struct CreateUser {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateImageMeta {
-    pub albums_id: i32,
+    pub album_id: i32,
     pub file_path: String,
     pub coordinates: String,
 }
@@ -76,7 +76,7 @@ pub struct CreateImageMeta {
 #[pg_mapper(table = "image_metas")]
 pub struct ImageMeta {
     pub id: i32,
-    pub albums_id: i32,
+    pub album_id: i32,
     pub tag: String,
     pub file_path: String,
     pub coordinates: String,
