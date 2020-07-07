@@ -14,7 +14,6 @@ use tokio_pg_mapper::FromTokioPostgresRow;
 use log::{error, info};
 
 use chrono::offset::Utc;
-use chrono::{DateTime, TimeZone, NaiveDateTime};
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -357,15 +356,25 @@ pub async fn tag_photo_by_id(
     id: &i32,
     photo_data: &TagPhoto
 ) -> Result<bool, DBError> {
+    let current_time = Utc::now().timestamp();
+    let offset: i64 = 30; // 15 min in sec
     
-    client
+    
+    let result = client.query_one("SELECT locked_at FROM image_metas WHERE id = $1",&[&id],).await?;
+    
+
+    if (&result.get(0) + &offset) > current_time {
+        client
         .query(
-            "UPDATE image_metas SET tag = $1, coordinates = $2, tagged = true WHERE id = $3 ",
+            "UPDATE image_metas SET tag = $1, coordinates = $2, tagged = true, locked_at = 0 WHERE id = $3 ", // reset timer if tagged
             &[&photo_data.tag, &photo_data.coordinates, &id],
         )
         .await?;
 
-    Ok(true)
+        Ok(true)
+    }else {
+        Ok(false)
+    }
 }
 
 // verify photo ( if true => set verify true, else delete tag and coordinates & set both verified and tagged as false)
@@ -374,24 +383,32 @@ pub async fn verify_photo_by_id(
     id: &i32,
     verified: bool
 ) -> Result<bool, DBError> {
+    let current_time = Utc::now().timestamp();
+    let offset: i64 = 30;   //15 min in sec
     
-    if verified {
-        client
-        .query(
-            "UPDATE image_metas SET verified = true WHERE id = $1 ",
-            &[ &id],
-        )
-        .await?;
-    } else {
-        client
-        .query(
-            "UPDATE image_metas SET tag = '', coordinates = '', tagged = false, verified = false WHERE id = $1 ",
-            &[ &id],
-        )
-        .await?;
+    let result = client.query_one("SELECT locked_at FROM image_metas WHERE id = $1",&[&id],).await?;
+    if(&result.get(0) + &offset) > current_time {
+        if verified {
+            client
+            .query(
+                "UPDATE image_metas SET verified = true, locked_at = 0 WHERE id = $1 ",    // reset timer
+                &[ &id],
+            )
+            .await?;
+        } else {
+            client
+            .query(
+                "UPDATE image_metas SET tag = '', coordinates = '', tagged = false, verified = false, locked_at = 0 WHERE id = $1 ", // reset timer
+                &[ &id],
+            )
+            .await?;
+        }
+        Ok(true)
+    }else {
+        Ok(false)
     }
     
-    Ok(true)
+    
 }
 
 //get photos for tagging
@@ -402,29 +419,28 @@ pub async fn get_photos_for_tagging(
     let mut photos = Vec::new();
 
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 20; // 15 min in sec
+    let offset: i64 = 30; // 15 min in sec
+    let time_after_offset: i64 = &current_time - &offset;
     
     
-    for row in client.query("SELECT id, file_path, locked_at, tagged  FROM image_metas WHERE albums_id = $1 AND verified = false ", &[&id]).await? {
-        let locked_at = row.get(2);
-        if (&locked_at + &offset) <= current_time || locked_at == 0 {
+    for row in client.query("SELECT id, file_path, tagged  FROM image_metas WHERE albums_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
+        
+        
             let photo_timestamp = Utc::now();
 
             let photo = PhotoToTag {
                 id: row.get(0),
                 file_path: row.get(1),
-                tagged: row.get(3),
-                //timestamp: photo_timestamp
+                tagged: row.get(2),
+                timestamp: photo_timestamp
             };
             
-            client.query("UPDATE image_metas SET locked_at = $2 WHERE id = $1 ", &[&id, &photo_timestamp.timestamp()]).await?;
+            client.query("UPDATE image_metas SET locked_at = $2 WHERE id = $1 ", &[&&photo.id, &photo.timestamp.timestamp()]).await?;
 
             photos.push(photo);
             if photos.len() >= 20 {
                 break;
             }
-        }
-           
         
     }
     Ok(photos)

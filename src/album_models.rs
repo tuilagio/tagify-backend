@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tokio_pg_mapper_derive::PostgresMapper;
 
 use chrono::offset::Utc;
-use chrono::{DateTime, TimeZone, NaiveDateTime};
+use chrono::{DateTime};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PostgresMapper)]
 #[pg_mapper(table = "albums")]
@@ -77,5 +77,6 @@ pub struct PhotoToTag {
     pub id: i32,
     pub file_path: String,
     pub tagged: bool,
-   // pub timestamp: DateTime<Utc>
+    pub timestamp: DateTime<Utc>
 }
+

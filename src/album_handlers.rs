@@ -11,10 +11,6 @@ use log::{error, info};
 
 use crate::db;
 
-use chrono::offset::Utc;
-use chrono::{DateTime, TimeZone, NaiveDateTime};
-
-
 pub async fn create_album(
     pool: web::Data<Pool>,
     data: web::Json<CreateAlbum>,
@@ -271,16 +267,22 @@ pub async fn tag_photo_by_id(
     };
 
     
-  let result = match db::tag_photo_by_id(client, &data_id.0, &data).await {
+     match db::tag_photo_by_id(client, &data_id.0, &data).await {
         Err(e) => {
             error!("Error occured : {}", e);
               return Err(HandlerError::InternalError);
         }
-        Ok(item) => item,
+        Ok(item) => match item {
+            true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
+            false => {
+                error!("Error occured : timeout");
+                return Err(HandlerError::BadClientData {
+                    field: "timeout".to_string()
+                });
+            }
+        }
     };
-
-   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
-    
+ 
 }
 
 // verify_photo
@@ -299,15 +301,22 @@ pub async fn verify_photo_by_id(
     };
 
   
-  let result = match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
+     match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
         Err(e) => {
             error!("Error occured : {}", e);
               return Err(HandlerError::InternalError);
         }
-        Ok(item) => item,
+        Ok(item) => match item {
+            true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
+            false => {
+                error!("Error occured : timeout");
+                return Err(HandlerError::BadClientData {
+                    field: "timeout".to_string()
+                });
+            }
+        }
     };
 
-   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
 }
 
 // get next 20 photos for tagging 
