@@ -323,7 +323,7 @@ pub async fn post_photo(
         match db::create_image_meta(
             &client, 
             &CreateImageMeta{
-                albums_id: album_id.clone(), 
+                album_id: album_id.clone(), 
                 coordinates: "".to_string(),
                 file_path: new_filename_with_ext.clone(),
             }
@@ -450,7 +450,7 @@ pub async fn put_photo(
         match db::update_image_meta(
             &client, 
             &CreateImageMeta{
-                albums_id: album_id.clone(), 
+                album_id: album_id.clone(), 
                 coordinates: "".to_string(),
                 file_path: new_filename_with_ext.clone(),
             },

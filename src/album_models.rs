@@ -32,7 +32,7 @@ pub struct UpdateAlbum {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AlbumTag {
     pub tags_id: i32,
-    pub albums_id: i32,
+    pub album_id: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
