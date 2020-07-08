@@ -1,9 +1,160 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-07-07T10:34:20.708Z",
-  "__export_source": "insomnia.desktop.app:v2020.2.1",
+  "__export_date": "2020-07-08T12:34:01.176Z",
+  "__export_source": "insomnia.desktop.app:v2020.2.2",
   "resources": [
+    {
+      "_id": "req_3ff982f0fbae43eeb506d97cb51e573b",
+      "authentication": {},
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "description": "",
+            "id": "pair_772e0ba8536348ab8f35b3e8790fa853",
+            "name": "id",
+            "value": "Screenshot from 2020-07-01 09-16-50.png"
+          }
+        ]
+      },
+      "created": 1593948570577,
+      "description": "",
+      "headers": [
+        {
+          "id": "pair_0c70f83726e84f1aa84c149c457ecc7f",
+          "name": "Content-Type",
+          "value": "multipart/form-data"
+        }
+      ],
+      "isPrivate": false,
+      "metaSortKey": -1593948570577,
+      "method": "POST",
+      "modified": 1594055604852,
+      "name": "DELETE PHOTO",
+      "parameters": [],
+      "parentId": "fld_4e6d2bc25eac4642ac6f287c3a3d9e73",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "127.0.0.1:5005/photo/delete",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_4e6d2bc25eac4642ac6f287c3a3d9e73",
+      "created": 1593948467474,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1594053651453,
+      "modified": 1594211443985,
+      "name": "GOLANG",
+      "parentId": "fld_48cafbdce88f4c06a42ba42b2529c6c7",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_48cafbdce88f4c06a42ba42b2529c6c7",
+      "created": 1592738170083,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1592738170084,
+      "modified": 1592738170083,
+      "name": "Tagify",
+      "parentId": "wrk_d1cb6ec7d51644818180754454c1e36d",
+      "_type": "request_group"
+    },
+    {
+      "_id": "wrk_d1cb6ec7d51644818180754454c1e36d",
+      "created": 1590230050821,
+      "description": "",
+      "modified": 1591564256408,
+      "name": "Tagify",
+      "parentId": null,
+      "scope": null,
+      "_type": "workspace"
+    },
+    {
+      "_id": "req_89727ef523e04548aa2a7e8efea63c92",
+      "authentication": {},
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "description": "",
+            "fileName": "/home/karol/Pictures/Screenshot from 2020-06-17 21-24-42.png",
+            "id": "pair_2053aeaa3524498796ea5e3e0c110b66",
+            "name": "upload",
+            "type": "file",
+            "value": ""
+          },
+          {
+            "description": "",
+            "fileName": "/home/karol/Pictures/Screenshot from 2020-07-01 09-16-50.png",
+            "id": "pair_6347968d139249e0aa92371db8ddb02a",
+            "name": "upload",
+            "type": "file",
+            "value": ""
+          },
+          {
+            "description": "",
+            "id": "pair_28da4938f6374a68a1ae6780a2dd8abe",
+            "name": "upload",
+            "value": ""
+          }
+        ]
+      },
+      "created": 1593948509190,
+      "description": "",
+      "headers": [
+        {
+          "id": "pair_c015291b430f465fbcd0b37dc299baf3",
+          "name": "Content-Type",
+          "value": "multipart/form-data"
+        }
+      ],
+      "isPrivate": false,
+      "metaSortKey": -1593317056044.75,
+      "method": "POST",
+      "modified": 1594057437975,
+      "name": "ADD PHOTO",
+      "parameters": [],
+      "parentId": "fld_4e6d2bc25eac4642ac6f287c3a3d9e73",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "127.0.0.1:5005/photo/add",
+      "_type": "request"
+    },
+    {
+      "_id": "req_912f52c2a3bb4fe0b09ee31c25a61da0",
+      "authentication": {},
+      "body": {},
+      "created": 1593948475593,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1593317055994.75,
+      "method": "GET",
+      "modified": 1593948536084,
+      "name": "Photo_server_STATUS",
+      "parameters": [],
+      "parentId": "fld_4e6d2bc25eac4642ac6f287c3a3d9e73",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "127.0.0.1:5005/",
+      "_type": "request"
+    },
     {
       "_id": "req_95cf3e340eee4a4da8fa27ec9855653d",
       "authentication": {},
@@ -38,28 +189,6 @@
       "name": "USER->TAG",
       "parentId": "fld_48cafbdce88f4c06a42ba42b2529c6c7",
       "_type": "request_group"
-    },
-    {
-      "_id": "fld_48cafbdce88f4c06a42ba42b2529c6c7",
-      "created": 1592738170083,
-      "description": "",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1592738170084,
-      "modified": 1592738170083,
-      "name": "Tagify",
-      "parentId": "wrk_d1cb6ec7d51644818180754454c1e36d",
-      "_type": "request_group"
-    },
-    {
-      "_id": "wrk_d1cb6ec7d51644818180754454c1e36d",
-      "created": 1590230050821,
-      "description": "",
-      "modified": 1591564256408,
-      "name": "Tagify",
-      "parentId": null,
-      "scope": null,
-      "_type": "workspace"
     },
     {
       "_id": "req_66440a1337d947e488ae532f98e243e1",
