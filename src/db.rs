@@ -2,16 +2,19 @@
 
 use crate::album_models::{
     Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, 
-    PhotoPreview, TagPhoto
+    PhotoPreview, TagPhoto, PhotoToTag
 };
 use crate::errors::DBError;
 use crate::user_models::{
-    CreateUser, Hash, User, CreateImageMeta
+    CreateUser, Hash, User, CreateImageMeta,
+    SendUser
 };
 
 use actix_web::Result;
 use tokio_pg_mapper::FromTokioPostgresRow;
 use log::{error, info};
+
+use chrono::offset::Utc;
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -134,7 +137,7 @@ pub async fn create_image_meta (
     image_meta: &CreateImageMeta,
 ) -> Result<bool, DBError> {
     let _result = client.query_one(
-        "insert into image_metas (album_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
+        "insert into image_metas (album_id, file_path, coordinates, tag) values ($1, $2, $3, '') RETURNING *",
         &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates]).await?;
     // println!("restlt: {:?}", result);
     Ok(true)
@@ -315,6 +318,7 @@ pub async fn delete_album(
     client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
+    client.query("DELETE FROM image_metas WHERE album_id = $1", &[&album_id]).await?;   // need to delete all photos from the album firstly
     let result = client
         .query_one("DELETE FROM albums WHERE id=$1 RETURNING *", &[&album_id])
         .await?;
@@ -335,19 +339,19 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-// pub async fn get_all_users(
-//     client: &deadpool_postgres::Client,
-// ) -> Result<Vec<SendUser>, DBError> {
-//     let result = client
-//         .query("SELECT id, username, nickname, role FROM users ", &[])
-//         .await
-//         .expect("ERROR GETTING USERS")
-//         .iter()
-//         .map(|row| SendUser::from_row_ref(row).unwrap())
-//         .collect::<Vec<SendUser>>();
+pub async fn get_all_users(
+    client: &deadpool_postgres::Client,
+) -> Result<Vec<SendUser>, DBError> {
+    let result = client
+        .query("SELECT id, username, nickname, role FROM users ", &[])
+        .await
+        .expect("ERROR GETTING USERS")
+        .iter()
+        .map(|row| SendUser::from_row_ref(row).unwrap())
+        .collect::<Vec<SendUser>>();
 
-//     Ok(result)
-// }
+    Ok(result)
+}
 
 // tag photo + set coordinats
 pub async fn tag_photo_by_id(
@@ -355,15 +359,25 @@ pub async fn tag_photo_by_id(
     id: &i32,
     photo_data: &TagPhoto
 ) -> Result<bool, DBError> {
+    let current_time = Utc::now().timestamp();
+    let offset: i64 = 30; // 15 min in sec
     
-    client
+    
+    let result = client.query_one("SELECT locked_at FROM image_metas WHERE id = $1",&[&id],).await?;
+    
+
+    if (&result.get(0) + &offset) > current_time {
+        client
         .query(
-            "UPDATE image_metas SET tag = $1, coordinates = $2, tagged = true WHERE id = $3 ",
+            "UPDATE image_metas SET tag = $1, coordinates = $2, tagged = true, locked_at = 0 WHERE id = $3 ", // reset timer if tagged
             &[&photo_data.tag, &photo_data.coordinates, &id],
         )
         .await?;
 
-    Ok(true)
+        Ok(true)
+    }else {
+        Ok(false)
+    }
 }
 
 // verify photo ( if true => set verify true, else delete tag and coordinates & set both verified and tagged as false)
@@ -372,22 +386,66 @@ pub async fn verify_photo_by_id(
     id: &i32,
     verified: bool
 ) -> Result<bool, DBError> {
+    let current_time = Utc::now().timestamp();
+    let offset: i64 = 30;   //15 min in sec
     
-    if verified {
-        client
-        .query(
-            "UPDATE image_metas SET verified = true WHERE id = $1 ",
-            &[ &id],
-        )
-        .await?;
-    } else {
-        client
-        .query(
-            "UPDATE image_metas SET tag = '', coordinates = '', tagged = false, verified = false WHERE id = $1 ",
-            &[ &id],
-        )
-        .await?;
+    let result = client.query_one("SELECT locked_at FROM image_metas WHERE id = $1",&[&id],).await?;
+    if(&result.get(0) + &offset) > current_time {
+        if verified {
+            client
+            .query(
+                "UPDATE image_metas SET verified = true, locked_at = 0 WHERE id = $1 ",    // reset timer
+                &[ &id],
+            )
+            .await?;
+        } else {
+            client
+            .query(
+                "UPDATE image_metas SET tag = '', coordinates = '', tagged = false, verified = false, locked_at = 0 WHERE id = $1 ", // reset timer
+                &[ &id],
+            )
+            .await?;
+        }
+        Ok(true)
+    }else {
+        Ok(false)
     }
     
-    Ok(true)
+    
+}
+
+//get photos for tagging
+pub async fn get_photos_for_tagging(
+    client: deadpool_postgres::Client,
+    id: &i32
+) -> Result<Vec<PhotoToTag>, DBError> {
+    let mut photos = Vec::new();
+
+    let current_time = Utc::now().timestamp();
+    let offset: i64 = 30; // 15 min in sec
+    let time_after_offset: i64 = &current_time - &offset;
+    
+    
+    for row in client.query("SELECT id, file_path, tagged, tag  FROM image_metas WHERE album_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
+        
+        
+            let photo_timestamp = Utc::now();
+
+            let photo = PhotoToTag {
+                id: row.get(0),
+                file_path: row.get(1),
+                tagged: row.get(2),
+                tag: row.get(3),
+                timestamp: photo_timestamp
+            };
+            
+            client.query("UPDATE image_metas SET locked_at = $2 WHERE id = $1 ", &[&&photo.id, &photo.timestamp.timestamp()]).await?;
+
+            photos.push(photo);
+            if photos.len() >= 20 {
+                break;
+            }
+        
+    }
+    Ok(photos)
 }

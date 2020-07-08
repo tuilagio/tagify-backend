@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS image_metas (
     album_id INT NOT NULL,
     tag VARCHAR(100),
     file_path TEXT NOT NULL,
-    locked_at TIMESTAMP ,
+    locked_at BIGINT DEFAULT 0,
     coordinates TEXT NOT NULL,
     verified BOOL DEFAULT FALSE,
     tagged BOOL DEFAULT FALSE,
