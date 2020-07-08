@@ -77,6 +77,7 @@ pub struct PhotoToTag {
     pub id: i32,
     pub file_path: String,
     pub tagged: bool,
-    pub timestamp: DateTime<Utc>
+    pub tag: String,
+    pub timestamp: DateTime<Utc>,
 }
 

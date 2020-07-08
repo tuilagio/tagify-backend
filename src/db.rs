@@ -137,7 +137,7 @@ pub async fn create_image_meta (
     image_meta: &CreateImageMeta,
 ) -> Result<bool, DBError> {
     let _result = client.query_one(
-        "insert into image_metas (album_id, file_path, coordinates) values ($1, $2, $3) RETURNING *",
+        "insert into image_metas (album_id, file_path, coordinates, tag) values ($1, $2, $3, '') RETURNING *",
         &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates]).await?;
     // println!("restlt: {:?}", result);
     Ok(true)
@@ -318,6 +318,7 @@ pub async fn delete_album(
     client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
+    client.query("DELETE FROM image_metas WHERE album_id = $1", &[&album_id]).await?;   // need to delete all photos from the album firstly
     let result = client
         .query_one("DELETE FROM albums WHERE id=$1 RETURNING *", &[&album_id])
         .await?;
@@ -425,7 +426,7 @@ pub async fn get_photos_for_tagging(
     let time_after_offset: i64 = &current_time - &offset;
     
     
-    for row in client.query("SELECT id, file_path, tagged  FROM image_metas WHERE album_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
+    for row in client.query("SELECT id, file_path, tagged, tag  FROM image_metas WHERE album_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
         
         
             let photo_timestamp = Utc::now();
@@ -434,6 +435,7 @@ pub async fn get_photos_for_tagging(
                 id: row.get(0),
                 file_path: row.get(1),
                 tagged: row.get(2),
+                tag: row.get(3),
                 timestamp: photo_timestamp
             };
             
