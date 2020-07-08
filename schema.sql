@@ -36,25 +36,25 @@ CREATE TABLE IF NOT EXISTS albums (
 
 CREATE TABLE IF NOT EXISTS is_tagging_album (
     users_id INT NOT NULL,
-    albums_id INT NOT NULL,
+    album_id INT NOT NULL,
     in_progress bool NOT NULL,
-    PRIMARY KEY ( users_id, albums_id),
+    PRIMARY KEY ( users_id, album_id),
     FOREIGN KEY (users_id) REFERENCES users (id),
-    FOREIGN KEY (albums_id) REFERENCES albums (id)
+    FOREIGN KEY (album_id) REFERENCES albums (id)
 );
 
 CREATE TABLE IF NOT EXISTS image_metas (
     id SERIAL PRIMARY KEY,
-    albums_id INT NOT NULL,
+    album_id INT NOT NULL,
     tag VARCHAR(100),
     file_path TEXT NOT NULL,
-    locked_at TIMESTAMP ,
+    locked_at BIGINT DEFAULT 0,
     coordinates TEXT NOT NULL,
     verified BOOL DEFAULT FALSE,
     tagged BOOL DEFAULT FALSE,
     date_created DATE NOT NULL DEFAULT CURRENT_DATE,
     date_modified DATE NOT NULL DEFAULT CURRENT_DATE,
-    FOREIGN KEY (albums_id) REFERENCES albums (id)
+    FOREIGN KEY (album_id) REFERENCES albums (id)
 );
 
 

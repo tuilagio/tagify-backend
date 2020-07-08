@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use tokio_pg_mapper_derive::PostgresMapper;
 
+use chrono::offset::Utc;
+use chrono::{DateTime};
+
 #[derive(Debug, Clone, Serialize, Deserialize, PostgresMapper)]
 #[pg_mapper(table = "albums")]
 pub struct Album {
@@ -29,7 +32,7 @@ pub struct UpdateAlbum {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AlbumTag {
     pub tags_id: i32,
-    pub albums_id: i32,
+    pub album_id: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -56,5 +59,25 @@ pub struct AlbumsPreview {
 pub struct PhotoPreview {
     pub id: i32,
     pub file_path: String
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TagPhoto {
+    pub tag: String,
+    pub coordinates: String
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VerifyPhoto {
+    pub verified: bool
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PhotoToTag {
+    pub id: i32,
+    pub file_path: String,
+    pub tagged: bool,
+    pub tag: String,
+    pub timestamp: DateTime<Utc>,
 }
 

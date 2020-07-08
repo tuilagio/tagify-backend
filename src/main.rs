@@ -229,7 +229,7 @@ async fn main() -> std::io::Result<()> {
                             ))
                             .route("/logout", web::post().to(logout))
                             //get all users
-                            // .route("/users", web::get().to(admin_handlers::get_all_users))
+                            .route("/users", web::get().to(admin_handlers::get_all_users))
                             //create new user account
                             .route("/users", web::post().to(admin_handlers::create_user))
                             //get user by id
@@ -319,11 +319,11 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/tag")
                                     //get 15 photos for tagging
-                                    .route("", web::get().to(status))
-                                    //get own album by id
-                                    .route("/{album_id}/action/{photo_id}", web::post().to(status))
+                                    .route("/{album_id}", web::get().to(album_handlers::get_photos_for_tagging))
+                                    //tag album
+                                    .route("/action/{photo_id}", web::put().to(album_handlers::tag_photo_by_id))
                                     //verify tag
-                                    .route("/{album_id}/action/{photo_id}", web::put().to(status)),
+                                    .route("/verify/{photo_id}", web::put().to(album_handlers::verify_photo_by_id)),
                             ),
                     )
                     .service(

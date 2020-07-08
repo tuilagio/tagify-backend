@@ -1,5 +1,5 @@
 
-use crate::album_models::{CreateAlbum, AlbumsPreview, UpdateAlbum};
+use crate::album_models::{CreateAlbum, AlbumsPreview, UpdateAlbum, TagPhoto, VerifyPhoto};
 use crate::user_models::{User};
 
 use crate::errors::{HandlerError, DBError};
@@ -20,7 +20,7 @@ pub async fn create_album(
     let user: User = id.identity();
     let first_photo = String::from("default_path");
 
-    let album = match pool.get().await {
+    let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
             error!("Error occured : {}", e);
@@ -28,7 +28,7 @@ pub async fn create_album(
         }
     };
     //create album without tags
-    let result = match db::create_album(&album, &data, user.id, first_photo).await {
+    let result = match db::create_album(&client, &data, user.id, first_photo).await {
         Err(e) => {
             error!("Error occured after create_album: {}", e);
             return Err(HandlerError::InternalError);
@@ -43,6 +43,7 @@ pub async fn create_album(
                     return Err(HandlerError::InternalError);
                 }
             }
+            album
         },
     };
 
@@ -248,4 +249,101 @@ pub async fn update_album_by_id(
         //TODO ERROR you are not owner of this album
     }
     Ok(HttpResponse::new(StatusCode::OK))
+}
+
+// tag photo + set coordinates
+pub async fn tag_photo_by_id(
+    pool: web::Data<Pool>,
+    data_id : web::Path<(i32,)>,
+    data: web::Json<TagPhoto>,
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    
+     match db::tag_photo_by_id(client, &data_id.0, &data).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => match item {
+            true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
+            false => {
+                error!("Error occured : timeout");
+                return Err(HandlerError::BadClientData {
+                    field: "timeout".to_string()
+                });
+            }
+        }
+    };
+ 
+}
+
+// verify_photo
+pub async fn verify_photo_by_id(
+    pool: web::Data<Pool>,
+    data_id : web::Path<(i32,)>,
+    data: web::Json<VerifyPhoto>,
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+  
+     match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => match item {
+            true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
+            false => {
+                error!("Error occured : timeout");
+                return Err(HandlerError::BadClientData {
+                    field: "timeout".to_string()
+                });
+            }
+        }
+    };
+
+}
+
+// get next 20 photos for tagging 
+pub async fn get_photos_for_tagging(
+    pool: web::Data<Pool>,
+    data : web::Path<(i32, )>
+) -> Result<HttpResponse, HandlerError> {
+  
+  let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    
+    
+  let result = match db::get_photos_for_tagging(client, &data.0).await {
+        Err(e) => {
+            error!("Error occured : {}", e);
+              return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+   Ok(HttpResponse::build(StatusCode::OK).json(result)) 
+  
+    
 }
