@@ -117,7 +117,7 @@ pub async fn get_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: "Id of image not found in db".to_string()
@@ -179,7 +179,7 @@ pub async fn delete_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: "Id of image not found in db".to_string()
@@ -231,4 +231,28 @@ pub async fn delete_photo(
     };
 
     Ok(HttpResponse::build(StatusCode::OK).json(format!("Success delete image id={}",  &image_id)))
+}
+
+// get api/admin/users -> get all users data
+// should i also list admin ?
+pub async fn get_all_users(
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, HandlerError> {
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured : {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_all_users(&client).await {
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    Ok(HttpResponse::build(StatusCode::OK).json(result))
 }

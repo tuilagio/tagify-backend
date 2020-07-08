@@ -255,7 +255,6 @@ pub async fn post_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // Check user has right to change file image:
-    println!("{}", album_id);
     let result = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
@@ -388,7 +387,7 @@ pub async fn put_photo(
     }
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: "Id of image not found in db".to_string()
@@ -471,7 +470,7 @@ pub async fn get_photo(
     pool: web::Data<Pool>,
     tagify_albums_path: web::Data<String,>,
     parameters: web::Path<(i32, i32)>,
-    id: Identity,
+    //id: Identity,
 ) -> Result<NamedFile, HandlerError> {
     let client = match pool.get().await {
         Ok(item) => item,
@@ -480,33 +479,10 @@ pub async fn get_photo(
             return Err(HandlerError::InternalError);
         }
     };
-    let user: User = id.identity();
+    //let user: User = id.identity();
     let album_id = parameters.0;
     let image_id = parameters.1;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
-
-    // Check user has right to change file image:
-    let result = match db::get_album_by_id(&client, album_id).await {
-        Err(e) => {
-            error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
-        }
-        Ok(item) => item,
-    };
-
-    if user.id != result.users_id && user.role != "admin" {
-        return Err(HandlerError::PermissionDenied {
-            err_message: format!("Only owner can delete image from album {}", album_id)
-        });
-    }
-
-    // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
-    if file_path_db == "".to_string() {
-        return Err(HandlerError::BadClientData {
-            field: "Id of image not found in db".to_string()
-        });
-    }
 
     // Check album exist
     if !std::path::Path::new(&album_path).exists() {
@@ -522,17 +498,25 @@ pub async fn get_photo(
         });
     }
 
+    // Check if image exists in db:
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
+    if file_path_db == "".to_string() {
+        return Err(HandlerError::BadClientData {
+            field: format!("Image with id={} of album id={} not found in db.\nImage not exists or false album id?", &image_id, &album_id).to_string()
+        });
+    }
+
+
     let filepath = format!("{}{}", album_path, file_path_db);
     // Check file exist
     if !std::path::Path::new(&filepath).exists() {
-        error!("Error occured : image file with id={} not found on disk", &filepath);
+        error!("Error occured : Image file with id={} not found on disk", &filepath);
         return Err(HandlerError::BadClientData {
-            field: "File not found".to_string()
+            field: format!("File {} not found on disk", filepath).to_string()
         });
     }
 
     let path: PathBuf = filepath.parse().unwrap();
-    println!("{:?}", path);
 
     let r = NamedFile::open(&path);
     match &r {
@@ -580,7 +564,7 @@ pub async fn delete_photo(
     }
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id(&client, &image_id).await;
+    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: "Id of image not found in db".to_string()

@@ -6,7 +6,8 @@ use crate::album_models::{
 };
 use crate::errors::DBError;
 use crate::user_models::{
-    CreateUser, Hash, User, CreateImageMeta
+    CreateUser, Hash, User, CreateImageMeta,
+    SendUser
 };
 
 use actix_web::Result;
@@ -257,14 +258,15 @@ pub async fn get_photos_from_album(
     Ok(photos)
 }
 
-pub async fn get_image_file_path_with_id (
+pub async fn get_image_file_path_with_id_from_album (
     client: &deadpool_postgres::Client,
+    album_id: &i32,
     image_id: &i32,
 ) -> String {
 
     let mut file_path = "".to_string();
     let result = client.query(
-        "SELECT * FROM image_metas WHERE id = $1", &[&image_id]).await;
+        "SELECT * FROM image_metas WHERE id = $1 AND album_id = $2", &[&image_id, &album_id]).await;
     match result {
         Ok(rows) => {
             if rows.len() == 0{
@@ -336,19 +338,19 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-// pub async fn get_all_users(
-//     client: &deadpool_postgres::Client,
-// ) -> Result<Vec<SendUser>, DBError> {
-//     let result = client
-//         .query("SELECT id, username, nickname, role FROM users ", &[])
-//         .await
-//         .expect("ERROR GETTING USERS")
-//         .iter()
-//         .map(|row| SendUser::from_row_ref(row).unwrap())
-//         .collect::<Vec<SendUser>>();
+pub async fn get_all_users(
+    client: &deadpool_postgres::Client,
+) -> Result<Vec<SendUser>, DBError> {
+    let result = client
+        .query("SELECT id, username, nickname, role FROM users ", &[])
+        .await
+        .expect("ERROR GETTING USERS")
+        .iter()
+        .map(|row| SendUser::from_row_ref(row).unwrap())
+        .collect::<Vec<SendUser>>();
 
-//     Ok(result)
-// }
+    Ok(result)
+}
 
 // tag photo + set coordinats
 pub async fn tag_photo_by_id(
