@@ -29,11 +29,16 @@ use crate::handlers::{login, logout, status};
 use user_models::ROLES;
 
 struct DistPath {
-    path: PathBuf,
+    user: PathBuf,
+    admin: PathBuf
 }
 
 async fn index(data: web::Data<DistPath>) -> Result<NamedFile> {
-    Ok(NamedFile::open(data.path.clone())?)
+    Ok(NamedFile::open(data.user.clone())?)
+}
+
+async fn admin_index(data: web::Data<DistPath>) -> Result<NamedFile> {
+    Ok(NamedFile::open(data.admin.clone())?)
 }
 
 #[actix_rt::main]
@@ -160,14 +165,16 @@ async fn main() -> std::io::Result<()> {
                 fs::Files::new("/app/frontend/debug_dist", "../frontend/debug_dist")
                     .show_files_listing();
             path_arg = DistPath {
-                path: PathBuf::from("../frontend/debug_dist/index.html"),
+                user: PathBuf::from("../frontend/debug_dist/index.html"),
+                admin: PathBuf::from("../frontend/debug_dist/index_admin.html"),
             };
             secure_cookie = false;
         } else {
             // If release binary use DIST env var
             let dist = std::env::var("DIST").expect("Could not find environment variable DIST");
             path_arg = DistPath {
-                path: PathBuf::from(dist.clone()).join("index.html"),
+                user: PathBuf::from(dist.clone()).join("index.html"),
+                admin: PathBuf::from(dist.clone()).join("index_admin.html"),
             };
             if !std::path::Path::new(&dist).exists() {
                 panic!(
@@ -341,6 +348,8 @@ async fn main() -> std::io::Result<()> {
 
             )
             .route("/", web::get().to(index))
+            .route("/admin/.*", web::get().to(admin_index))
+            .route("/admin", web::get().to(admin_index))
             .route("/.*", web::get().to(index))
     }).workers(conf.server.threads);
 
