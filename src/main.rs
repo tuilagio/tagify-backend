@@ -241,6 +241,8 @@ async fn main() -> std::io::Result<()> {
                             .route("/users", web::post().to(admin_handlers::create_user))
                             //get user by id
                             .route("/user/{user_id}", web::get().to(status))
+
+                            .route("/me", web::get().to(handlers::get_user))
                             //change user password
                             .route(
                                 "/user/{user_id}",
