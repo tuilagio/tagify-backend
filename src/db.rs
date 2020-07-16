@@ -139,6 +139,14 @@ pub async fn create_image_meta(
     let _result = client.query_one(
         "insert into image_metas (album_id, file_path, coordinates, tag) values ($1, $2, $3, '') RETURNING *",
         &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates]).await?;
+
+    client
+        .query(
+            "UPDATE albums SET image_number = image_number +1 WHERE id = $1",
+            &[&image_meta.album_id],
+        )
+    .await?;
+
     // println!("restlt: {:?}", result);
     Ok(true)
 }
