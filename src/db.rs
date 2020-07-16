@@ -167,12 +167,20 @@ pub async fn delete_image_meta(
     client: &deadpool_postgres::Client,
     image_meta_id: &i32,
 ) -> Result<bool, DBError> {
-    let _result = client
+    let result = client
         .query_one(
-            "DELETE FROM image_metas WHERE id=$1 RETURNING *",
+            "DELETE FROM image_metas WHERE id=$1 RETURNING album_id",
             &[&image_meta_id],
         )
         .await?;
+
+    let album_id:i32 = result.get(0);
+    client
+        .query(
+            "UPDATE albums SET image_number = image_number -1 WHERE id = $1",
+            &[&album_id],
+        )
+    .await?;
     Ok(true)
 }
 
