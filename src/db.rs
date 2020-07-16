@@ -1,18 +1,13 @@
-
-
 use crate::album_models::{
-    Album, CreateAlbum, AlbumsPreview, AlbumPreview, UpdateAlbum, 
-    PhotoPreview, TagPhoto, PhotoToTag
+    Album, AlbumPreview, AlbumsPreview, CreateAlbum, PhotoPreview, PhotoToTag, TagPhoto,
+    UpdateAlbum,
 };
 use crate::errors::DBError;
-use crate::user_models::{
-    CreateUser, Hash, User, CreateImageMeta,
-    SendUser
-};
+use crate::user_models::{CreateImageMeta, CreateUser, Hash, SendUser, User};
 
 use actix_web::Result;
+use log::{error, info, debug};
 use tokio_pg_mapper::FromTokioPostgresRow;
-use log::{error, info};
 
 use chrono::offset::Utc;
 
@@ -58,8 +53,10 @@ pub async fn update_user(client: &deadpool_postgres::Client, user: &User) -> Res
     Ok(User::from_row_ref(&result)?)
 }
 
-pub async fn update_user_nickname(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
-
+pub async fn update_user_nickname(
+    client: &deadpool_postgres::Client,
+    user: &User,
+) -> Result<User, DBError> {
     let result = client
         .query_one(
             "UPDATE users SET nickname=$1 WHERE id=$2 RETURNING *",
@@ -69,7 +66,10 @@ pub async fn update_user_nickname(client: &deadpool_postgres::Client, user: &Use
     Ok(User::from_row_ref(&result)?)
 }
 
-pub async fn update_user_password(client: &deadpool_postgres::Client, user: &User) -> Result<User, DBError> {
+pub async fn update_user_password(
+    client: &deadpool_postgres::Client,
+    user: &User,
+) -> Result<User, DBError> {
     if user.password.len() < 4 {
         return Err(DBError::BadArgs {
             err: "Password is too short".to_owned(),
@@ -132,7 +132,7 @@ pub async fn create_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-pub async fn create_image_meta (
+pub async fn create_image_meta(
     client: &deadpool_postgres::Client,
     image_meta: &CreateImageMeta,
 ) -> Result<bool, DBError> {
@@ -143,7 +143,7 @@ pub async fn create_image_meta (
     Ok(true)
 }
 
-pub async fn update_image_meta (
+pub async fn update_image_meta(
     client: &deadpool_postgres::Client,
     image_meta: &CreateImageMeta,
     image_id: &i32,
@@ -155,43 +155,47 @@ pub async fn update_image_meta (
     Ok(true)
 }
 
-pub async fn delete_image_meta (
+pub async fn delete_image_meta(
     client: &deadpool_postgres::Client,
     image_meta_id: &i32,
 ) -> Result<bool, DBError> {
-    let _result = client.query_one(
-        "DELETE FROM image_metas WHERE id=$1 RETURNING *",
-        &[&image_meta_id]).await?;
+    let _result = client
+        .query_one(
+            "DELETE FROM image_metas WHERE id=$1 RETURNING *",
+            &[&image_meta_id],
+        )
+        .await?;
     Ok(true)
 }
 
-pub async fn check_album_exist_by_id (
-    client: &deadpool_postgres::Client,
-    album_id: &i32,
-) -> bool {
-    let result = client.query_one(
-        "SELECT * FROM albums WHERE id=$1", &[&album_id]).await;
+pub async fn check_album_exist_by_id(client: &deadpool_postgres::Client, album_id: &i32) -> bool {
+    let result = client
+        .query_one("SELECT * FROM albums WHERE id=$1", &[&album_id])
+        .await;
     // println!("restlt: {:?}", result);
     match result {
         Ok(_row) => return true,
         Err(e) => {
             error!("Error check_album_exist_by_id: {:?}", e);
             return false;
-        },
+        }
     }
 }
 
-pub async fn get_image_filenames_of_album_with_id (
+pub async fn get_image_filenames_of_album_with_id(
     client: &deadpool_postgres::Client,
     album_id: &i32,
 ) -> Vec<String> {
-
     let mut filenames_db: Vec<String> = Vec::new();
-    let result = client.query(
-        "SELECT * FROM image_metas WHERE album_id = $1 ORDER BY file_path DESC", &[&album_id]).await;
+    let result = client
+        .query(
+            "SELECT * FROM image_metas WHERE album_id = $1 ORDER BY file_path DESC",
+            &[&album_id],
+        )
+        .await;
     match result {
         Ok(rows) => {
-            if rows.len() == 0{
+            if rows.len() == 0 {
                 info!("Album {} has no photo in db", album_id);
             } else {
                 for row in rows {
@@ -199,23 +203,25 @@ pub async fn get_image_filenames_of_album_with_id (
                     filenames_db.push(filename);
                 }
             }
-        },
+        }
         Err(e) => {
             error!("Error get_image_filenames_of_album_with_id: {:?}", e);
-        },
+        }
     }
     return filenames_db;
 }
 
 // get albums data to preview from DB
-pub async fn get_all_albums(
-    client: deadpool_postgres::Client
-) -> Result<AlbumsPreview, DBError> {
-    let mut albums = AlbumsPreview {
-        albums: Vec::new()
-    };
-    
-    for row in client.query("SELECT id, title, description, first_photo  FROM albums ", &[]).await? {
+pub async fn get_all_albums(client: deadpool_postgres::Client) -> Result<AlbumsPreview, DBError> {
+    let mut albums = AlbumsPreview { albums: Vec::new() };
+
+    for row in client
+        .query(
+            "SELECT id, title, description, first_photo  FROM albums ",
+            &[],
+        )
+        .await?
+    {
         let album = AlbumPreview {
             id: row.get(0),
             title: row.get(1),
@@ -227,49 +233,57 @@ pub async fn get_all_albums(
     Ok(albums)
 }
 
-
 // get all photos from certain album -> sort by date_created
 pub async fn get_photos_from_album(
     client: deadpool_postgres::Client,
     id: &i32,
-    index: &i32
+    index: &i32,
 ) -> Result<Vec<PhotoPreview>, DBError> {
     let mut photos = Vec::new();
 
     let start_position = index * 20;
     let last_position = &start_position + 20;
     let mut current_position = 0;
-    
-    for row in client.query("SELECT id, file_path  FROM image_metas WHERE album_id = $1 ", &[&id]).await? {
+
+    for row in client
+        .query(
+            "SELECT id, file_path  FROM image_metas WHERE album_id = $1 ",
+            &[&id],
+        )
+        .await?
+    {
         if &current_position >= &start_position {
             let photo = PhotoPreview {
                 id: row.get(0),
-                file_path: row.get(1)
+                file_path: row.get(1),
             };
             photos.push(photo);
             current_position = current_position + 1;
             if &current_position >= &last_position {
                 break;
             }
-        }else {
+        } else {
             current_position = current_position + 1;
         }
     }
     Ok(photos)
 }
 
-pub async fn get_image_file_path_with_id_from_album (
+pub async fn get_image_file_path_with_id_from_album(
     client: &deadpool_postgres::Client,
     album_id: &i32,
     image_id: &i32,
 ) -> String {
-
     let mut file_path = "".to_string();
-    let result = client.query(
-        "SELECT * FROM image_metas WHERE id = $1 AND album_id = $2", &[&image_id, &album_id]).await;
+    let result = client
+        .query(
+            "SELECT * FROM image_metas WHERE id = $1 AND album_id = $2",
+            &[&image_id, &album_id],
+        )
+        .await;
     match result {
         Ok(rows) => {
-            if rows.len() == 0{
+            if rows.len() == 0 {
                 info!("Image with id {} not found in db", image_id);
             } else {
                 for row in rows {
@@ -277,14 +291,13 @@ pub async fn get_image_file_path_with_id_from_album (
                     break;
                 }
             }
-        },
+        }
         Err(e) => {
             error!("Error get_image_file_path_with_id: {:?}", e);
-        },
+        }
     }
     return file_path;
 }
-
 
 pub async fn get_users_albums(
     client: &deadpool_postgres::Client,
@@ -313,12 +326,13 @@ pub async fn get_album_by_id(
     Ok(Album::from_row_ref(&result)?)
 }
 
-
 pub async fn delete_album(
     client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
-    client.query("DELETE FROM image_metas WHERE album_id = $1", &[&album_id]).await?;   // need to delete all photos from the album firstly
+    client
+        .query("DELETE FROM image_metas WHERE album_id = $1", &[&album_id])
+        .await?; // need to delete all photos from the album firstly
     let result = client
         .query_one("DELETE FROM albums WHERE id=$1 RETURNING *", &[&album_id])
         .await?;
@@ -339,9 +353,7 @@ pub async fn update_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-pub async fn get_all_users(
-    client: &deadpool_postgres::Client,
-) -> Result<Vec<SendUser>, DBError> {
+pub async fn get_all_users(client: &deadpool_postgres::Client) -> Result<Vec<SendUser>, DBError> {
     let result = client
         .query("SELECT id, username, nickname, role FROM users ", &[])
         .await
@@ -356,26 +368,36 @@ pub async fn get_all_users(
 // tag photo + set coordinats
 pub async fn tag_photo_by_id(
     client: deadpool_postgres::Client,
-    id: &i32,
-    photo_data: &TagPhoto
+    photo_id: &i32,
+    photo_data: &TagPhoto,
 ) -> Result<bool, DBError> {
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30; // 15 min in sec
-    
-    
-    let result = client.query_one("SELECT locked_at FROM image_metas WHERE id = $1",&[&id],).await?;
-    
+    let offset: i64 = 30; // 30s timeout TODO: Change in prod to 15 min in sec
 
-    if (&result.get(0) + &offset) > current_time {
+    let result = client
+        .query_one("SELECT * FROM image_metas WHERE id = $1", &[&photo_id])
+        .await?;
+    let locked_at = result.get::<&str, i64>("locked_at");
+    let album_id = result.get::<&str, i32>("album_id");
+
+    debug!("Albumid: {}, Locked_at: {}", album_id, locked_at);
+    if (&locked_at + &offset) > current_time {
         client
         .query(
             "UPDATE image_metas SET tag = $1, coordinates = $2, tagged = true, locked_at = 0 WHERE id = $3 ", // reset timer if tagged
-            &[&photo_data.tag, &photo_data.coordinates, &id],
+            &[&photo_data.tag, &photo_data.coordinates, &photo_id],
         )
         .await?;
 
+        client
+            .query(
+                "UPDATE albums SET tagged_number = tagged_number +1 WHERE id = $1",
+                &[&album_id],
+            )
+            .await?;
+
         Ok(true)
-    }else {
+    } else {
         Ok(false)
     }
 }
@@ -384,20 +406,22 @@ pub async fn tag_photo_by_id(
 pub async fn verify_photo_by_id(
     client: deadpool_postgres::Client,
     id: &i32,
-    verified: bool
+    verified: bool,
 ) -> Result<bool, DBError> {
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30;   //15 min in sec
-    
-    let result = client.query_one("SELECT locked_at FROM image_metas WHERE id = $1",&[&id],).await?;
-    if(&result.get(0) + &offset) > current_time {
+    let offset: i64 = 30; //15 min in sec
+
+    let result = client
+        .query_one("SELECT locked_at FROM image_metas WHERE id = $1", &[&id])
+        .await?;
+    if (&result.get(0) + &offset) > current_time {
         if verified {
             client
-            .query(
-                "UPDATE image_metas SET verified = true, locked_at = 0 WHERE id = $1 ",    // reset timer
-                &[ &id],
-            )
-            .await?;
+                .query(
+                    "UPDATE image_metas SET verified = true, locked_at = 0 WHERE id = $1 ", // reset timer
+                    &[&id],
+                )
+                .await?;
         } else {
             client
             .query(
@@ -407,28 +431,23 @@ pub async fn verify_photo_by_id(
             .await?;
         }
         Ok(true)
-    }else {
+    } else {
         Ok(false)
     }
-    
-    
 }
 
 //get photos for tagging
 pub async fn get_photos_for_tagging(
     client: deadpool_postgres::Client,
-    id: &i32
+    id: &i32,
 ) -> Result<Vec<PhotoToTag>, DBError> {
     let mut photos = Vec::new();
 
     let current_time = Utc::now().timestamp();
     let offset: i64 = 30; // 15 min in sec
     let time_after_offset: i64 = &current_time - &offset;
-    
-    
+
     for row in client.query("SELECT id, file_path, tagged, tag  FROM image_metas WHERE album_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
-        
-        
             let photo_timestamp = Utc::now();
 
             let photo = PhotoToTag {
@@ -438,14 +457,12 @@ pub async fn get_photos_for_tagging(
                 tag: row.get(3),
                 timestamp: photo_timestamp
             };
-            
             client.query("UPDATE image_metas SET locked_at = $2 WHERE id = $1 ", &[&&photo.id, &photo.timestamp.timestamp()]).await?;
 
             photos.push(photo);
             if photos.len() >= 20 {
                 break;
             }
-        
     }
     Ok(photos)
 }
