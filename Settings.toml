@@ -20,8 +20,11 @@ role = "user"
 user = "example"
 password = "example"
 dbname = "example"
-host = "localhost"
+host = "192.168.1.14"
 port = "5432"
 
 [tagify_data]
 path = "./tagify_data"
+google_storage_enable = "true"
+local_storage_enable = "false"
+project_number = "726101970662"

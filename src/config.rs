@@ -12,6 +12,9 @@ pub struct Server {
 #[derive(Deserialize, Clone)]
 pub struct TagifyData {
     pub path: String,
+    pub google_storage_enable: String,
+    pub local_storage_enable: String,
+    pub project_number: String,
 }
 
 #[derive(Deserialize, Clone)]

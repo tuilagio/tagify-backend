@@ -1,5 +1,7 @@
 use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto};
 use crate::user_models::User;
+use crate::gg_storage;
+extern crate reqwest;
 
 use crate::errors::{DBError, HandlerError};
 use crate::my_identity_service::Identity;
@@ -15,9 +17,15 @@ pub async fn create_album(
     data: web::Json<CreateAlbum>,
     id: Identity,
     tagify_albums_path: web::Data<String>,
+    gg_storage_data: web::Data<gg_storage::GoogleStorage>,
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
     let first_photo = String::from("default_path");
+
+    let bearer_string = &gg_storage_data.bearer_string;
+    let key_refresh_token = &gg_storage_data.key_refresh_token;
+    let project_number = &gg_storage_data.project_number;
+    let google_storage_enable = &gg_storage_data.google_storage_enable;
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -33,19 +41,40 @@ pub async fn create_album(
             return Err(HandlerError::InternalError);
         }
         Ok(album) => {
-            //TODO create album folder on photo_server
-            let path = format!("{}{}", tagify_albums_path.to_string(), &album.id);
-            match std::fs::create_dir_all(&path) {
-                Ok(_) => info!("Created folder for album with id={}", &album.id),
-                Err(e) => {
-                    error!(
-                        "Error creating folder for album with id={}: {:?}",
-                        &album.id, e
-                    );
-                    return Err(HandlerError::InternalError);
+            print!("google_storage_enable {:?}", google_storage_enable.to_string());
+            if google_storage_enable.to_string() == "true" {
+                let client_r = reqwest::Client::new();
+                let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
+                let result = gg_storage::create_bucket(
+                    &client_r, &bearer_string.to_string(), &key_refresh_token.to_string(), 
+                    &project_number.to_string(), &bucket_name).await;
+                match result {
+                    Ok(result) => {
+                        if result.contains("error") {
+                            error!("Fail creating google storage bucket: {}", result);
+                            return Err(HandlerError::InternalError);
+                        }
+                        album
+                    },
+                    Err(e) => {
+                        error!("Fail creating google storage bucket: {}", e);
+                        return Err(HandlerError::InternalError);
+                    }
                 }
+            } else {
+                let path = format!("{}{}", tagify_albums_path.to_string(), &album.id);
+                match std::fs::create_dir_all(&path) {
+                    Ok(_) => info!("Created folder for album with id={}", &album.id),
+                    Err(e) => {
+                        error!(
+                            "Error creating folder for album with id={}: {:?}",
+                            &album.id, e
+                        );
+                        return Err(HandlerError::InternalError);
+                    }
+                }
+                album
             }
-            album
         }
     };
 
