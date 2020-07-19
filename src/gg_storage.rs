@@ -39,6 +39,22 @@ pub async fn get_bucket(
     return Ok(body);
 }
 
+// https://cloud.google.com/storage/docs/json_api/v1/buckets/delete?hl=en_US
+pub async fn delete_bucket(
+    client: &reqwest::Client,
+    bearer_string: &String, bucket_name: &String, 
+) -> Result<String, reqwest::Error> {
+
+    let url = format!("https://storage.googleapis.com/storage/v1/b/{}", bucket_name);
+    let res = client
+        .delete(&url)
+        .bearer_auth(&bearer_string)
+        .send()
+        .await?;
+    let body = res.text().await?;
+    return Ok(body);
+}
+
 /* https://cloud.google.com/storage/docs/json_api/v1/buckets/insert?hl=en_US */
 pub async fn create_bucket(
     client: &reqwest::Client, bearer_string: &String, key_refresh_token: &String,

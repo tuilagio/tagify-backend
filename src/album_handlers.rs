@@ -45,14 +45,23 @@ pub async fn create_album(
             if google_storage_enable.to_string() == "true" {
                 let client_r = reqwest::Client::new();
                 let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
-                let result = gg_storage::create_bucket(
+                let response = gg_storage::create_bucket(
                     &client_r, &bearer_string.to_string(), &key_refresh_token.to_string(), 
                     &project_number.to_string(), &bucket_name).await;
-                match result {
-                    Ok(result) => {
-                        if result.contains("error") {
-                            error!("Fail creating google storage bucket: {}", result);
-                            return Err(HandlerError::InternalError);
+                match response {
+                    Ok(response) => {
+                        if response.contains("error") {
+                            error!("Fail creating google storage bucket: {}", response);
+                            // Delete created album in db because creating on gg storage failed:
+                            match db::delete_album(&client, album.id).await {
+                                Err(e) => {
+                                    error!("Error occured deleting album: {}", e);
+                                    return Err(HandlerError::InternalError);
+                                }
+                                Ok(_) => {
+                                    return Err(HandlerError::InternalError);
+                                }
+                            };
                         }
                         album
                     },
@@ -195,6 +204,8 @@ pub async fn delete_album_by_id(
     pool: web::Data<Pool>,
     album_id: web::Path<(i32,)>,
     id: Identity,
+    tagify_albums_path: web::Data<String>,
+    gg_storage_data: web::Data<gg_storage::GoogleStorage>,
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
 
@@ -208,20 +219,47 @@ pub async fn delete_album_by_id(
 
     let result = match db::get_album_by_id(&client, album_id.0).await {
         Err(e) => {
-            error!("Error occured get users albums: {}", e);
+            error!("Error occured get user's album: {}", e);
             return Err(HandlerError::InternalError);
         }
         Ok(item) => item,
     };
 
     if user.id == result.users_id || user.role == "admin" {
-        println!("usunie album");
+        // println!("usunie album");
+        // Delete album from DB
         match db::delete_album(&client, album_id.0).await {
             Err(e) => {
                 error!("Error occured: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(result) => result,
+            Ok(_) => {
+                // result
+                // DELETE from storage:
+                if gg_storage_data.google_storage_enable.to_string() == "true" {
+                    //  Google storage
+                    let client_r = reqwest::Client::new();
+                    let bearer_string = &gg_storage_data.bearer_string;
+
+                    let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id.0);
+                    match gg_storage::delete_bucket(&client_r, &bearer_string.to_string(), &bucket_name)
+                    .await {
+                        Err(e) => {
+                            error!("Error occured deleting album from google storage: {}", e);
+                            return Err(HandlerError::InternalError);
+                        }
+                        Ok(response) => {
+                            if response.contains("error") {
+                                // This error is considered "acceptable"
+                                error!("Fail deleting google storage bucket: {}", response);
+                            }
+                        }
+                    }
+                } else {
+                    // Local
+                    
+                }
+            },
         };
     } else {
         //TODO ERROR you are not owner of this album
