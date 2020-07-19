@@ -85,11 +85,28 @@ pub async fn create_bucket(
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
 pub async fn get_object_from_bucket(
     client: &reqwest::Client, bearer_string: &String,
-    object_string: &String, bucket_name: &String, 
+    bucket_name: &String, object_string: &String, 
 ) -> Result<String, reqwest::Error> {
-
+    //TODO: object  not found (404, but now "error" in body: No such object: tagify_album_ss20_39/1.jpg)
     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}", &bucket_name, &object_string);
     let res = client.get(&url)
+        .bearer_auth(&bearer_string)
+        .send()
+        .await?;
+    let body = res.text().await?;
+    // print!("{:?}", body3);
+    Ok(body)
+}
+
+/* Delete object (file) */
+// https://cloud.google.com/storage/docs/json_api/v1/objects/delete?hl=en_US
+pub async fn delete_object_from_bucket(
+    client: &reqwest::Client, bearer_string: &String,
+    bucket_name: &String, object_name: &String, 
+) -> Result<String, reqwest::Error> {
+
+    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}", &bucket_name, &object_name);
+    let res = client.delete(&url)
         .bearer_auth(&bearer_string)
         .send()
         .await?;
@@ -171,7 +188,7 @@ pub async fn upload_buffer_with_name_to_bucket(
     client: &reqwest::Client, bearer_string: &String,
     bucket_name: &String, object_name: &String, buffer: Bytes
 ) -> Result<String, reqwest::Error> {
-    
+
     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
     let res = client.post(&url)
         .bearer_auth(&bearer_string)
