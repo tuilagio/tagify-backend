@@ -234,7 +234,6 @@ pub async fn delete_album_by_id(
                 return Err(HandlerError::InternalError);
             }
             Ok(_) => {
-                // result
                 // DELETE from storage:
                 if gg_storage_data.google_storage_enable.to_string() == "true" {
                     //  Google storage

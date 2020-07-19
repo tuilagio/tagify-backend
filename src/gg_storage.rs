@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Read;
+use regex::Regex;
+use bytes::Bytes;
 
 fn construct_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
@@ -98,7 +100,7 @@ pub async fn get_object_from_bucket(
 
 /* Retrieves a list of objects matching the criteria */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/list?hl=en_US
-pub async fn get_all_object_from_bucket(
+pub async fn get_all_objects_from_bucket(
     client: &reqwest::Client, bearer_string: &String,
     bucket_name: &String, 
 ) -> Result<String, reqwest::Error> {
@@ -110,6 +112,31 @@ pub async fn get_all_object_from_bucket(
         .await?;
     let body = res.text().await?;
     Ok(body)
+}
+
+/* Retrieves a list of object names matching the criteria */
+// https://cloud.google.com/storage/docs/json_api/v1/objects/list?hl=en_US
+pub async fn get_all_object_names_from_bucket(
+    client: &reqwest::Client, bearer_string: &String,
+    bucket_name: &String, 
+) -> Result<Vec<String>, reqwest::Error> {
+
+    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o", &bucket_name);
+    let res = client.get(&url)
+        .bearer_auth(&bearer_string)
+        .send()
+        .await?;
+    let body = res.text().await?;
+    let mut objectnames_bucket: Vec<String> = Vec::new();
+    if !body.contains("error") {
+        let re = Regex::new(r###""name":\s"([\w]+\.[\w]+)","###).unwrap();
+        // let matches: Vec<_> = re.find(&response).into_iter().collect();
+        for cap in re.captures_iter(&body) {
+            // println!("{}", &cap[1]);
+            objectnames_bucket.push(cap[1].to_string());
+        }
+    }
+    Ok(objectnames_bucket)
 }
 
 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert?hl=en_US
@@ -126,6 +153,25 @@ pub async fn upload_file_to_bucket(
     let metadata = std::fs::metadata(&filepath).expect("unable to read metadata");
     let mut buffer = vec![0; metadata.len() as usize];
     f.read(&mut buffer).expect("buffer overflow");
+    let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
+    let res = client.post(&url)
+        .bearer_auth(&bearer_string)
+        .headers(construct_headers())
+        .body(buffer)
+        .send()
+        .await?;
+    // print!("\n##############\n{:?}\n", &res);
+    let body = res.text().await?;
+    // print!("\n##############\n{:?}\n", &body);
+    Ok(body)
+}
+
+// https://cloud.google.com/storage/docs/json_api/v1/objects/insert?hl=en_US
+pub async fn upload_buffer_with_name_to_bucket(
+    client: &reqwest::Client, bearer_string: &String,
+    bucket_name: &String, object_name: &String, buffer: Bytes
+) -> Result<String, reqwest::Error> {
+    
     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
     let res = client.post(&url)
         .bearer_auth(&bearer_string)
