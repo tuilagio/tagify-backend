@@ -13,7 +13,6 @@ pub struct Server {
 pub struct TagifyData {
     pub path: String,
     pub google_storage_enable: String,
-    pub local_storage_enable: String,
     pub project_number: String,
 }
 

@@ -5,12 +5,6 @@ use actix_files::NamedFile;
 use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result};
 use std::path::PathBuf;
 
-// gg storage
-extern crate reqwest;
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, /* USER_AGENT */};
-use std::collections::HashMap;
-use std::io::prelude::*;
-
 use listenfd::ListenFd;
 use log::{error, info};
 use std::fs::File;
@@ -97,12 +91,10 @@ async fn main() -> std::io::Result<()> {
     // Google storage 
     // TODO: server-base or file-base token supplier?
     // TODO: how to keep token fresh ?
-    let key_refresh_token = "1//04eUXlxYodkQxCgYIARAAGAQSNwF-L9IrEXrjE3zTyRBhaPO_TQviwMkfld-GL6oqyzZpxR0dlQqGKvdhxNRqI7NNdqRWD4kcEhU".to_string();
-    let bearer_string = "ya29.a0AfH6SMCrZI9N-N9nVEuOyevGmtk4Hly1iZ9iTvgSJb_JLaaGvj78EIS-Weu_OW331TvhlLmOAdkR1YCFX948o9y0p0BUmjo20h_9K_E-dyKz2MoOj0OgSQd_hoEMsUMSDZazXRxP63j6p1IuxvgcfgdZG-p1Sy94-dE".to_string();
-    let project_number = conf.tagify_data.project_number;//"726101970662".to_string();
+    let key_refresh_token = "".to_string();
+    let bearer_string = "".to_string();
+    let project_number = conf.tagify_data.project_number;
     let google_storage_enable = conf.tagify_data.google_storage_enable;
-    // let local_storage_enable = conf.tagify_data.local_storage_enable;
-    // let client_reqwest = reqwest::Client::new();
     let gg_storage_data = gg_storage::GoogleStorage {
         key_refresh_token,
         bearer_string,
@@ -238,19 +230,10 @@ async fn main() -> std::io::Result<()> {
             // Serve index.html
             // Give every handler access to the db connection pool
             .data(pool.clone())
-            // Data path
-            // .data(tagify_data_path.clone())
             // Albums path
             .data(tagify_albums_path.clone())
             // Google storage:
             .data(gg_storage_data.clone())
-            // .data(key_refresh_token.clone())
-            // .data(bearer_string.clone())
-            // .data(project_number.clone())
-            //
-            // .data(local_storage_enable.clone())
-            // .data(google_storage_enable.clone())
-            // .data(client_reqwest.clone())
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept

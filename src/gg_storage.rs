@@ -6,16 +6,14 @@ use std::io::prelude::*;
 use std::io::Read;
 use regex::Regex;
 use bytes::Bytes;
+use crate::utils;
 
-fn construct_headers() -> HeaderMap {
+fn construct_headers_image(ext: &str) -> HeaderMap {
     let mut headers = HeaderMap::new();
-    // headers.insert(USER_AGENT, HeaderValue::from_static("reqwest"));
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/png"));
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static(format!("image/{}", ext)));
     headers
 }
 
-// pub let prefix_bucket: String = "tagify_album_ss20_".to_string();
-// pub PREFIX_BUCKET: &'static String = &"tagify_album_ss20_".to_string();
 pub static PREFIX_BUCKET: &str = "tagify_album_ss20_";
 
 #[derive(Clone)]
@@ -77,7 +75,6 @@ pub async fn create_bucket(
         .send()
         .await?;
     let body = res.text().await?;
-    // print!("{:?}", body);
     return Ok(body);
 }
 
@@ -94,7 +91,6 @@ pub async fn get_object_from_bucket(
         .send()
         .await?;
     let body = res.text().await?;
-    // print!("{:?}", body3);
     Ok(body)
 }
 
@@ -111,7 +107,6 @@ pub async fn delete_object_from_bucket(
         .send()
         .await?;
     let body = res.text().await?;
-    // print!("{:?}", body3);
     Ok(body)
 }
 
@@ -147,9 +142,7 @@ pub async fn get_all_object_names_from_bucket(
     let mut objectnames_bucket: Vec<String> = Vec::new();
     if !body.contains("error") {
         let re = Regex::new(r###""name":\s"([\w]+\.[\w]+)","###).unwrap();
-        // let matches: Vec<_> = re.find(&response).into_iter().collect();
         for cap in re.captures_iter(&body) {
-            // println!("{}", &cap[1]);
             objectnames_bucket.push(cap[1].to_string());
         }
     }
@@ -173,13 +166,11 @@ pub async fn upload_file_to_bucket(
     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
     let res = client.post(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers())
+        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
         .body(buffer)
         .send()
         .await?;
-    // print!("\n##############\n{:?}\n", &res);
     let body = res.text().await?;
-    // print!("\n##############\n{:?}\n", &body);
     Ok(body)
 }
 
@@ -192,13 +183,11 @@ pub async fn upload_buffer_with_name_to_bucket(
     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
     let res = client.post(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers())
+        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
         .body(buffer)
         .send()
         .await?;
-    // print!("\n##############\n{:?}\n", &res);
     let body = res.text().await?;
-    // print!("\n##############\n{:?}\n", &body);
     Ok(body)
 }
 
@@ -212,10 +201,9 @@ pub async fn download_file_from_bucket(
     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
     let res = client.get(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers())
+        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
         .send()
         .await?;
-    // print!("\n##############\n{:?}\n", &res);
     let bytes = &res.bytes().await?;
     // Write data
     let buffer = File::create(filepath);
@@ -246,10 +234,9 @@ pub async fn download_object_bytes_from_bucket(
     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
     let res = client.get(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers())
+        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
         .send()
         .await?;
-    // print!("\n##############\n{:?}\n", &res);
     let bytes = res.bytes().await?;
     Ok(bytes)
 }

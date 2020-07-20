@@ -19,12 +19,9 @@ use std::fs;
 use std::io::Write;
 
 use bytes::Bytes;
-use actix_files::NamedFile;
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use log::{debug, error, info};
-use std::path::PathBuf;
-use regex::Regex;
 
 pub async fn status() -> Result<HttpResponse, HandlerError> {
     let status = String::from("server is working!");
@@ -260,8 +257,6 @@ pub async fn post_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
     // For gg storage 
     let bearer_string = &gg_storage_data.bearer_string;
-    // let key_refresh_token = &gg_storage_data.key_refresh_token;
-    // let project_number = &gg_storage_data.project_number;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
@@ -745,16 +740,6 @@ pub async fn get_photo(
             });
         }
     
-        let path: PathBuf = filepath.parse().unwrap();
-    
-        let r = NamedFile::open(&path);
-        match &r {
-            Ok(_) => info!("success open file {:?}", &path),
-            Err(e) => {
-                error!("unsuccess open: {:?}", e);
-                return Err(HandlerError::InternalError);
-            }
-        };
         let mut bb: Vec<u8> = Vec::new();
         match std::fs::read(filepath) {
             Err(e) => {
@@ -865,7 +850,7 @@ pub async fn delete_photo(
             Err(e) => {
                 error!("Error deleting object from google storage {:?}", &e);
             },
-            Ok(response) =>  {}
+            Ok(_) => {}
         };
     } else {
         // Check file exist
