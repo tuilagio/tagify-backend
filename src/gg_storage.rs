@@ -202,24 +202,21 @@ pub async fn upload_buffer_with_name_to_bucket(
     Ok(body)
 }
 
-/* Retrieves object metadata AND download file. Mind the "?alt=media" URL parameter! */
+/* Download file. Mind the "?alt=media" URL parameter! */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
 pub async fn download_file_from_bucket(
     client: &reqwest::Client, bearer_string: &String,
     bucket_name: &String, filepath: &String, object_name: &String, 
 ) -> Result<String, reqwest::Error> {
 
-    // let object_name = "salt3.png";
     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
-    // print!("{}\n", url);
     let res = client.get(&url)
         .bearer_auth(&bearer_string)
         .headers(construct_headers())
         .send()
         .await?;
-    print!("\n##############\n{:?}\n", &res);
+    // print!("\n##############\n{:?}\n", &res);
     let bytes = &res.bytes().await?;
-    // print!("{:}", bytes.len());
     // Write data
     let buffer = File::create(filepath);
     let mut b = match buffer {
@@ -237,6 +234,24 @@ pub async fn download_file_from_bucket(
         pos += bw;
     }
     Ok(filepath.to_string())
+}
+
+/* Retrieves object bytes. Mind the "?alt=media" URL parameter! */
+// https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
+pub async fn download_object_bytes_from_bucket(
+    client: &reqwest::Client, bearer_string: &String,
+    bucket_name: &String, object_name: &String, 
+) -> Result<Bytes, reqwest::Error> {
+
+    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
+    let res = client.get(&url)
+        .bearer_auth(&bearer_string)
+        .headers(construct_headers())
+        .send()
+        .await?;
+    // print!("\n##############\n{:?}\n", &res);
+    let bytes = res.bytes().await?;
+    Ok(bytes)
 }
 
 
