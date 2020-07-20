@@ -8,9 +8,30 @@ use regex::Regex;
 use bytes::Bytes;
 use crate::utils;
 
-fn construct_headers_image(ext: &str) -> HeaderMap {
+fn construct_headers_image(ext: String) -> HeaderMap {
     let mut headers = HeaderMap::new();
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static(format!("image/{}", ext)));
+    // TODO: this is stupid, but I couldn't findd a way to convert string to 'static string'
+    let mut l_ext = ext;
+    l_ext.make_ascii_lowercase();
+    if l_ext == "png" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/png"));
+    } else if l_ext == "bmp" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/bmp"));
+    } else if l_ext == "jpg" || l_ext == "jpeg" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
+    } else if l_ext == "gif" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/gif"));
+    } else if l_ext == "ico" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/vnd.microsoft.icon"));
+    } else if l_ext == "svg" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/svg+xml"));
+    } else if l_ext == "tif" || l_ext == "tiff" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/tiff"));
+    } else if l_ext == "webp" {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/webp"));
+    } else {
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/png"));
+    }
     headers
 }
 
@@ -166,7 +187,7 @@ pub async fn upload_file_to_bucket(
     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
     let res = client.post(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
+        .headers(construct_headers_image(utils::get_file_ext(object_name)))
         .body(buffer)
         .send()
         .await?;
@@ -183,7 +204,7 @@ pub async fn upload_buffer_with_name_to_bucket(
     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
     let res = client.post(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
+        .headers(construct_headers_image(utils::get_file_ext(object_name)))
         .body(buffer)
         .send()
         .await?;
@@ -201,7 +222,7 @@ pub async fn download_file_from_bucket(
     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
     let res = client.get(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
+        .headers(construct_headers_image(utils::get_file_ext(object_name)))
         .send()
         .await?;
     let bytes = &res.bytes().await?;
@@ -234,59 +255,9 @@ pub async fn download_object_bytes_from_bucket(
     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
     let res = client.get(&url)
         .bearer_auth(&bearer_string)
-        .headers(construct_headers_image(&utils::get_file_ext(object_name)))
+        .headers(construct_headers_image(utils::get_file_ext(object_name)))
         .send()
         .await?;
     let bytes = res.bytes().await?;
     Ok(bytes)
 }
-
-
-
-// #[tokio::main]
-// pub async fn main() -> Result<(), reqwest::Error> {
-//     /* How to create project: */
-//     // - This link _may_ work: https://console.cloud.google.com/projectcreate?previousPage=%2Fhome%2Fdashboard%3Fproject%3Ddt-project-01&folder=&organizationId=0
-//     //  - After create project under "Project infor" board you can get all information. Copy "Project number" replace to "project_number" variable.
-
-//     /* How to get token: */
-//     // - Go to  https://developers.google.com/oauthplayground/
-//     // - Select "Cloud Storage JSON API v1" ... 
-//     // - ... and then select "https://www.googleapis.com/auth/devstorage.full_control".
-//     // - Authorize APIs. Allow OAuth 2.0 Playground to have control.
-//     // - There will be 3 fields: "Authorization code", "Refresh token" and "Access token".
-//     // - Click "Exchange authorization code for tokens"
-//     // - Copy  "Refresh token" and "Access token" and replace value of variables "key_refresh_token"  and  "bearer_string"
-
-//     // Should look like "1//041_LvYC-DOorCgYIARAAGAQSNwF-L9srgfrdh5reu4w6hgerdg3ez6riz8uktzhjztuthrtzhftgewraA8BTTLZ9Kfzjheg5egdGw"
-//     let key_refresh_token = "".to_string();
-//     // ... "ya29.a0AfH6SMDfLmtz9GdzAhN2xkeTwgQpYnhfhrsdg4wet-kPTeE8txEGgdv6bYb4oqdFXPmxQer5dtrhgrtzrth6CSWx3NGYrzj7tu4z5437z56uthe5z345tewrferzh65uget34t3eiRZYWFIH0"
-//     let bearer_string = "".to_string();
-//     // ... 726421344513
-//     let project_number  = "".to_string();
-
-//     /* What do those code do? */
-//     // - Create, get bucket. Then upload file to this bucket, and download it.
-//     // - object_name Name  that file will be saved under in the cloud.
-//     // - filepath Path to  local file to be upload.
-//     // - filepath_download Path to download file to.
-//     // The path should work out of the box.
-
-//     let bucket_name = "qwertz013".to_string();
-//     let object_name = "salt_object.png".to_string();
-//     let filepath = "./salt.png".to_string();
-//     let filepath_download = "./salt_download.png".to_string();
-
-//     let client = reqwest::Client::new();
-
-//     print!("\n#########\nCreate bucket\n#########\n");
-//     print!("{:?}", create_bucket(&client, &bearer_string, &key_refresh_token, &project_number, &bucket_name).await?);
-//     print!("\n#########\nGet bucket\n#########\n");
-//     print!("{:?}", get_bucket(&client, &bearer_string, &bucket_name).await?);
-//     print!("\n#########\nupload_file_to_bucket\n#########\n");
-//     print!("{:?}", upload_file_to_bucket(&client, &bearer_string, &bucket_name, &filepath, &object_name).await?);
-//     print!("\n#########\ndownload_file_from_bucket\n#########\n");
-//     print!("{:?}", download_file_from_bucket(&client, &bearer_string, &bucket_name, &filepath_download, &object_name).await?);
-
-//     Ok(())
-// }

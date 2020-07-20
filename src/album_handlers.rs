@@ -9,6 +9,7 @@ use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
 use log::{error, info};
+use std::fs;
 
 use crate::db;
 
@@ -218,6 +219,7 @@ pub async fn delete_album_by_id(
     };
 
     let result = match db::get_album_by_id(&client, album_id.0).await {
+        // TODO: Error response for case supplied album id not found?
         Err(e) => {
             error!("Error occured get user's album: {}", e);
             return Err(HandlerError::InternalError);
@@ -226,7 +228,6 @@ pub async fn delete_album_by_id(
     };
 
     if user.id == result.users_id || user.role == "admin" {
-        // println!("usunie album");
         // Delete album from DB
         match db::delete_album(&client, album_id.0).await {
             Err(e) => {
@@ -256,7 +257,14 @@ pub async fn delete_album_by_id(
                     }
                 } else {
                     // Local
-                    
+                    let dir_path = format!("{}{}", &tagify_albums_path.to_string(), &album_id.0);
+                    match fs::remove_dir_all(&dir_path) {
+                        Err(e) => {
+                            error!("Error occured deleting album {} from local storage: {}", dir_path, e);
+                            return Err(HandlerError::InternalError);
+                        },
+                        Ok(_) => {}
+                    }
                 }
             },
         };
