@@ -11,6 +11,9 @@ use tokio_pg_mapper::FromTokioPostgresRow;
 
 use chrono::offset::Utc;
 
+use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
+
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
     username: &str,
@@ -481,4 +484,32 @@ pub async fn get_photos_for_tagging(
             }
     }
     Ok(photos)
+}
+
+// get albums data to preview from DB but with fuzzy matcher
+pub async fn get_searched_albums(client: deadpool_postgres::Client, search_after: &String) -> Result<AlbumsPreview, DBError> {
+    let mut albums = AlbumsPreview { albums: Vec::new() };
+    let matcher = SkimMatcherV2::default();
+    let search = String::from(search_after);
+
+    for row in client
+        .query(
+            "SELECT id, title, description, first_photo  FROM albums ",
+            &[],
+        )
+        .await?
+    {
+        let album = AlbumPreview {
+            id: row.get(0),
+            title: row.get(1),
+            description: row.get(2),
+            first_photo: row.get(3),
+        };
+        
+        if matcher.fuzzy_match(&album.title, &search).is_some() {
+            albums.albums.push(album);
+        }
+          
+    }
+    Ok(albums)
 }
