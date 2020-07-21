@@ -6,7 +6,7 @@ pub struct Server {
     pub hostname: String,
     pub port: String,
     pub key: String,
-    pub threads: usize
+    pub threads: usize,
 }
 
 #[derive(Deserialize, Clone)]

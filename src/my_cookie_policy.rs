@@ -40,7 +40,6 @@ struct CookieIdentityExtention {
     login_timestamp: Option<SystemTime>,
 }
 
-
 #[derive(Clone)]
 pub struct MyCookieIdentityPolicy(Rc<MyCookieIdentityInner>);
 

@@ -17,6 +17,8 @@ pub enum HandlerError {
     AuthFail,
     #[fail(display = "Permission denied: {}", err_message)]
     PermissionDenied { err_message: String },
+    #[fail(display = "Timeout request a new annotate session")]
+    Timeout
 }
 
 impl ResponseError for HandlerError {
@@ -28,6 +30,7 @@ impl ResponseError for HandlerError {
 
     fn status_code(&self) -> StatusCode {
         match *self {
+            HandlerError::Timeout => StatusCode::UNAUTHORIZED,
             HandlerError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             HandlerError::BadClientData { .. } => StatusCode::BAD_REQUEST,
             HandlerError::AuthFail => StatusCode::UNAUTHORIZED,

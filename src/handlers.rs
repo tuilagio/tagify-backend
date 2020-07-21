@@ -1,7 +1,7 @@
 use crate::errors::HandlerError;
 use crate::user_models::{
-    Hash, LoginData, SendUser, Status, 
-    UpdateUserPassword, User, CreateImageMeta, UpdateUserNickname
+    CreateImageMeta, Hash, LoginData, SendUser, Status, UpdateUserNickname, UpdateUserPassword,
+    User,
 };
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -13,13 +13,13 @@ use crate::my_cookie_policy::MyCookieIdentityPolicy;
 use crate::my_identity_service::{login_user, Identity};
 
 use crate::utils;
-use std::io::Write;
 use std::fs;
+use std::io::Write;
 
+use actix_files::NamedFile;
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use log::{debug, error, info};
-use actix_files::NamedFile;
 use std::path::PathBuf;
 
 pub async fn status() -> Result<HttpResponse, HandlerError> {
@@ -238,7 +238,7 @@ pub async fn delete_user(
 
 pub async fn post_photo(
     pool: web::Data<Pool>,
-    tagify_albums_path: web::Data<String,>,
+    tagify_albums_path: web::Data<String>,
     parameters: web::Path<(i32,)>,
     mut payload: Multipart,
     id: Identity,
@@ -265,29 +265,34 @@ pub async fn post_photo(
 
     if user.id != result.users_id && user.role != "admin" {
         return Err(HandlerError::PermissionDenied {
-            err_message: format!("Only owner can add image to album {}", album_id)
+            err_message: format!("Only owner can add image to album {}", album_id),
         });
     }
 
     // Check album exist
     if !std::path::Path::new(&album_path).exists() {
-        error!("Error occured : album with id={} not found on disk", &album_id);
+        error!(
+            "Error occured : album with id={} not found on disk",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
-    if  !db::check_album_exist_by_id(&client, &album_id).await {
-        error!("Error occured : album with id={} not found in db", &album_id);
+    if !db::check_album_exist_by_id(&client, &album_id).await {
+        error!(
+            "Error occured : album with id={} not found in db",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
-    
-    while let Ok(Some(mut field)) = payload.try_next().await {
 
+    while let Ok(Some(mut field)) = payload.try_next().await {
         let new_filename = utils::calculate_next_filename_image(
-            &utils::get_filenames_in_folder(&album_path), 
-            &db::get_image_filenames_of_album_with_id(&client, &album_id).await
+            &utils::get_filenames_in_folder(&album_path),
+            &db::get_image_filenames_of_album_with_id(&client, &album_id).await,
         );
 
         let content_type = field.content_disposition().unwrap();
@@ -295,10 +300,13 @@ pub async fn post_photo(
         let filename_clean = sanitize_filename::sanitize(&filename_original);
         let vec: Vec<&str> = filename_clean.split(".").collect();
         if vec.len() < 2 {
-            info!("Filename {} in payload has no extension. Skip.", filename_original);
+            info!(
+                "Filename {} in payload has no extension. Skip.",
+                filename_original
+            );
             continue;
         }
-        let file_extension = vec[vec.len()-1];
+        let file_extension = vec[vec.len() - 1];
         let new_filename_with_ext = format!("{}.{}", new_filename, file_extension);
         let filepath = format!("{}{}", album_path, new_filename_with_ext);
         // File::create is blocking operation, use threadpool
@@ -320,27 +328,31 @@ pub async fn post_photo(
         }
         // Write to db
         match db::create_image_meta(
-            &client, 
-            &CreateImageMeta{
-                album_id: album_id.clone(), 
+            &client,
+            &CreateImageMeta {
+                album_id: album_id.clone(),
                 coordinates: "".to_string(),
                 file_path: new_filename_with_ext.clone(),
-            }
-        ).await {
-            Ok(_) => info!("Write meta data for {} to db success under {}", filename_original, &new_filename_with_ext),
+            },
+        )
+        .await
+        {
+            Ok(_) => info!(
+                "Write meta data for {} to db success under {}",
+                filename_original, &new_filename_with_ext
+            ),
             Err(e) => {
                 error!("Write file meta to db failed: {:?}", e);
                 return Err(HandlerError::InternalError);
             }
         };
-
     }
     Ok(HttpResponse::build(StatusCode::OK).json("Success write file(s)"))
 }
 
 pub async fn put_photo(
     pool: web::Data<Pool>,
-    tagify_albums_path: web::Data<String,>,
+    tagify_albums_path: web::Data<String>,
     parameters: web::Path<(i32, i32)>,
     mut payload: Multipart,
     id: Identity,
@@ -368,29 +380,36 @@ pub async fn put_photo(
 
     if user.id != result.users_id && user.role != "admin" {
         return Err(HandlerError::PermissionDenied {
-            err_message: format!("Only owner can add image to album {}", album_id)
+            err_message: format!("Only owner can add image to album {}", album_id),
         });
     }
 
     // Check album exist
     if !std::path::Path::new(&album_path).exists() {
-        error!("Error occured : album with id={} not found on disk", &album_id);
+        error!(
+            "Error occured : album with id={} not found on disk",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
-    if  !db::check_album_exist_by_id(&client, &album_id).await {
-        error!("Error occured : album with id={} not found in db", &album_id);
+    if !db::check_album_exist_by_id(&client, &album_id).await {
+        error!(
+            "Error occured : album with id={} not found in db",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
+    let file_path_db =
+        db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
-            field: "Id of image not found in db".to_string()
+            field: "Id of image not found in db".to_string(),
         });
     }
 
@@ -408,10 +427,13 @@ pub async fn put_photo(
         let filename_clean = sanitize_filename::sanitize(&filename_original);
         let vec: Vec<&str> = filename_clean.split(".").collect();
         if vec.len() < 2 {
-            info!("Filename {} in payload has no extension. Skip.", filename_original);
+            info!(
+                "Filename {} in payload has no extension. Skip.",
+                filename_original
+            );
             continue;
         }
-        let file_extension = vec[vec.len()-1];
+        let file_extension = vec[vec.len() - 1];
         let new_filename_with_ext = format!("{}.{}", new_filename, file_extension);
         let filepath = format!("{}{}", album_path, new_filename_with_ext);
 
@@ -426,7 +448,6 @@ pub async fn put_photo(
                 }
             }
         }
-
 
         // File::create is blocking operation, use threadpool
         // Write file
@@ -447,28 +468,32 @@ pub async fn put_photo(
         }
         // Update to db
         match db::update_image_meta(
-            &client, 
-            &CreateImageMeta{
-                album_id: album_id.clone(), 
+            &client,
+            &CreateImageMeta {
+                album_id: album_id.clone(),
                 coordinates: "".to_string(),
                 file_path: new_filename_with_ext.clone(),
             },
-            &image_id
-        ).await {
-            Ok(_) => info!("Update meta data for {} to db success under {}", filename_original, &new_filename_with_ext),
+            &image_id,
+        )
+        .await
+        {
+            Ok(_) => info!(
+                "Update meta data for {} to db success under {}",
+                filename_original, &new_filename_with_ext
+            ),
             Err(e) => {
                 error!("Update file meta to db failed: {:?}", e);
                 return Err(HandlerError::InternalError);
             }
         };
-
     }
-    Ok(HttpResponse::build(StatusCode::OK).json(format!("Success update image id={}",  &image_id)))
+    Ok(HttpResponse::build(StatusCode::OK).json(format!("Success update image id={}", &image_id)))
 }
 
 pub async fn get_photo(
     pool: web::Data<Pool>,
-    tagify_albums_path: web::Data<String,>,
+    tagify_albums_path: web::Data<String>,
     parameters: web::Path<(i32, i32)>,
     //id: Identity,
 ) -> Result<NamedFile, HandlerError> {
@@ -486,33 +511,42 @@ pub async fn get_photo(
 
     // Check album exist
     if !std::path::Path::new(&album_path).exists() {
-        error!("Error occured : album with id={} not found on disk", &album_id);
+        error!(
+            "Error occured : album with id={} not found on disk",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
-    if  !db::check_album_exist_by_id(&client, &album_id).await {
-        error!("Error occured : album with id={} not found in db", &album_id);
+    if !db::check_album_exist_by_id(&client, &album_id).await {
+        error!(
+            "Error occured : album with id={} not found in db",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
+    let file_path_db =
+        db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
             field: format!("Image with id={} of album id={} not found in db.\nImage not exists or false album id?", &image_id, &album_id).to_string()
         });
     }
 
-
     let filepath = format!("{}{}", album_path, file_path_db);
     // Check file exist
     if !std::path::Path::new(&filepath).exists() {
-        error!("Error occured : Image file with id={} not found on disk", &filepath);
+        error!(
+            "Error occured : Image file with id={} not found on disk",
+            &filepath
+        );
         return Err(HandlerError::BadClientData {
-            field: format!("File {} not found on disk", filepath).to_string()
+            field: format!("File {} not found on disk", filepath).to_string(),
         });
     }
 
@@ -524,7 +558,7 @@ pub async fn get_photo(
         Err(e) => {
             error!("unsuccess open: {:?}", e);
             return Err(HandlerError::InternalError);
-        },
+        }
     };
 
     Ok(r.unwrap())
@@ -532,7 +566,7 @@ pub async fn get_photo(
 
 pub async fn delete_photo(
     pool: web::Data<Pool>,
-    tagify_albums_path: web::Data<String,>,
+    tagify_albums_path: web::Data<String>,
     parameters: web::Path<(i32, i32)>,
     id: Identity,
 ) -> Result<HttpResponse, HandlerError> {
@@ -559,42 +593,52 @@ pub async fn delete_photo(
 
     if user.id != result.users_id && user.role != "admin" {
         return Err(HandlerError::PermissionDenied {
-            err_message: format!("Only owner can delete image from album {}", album_id)
+            err_message: format!("Only owner can delete image from album {}", album_id),
         });
     }
 
     // Check if image exists in db:
-    let file_path_db = db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
+    let file_path_db =
+        db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
-            field: "Id of image not found in db".to_string()
+            field: "Id of image not found in db".to_string(),
         });
     }
 
     // Check album exist
     if !std::path::Path::new(&album_path).exists() {
-        error!("Error occured : album with id={} not found on disk", &album_id);
+        error!(
+            "Error occured : album with id={} not found on disk",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
-    if  !db::check_album_exist_by_id(&client, &album_id).await {
-        error!("Error occured : album with id={} not found in db", &album_id);
+    if !db::check_album_exist_by_id(&client, &album_id).await {
+        error!(
+            "Error occured : album with id={} not found in db",
+            &album_id
+        );
         return Err(HandlerError::BadClientData {
-            field: "Album not found".to_string()
+            field: "Album not found".to_string(),
         });
     }
 
     // Check file exist
     let filepath = format!("{}{}", album_path, file_path_db);
     if !std::path::Path::new(&filepath).exists() {
-        error!("Error occured : image file with id={} not found on disk", &filepath);
+        error!(
+            "Error occured : image file with id={} not found on disk",
+            &filepath
+        );
         return Err(HandlerError::BadClientData {
-            field: "File not found".to_string()
+            field: "File not found".to_string(),
         });
     }
 
-    // Delete file 
+    // Delete file
     match fs::remove_file(&filepath) {
         Ok(_) => info!("Deleted file "),
         Err(e) => {
@@ -602,18 +646,21 @@ pub async fn delete_photo(
             return Err(HandlerError::InternalError);
         }
     }
-    
+
     // Delete from db
-    match db::delete_image_meta(
-        &client, 
-        &image_id,
-    ).await {
-        Ok(_) => info!("Delete meta id={} from album {} success", &image_id, &album_id),
+    match db::delete_image_meta(&client, &image_id).await {
+        Ok(_) => info!(
+            "Delete meta id={} from album {} success",
+            &image_id, &album_id
+        ),
         Err(e) => {
-            error!("Delete meta id={} from album {} success: {:?}", &image_id, &album_id, e);
+            error!(
+                "Delete meta id={} from album {} success: {:?}",
+                &image_id, &album_id, e
+            );
             return Err(HandlerError::InternalError);
         }
     };
 
-    Ok(HttpResponse::build(StatusCode::OK).json(format!("Success delete image id={}",  &image_id)))
+    Ok(HttpResponse::build(StatusCode::OK).json(format!("Success delete image id={}", &image_id)))
 }

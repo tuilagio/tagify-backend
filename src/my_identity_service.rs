@@ -20,6 +20,7 @@ use deadpool_postgres::Pool;
 use crate::db::get_user_by_name;
 use crate::errors::HandlerError;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
+use crate::user_models::SendUser;
 use crate::user_models::User;
 
 #[derive(Clone)]
@@ -39,7 +40,7 @@ pub async fn login_user(
     let cookie_name = user.role.clone();
 
     match cookie_factory
-        .to_response(Some(user), true, &cookie_name, &mut resp)
+        .to_response(Some(user.clone()), true, &cookie_name, &mut resp)
         .await
     {
         Ok(_) => (),
@@ -52,7 +53,14 @@ pub async fn login_user(
     for c in login.cookies() {
         resp.cookie(c);
     }
-    resp.finish()
+
+    let send_user = SendUser {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname,
+        role: user.role,
+    };
+    resp.json(send_user)
 }
 
 impl Identity {
