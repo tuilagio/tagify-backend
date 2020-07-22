@@ -579,6 +579,7 @@ pub async fn get_photo(
     Ok(r.unwrap())
 }
 
+#[allow(unused_assignments)]
 pub async fn delete_photo(
     pool: web::Data<Pool>,
     tagify_albums_path: web::Data<String>,
@@ -677,7 +678,6 @@ pub async fn delete_photo(
         }
     };
 
-   #[allow(unused_assignments)]
     if let Some(first_photo) = result.first_photo {
         debug!("first_photo: {} == image_id: {}", first_photo, image_id);
         if first_photo == image_id {
