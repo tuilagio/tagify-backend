@@ -255,11 +255,11 @@ pub async fn get_first_photo(
     client: &deadpool_postgres::Client,
     id: &i32,
 ) -> Result<Option<i32>, DBError> {
-    let row = client.query_one("SELECT id FROM image_metas WHERE album_id = $1 LIMIT 1", &[&id]).await?;
+    let row = client.query("SELECT id FROM image_metas WHERE album_id = $1", &[&id]).await?;
     if row.is_empty(){
         Ok(None)
     }else{
-        Ok(row.get(0))
+        Ok(row[0].get(0))
     }
 }
 
