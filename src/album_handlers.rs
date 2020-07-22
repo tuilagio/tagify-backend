@@ -17,7 +17,6 @@ pub async fn create_album(
     tagify_albums_path: web::Data<String>,
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
-    let first_photo = String::from("default_path");
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -27,7 +26,7 @@ pub async fn create_album(
         }
     };
     //create album without tags
-    let result = match db::create_album(&client, &data, user.id, first_photo).await {
+    let result = match db::create_album(&client, &data, user.id).await {
         Err(e) => {
             error!("Error occured after create_album: {}", e);
             return Err(HandlerError::InternalError);
@@ -89,10 +88,13 @@ pub async fn get_album_by_id(
         }
     };
 
-    // TODO ERROR album with this id does not exists
     let result = match db::get_album_by_id(&client, album_id.0).await {
         Err(e) => {
-            error!("Error occured get users albums: {}", e);
+            error!("Error occured : {}", e);
+            if let DBError::BadArgs{err} = e {
+                return Err(HandlerError::BadClientData{field: err});
+            }
+
             return Err(HandlerError::InternalError);
         }
         Ok(item) => item,
@@ -150,10 +152,13 @@ pub async fn get_photos_from_album(
         }
     };
 
-    // TODO catch error if album with id does not exists
-    let result = match db::get_photos_from_album(client, &data.0, &data.1).await {
+    let result = match db::get_photos_from_album(&client, &data.0, &data.1).await {
         Err(e) => {
             error!("Error occured : {}", e);
+            if let DBError::BadArgs{err} = e {
+                return Err(HandlerError::BadClientData{field: err});
+            }
+
             return Err(HandlerError::InternalError);
         }
         Ok(item) => item,
@@ -195,7 +200,7 @@ pub async fn delete_album_by_id(
             Ok(result) => result,
         };
     } else {
-        //TODO ERROR you are not owner of this album
+        return Err(HandlerError::PermissionDenied{err_message: "You are not the owner of this album".to_string()});
     }
     Ok(HttpResponse::new(StatusCode::OK))
 }
@@ -234,7 +239,7 @@ pub async fn update_album_by_id(
             Ok(num_updated) => num_updated,
         };
     } else {
-        //TODO ERROR you are not owner of this album
+        return Err(HandlerError::PermissionDenied{err_message: "You are not the owner of this album".to_string()});
     }
     Ok(HttpResponse::new(StatusCode::OK))
 }

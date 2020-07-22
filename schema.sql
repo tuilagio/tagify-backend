@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS albums (
     image_number INT DEFAULT 0,
     tagged_number INT DEFAULT 0,
     users_id INT NOT NULL,
-    first_photo TEXT,
+    first_photo INT,
     date_created DATE NOT NULL DEFAULT CURRENT_DATE,
     date_modified DATE NOT NULL DEFAULT CURRENT_DATE,
     FOREIGN KEY (users_id) REFERENCES users (id)
