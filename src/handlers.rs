@@ -9,6 +9,7 @@ use deadpool_postgres::Pool;
 use crate::gg_storage;
 
 extern crate reqwest;
+use crate::album_models::Album;
 use crate::db;
 use crate::errors;
 use crate::my_cookie_policy::MyCookieIdentityPolicy;
@@ -262,7 +263,7 @@ pub async fn post_photo(
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
     // Check user has right to change file image:
-    let result = match db::get_album_by_id(&client, album_id).await {
+    let mut result: Album = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
             return Err(HandlerError::InternalError);
@@ -402,7 +403,7 @@ pub async fn post_photo(
             }
         }
         // Write to db
-        match db::create_image_meta(
+        let image_meta = match db::create_image_meta(
             &client,
             &CreateImageMeta {
                 album_id: album_id.clone(),
@@ -412,17 +413,29 @@ pub async fn post_photo(
         )
         .await
         {
-            Ok(_) => info!(
+            Ok(i) =>{
+                info!(
                 "Write meta data for {} to db success under {}",
                 filename_original, &new_filename_with_ext
-            ),
+                );
+                i
+            }
             Err(e) => {
                 error!("Write file meta to db failed: {:?}", e);
                 return Err(HandlerError::InternalError);
             }
         };
+        if result.first_photo.is_none(){
+           result = match db::album_set_first_image(&client, album_id, Some(image_meta.id)).await {
+                Ok(i) => i,
+                Err(e) => {
+                    error!("Error occured : {}", e);
+                    return Err(HandlerError::InternalError);
+                }
+           }
+        }
     }
-    Ok(HttpResponse::build(StatusCode::OK).json("Success write file(s)"))
+    Ok(HttpResponse::build(StatusCode::OK).finish())
 }
 
 pub async fn put_photo(
@@ -633,7 +646,7 @@ pub async fn put_photo(
             }
         };
     }
-    Ok(HttpResponse::build(StatusCode::OK).json(format!("Success update image id={}", &image_id)))
+    Ok(HttpResponse::build(StatusCode::OK).finish())
 }
 
 pub async fn get_photo(
@@ -782,7 +795,7 @@ pub async fn delete_photo(
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
     // Check user has right to change file image:
-    let result = match db::get_album_by_id(&client, album_id).await {
+    let mut result: Album = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
             return Err(HandlerError::InternalError);
@@ -801,7 +814,7 @@ pub async fn delete_photo(
         db::get_image_file_path_with_id_from_album(&client, &album_id, &image_id).await;
     if file_path_db == "".to_string() {
         return Err(HandlerError::BadClientData {
-            field: "Id of image not found in db".to_string(),
+            field: format!("Id {} of image not found in db", image_id),
         });
     }
 
@@ -882,12 +895,46 @@ pub async fn delete_photo(
         ),
         Err(e) => {
             error!(
-                "Delete meta id={} from album {} success: {:?}",
+                "Delete meta id={} from album {} failed: {:?}",
                 &image_id, &album_id, e
             );
             return Err(HandlerError::InternalError);
         }
     };
 
-    Ok(HttpResponse::build(StatusCode::OK).json(format!("Success delete image id={}", &image_id)))
+   #[allow(unused_assignments)]
+    if let Some(first_photo) = result.first_photo {
+        debug!("first_photo: {} == image_id: {}", first_photo, image_id);
+        if first_photo == image_id {
+           let photo_id = match db::get_first_photo(&client, &album_id).await {
+                Ok(i) => i,
+                Err(e) => {
+                    error!("Error occured : {}", e);
+                    return Err(HandlerError::InternalError);
+                }
+           };
+           debug!("photo_id: {:?}", photo_id);
+           if let Some(p_id) = photo_id {
+               result = match db::album_set_first_image(&client, album_id, Some(p_id)).await {
+                    Ok(i) => i,
+                    Err(e) => {
+                        error!("Error occured : {}", e);
+                        return Err(HandlerError::InternalError);
+                    }
+               }
+           }else
+           {
+               result = match db::album_set_first_image(&client, album_id, None).await {
+                    Ok(i) => i,
+                    Err(e) => {
+                        error!("Error occured : {}", e);
+                        return Err(HandlerError::InternalError);
+                    }
+               }
+           }
+        }
+    }
+
+
+    Ok(HttpResponse::build(StatusCode::OK).finish())
 }
