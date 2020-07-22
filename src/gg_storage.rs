@@ -1,9 +1,9 @@
 extern crate reqwest;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, /* USER_AGENT */};
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::Read;
+// use std::fs::File;
+// use std::io::prelude::*;
+// use std::io::Read;
 use regex::Regex;
 use bytes::Bytes;
 use crate::utils;
@@ -101,19 +101,19 @@ pub async fn create_bucket(
 
 /* Retrieves object metadata */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
-pub async fn get_object_from_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, object_string: &String, 
-) -> Result<String, reqwest::Error> {
-    //TODO: object  not found (404, but now "error" in body: No such object: tagify_album_ss20_39/1.jpg)
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}", &bucket_name, &object_string);
-    let res = client.get(&url)
-        .bearer_auth(&bearer_string)
-        .send()
-        .await?;
-    let body = res.text().await?;
-    Ok(body)
-}
+// pub async fn get_object_from_bucket(
+//     client: &reqwest::Client, bearer_string: &String,
+//     bucket_name: &String, object_string: &String, 
+// ) -> Result<String, reqwest::Error> {
+//     //TODO: object  not found (404, but now "error" in body: No such object: tagify_album_ss20_39/1.jpg)
+//     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}", &bucket_name, &object_string);
+//     let res = client.get(&url)
+//         .bearer_auth(&bearer_string)
+//         .send()
+//         .await?;
+//     let body = res.text().await?;
+//     Ok(body)
+// }
 
 /* Delete object (file) */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/delete?hl=en_US
@@ -133,19 +133,19 @@ pub async fn delete_object_from_bucket(
 
 /* Retrieves a list of objects matching the criteria */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/list?hl=en_US
-pub async fn get_all_objects_from_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, 
-) -> Result<String, reqwest::Error> {
+// pub async fn get_all_objects_from_bucket(
+//     client: &reqwest::Client, bearer_string: &String,
+//     bucket_name: &String, 
+// ) -> Result<String, reqwest::Error> {
 
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o", &bucket_name);
-    let res = client.get(&url)
-        .bearer_auth(&bearer_string)
-        .send()
-        .await?;
-    let body = res.text().await?;
-    Ok(body)
-}
+//     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o", &bucket_name);
+//     let res = client.get(&url)
+//         .bearer_auth(&bearer_string)
+//         .send()
+//         .await?;
+//     let body = res.text().await?;
+//     Ok(body)
+// }
 
 /* Retrieves a list of object names matching the criteria */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/list?hl=en_US
@@ -171,29 +171,29 @@ pub async fn get_all_object_names_from_bucket(
 }
 
 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert?hl=en_US
-pub async fn upload_file_to_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, filepath: &String, object_name: &String, 
-) -> Result<String, reqwest::Error> {
+// pub async fn upload_file_to_bucket(
+//     client: &reqwest::Client, bearer_string: &String,
+//     bucket_name: &String, filepath: &String, object_name: &String, 
+// ) -> Result<String, reqwest::Error> {
 
-    let file = File::open(&filepath);
-    let mut f = match file {
-        Ok(file) => file,
-        Err(error) => panic!("Problem opening the file: {:?}", error),
-    };
-    let metadata = std::fs::metadata(&filepath).expect("unable to read metadata");
-    let mut buffer = vec![0; metadata.len() as usize];
-    f.read(&mut buffer).expect("buffer overflow");
-    let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
-    let res = client.post(&url)
-        .bearer_auth(&bearer_string)
-        .headers(construct_headers_image(utils::get_file_ext(object_name)))
-        .body(buffer)
-        .send()
-        .await?;
-    let body = res.text().await?;
-    Ok(body)
-}
+//     let file = File::open(&filepath);
+//     let mut f = match file {
+//         Ok(file) => file,
+//         Err(error) => panic!("Problem opening the file: {:?}", error),
+//     };
+//     let metadata = std::fs::metadata(&filepath).expect("unable to read metadata");
+//     let mut buffer = vec![0; metadata.len() as usize];
+//     f.read(&mut buffer).expect("buffer overflow");
+//     let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
+//     let res = client.post(&url)
+//         .bearer_auth(&bearer_string)
+//         .headers(construct_headers_image(utils::get_file_ext(object_name)))
+//         .body(buffer)
+//         .send()
+//         .await?;
+//     let body = res.text().await?;
+//     Ok(body)
+// }
 
 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert?hl=en_US
 pub async fn upload_buffer_with_name_to_bucket(
@@ -214,36 +214,36 @@ pub async fn upload_buffer_with_name_to_bucket(
 
 /* Download file. Mind the "?alt=media" URL parameter! */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
-pub async fn download_file_from_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, filepath: &String, object_name: &String, 
-) -> Result<String, reqwest::Error> {
+// pub async fn download_file_from_bucket(
+//     client: &reqwest::Client, bearer_string: &String,
+//     bucket_name: &String, filepath: &String, object_name: &String, 
+// ) -> Result<String, reqwest::Error> {
 
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
-    let res = client.get(&url)
-        .bearer_auth(&bearer_string)
-        .headers(construct_headers_image(utils::get_file_ext(object_name)))
-        .send()
-        .await?;
-    let bytes = &res.bytes().await?;
-    // Write data
-    let buffer = File::create(filepath);
-    let mut b = match buffer {
-        Ok(buffer) => buffer,
-        Err(error) => panic!("Problem create the file: {:?}", error),
-    };
+//     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
+//     let res = client.get(&url)
+//         .bearer_auth(&bearer_string)
+//         .headers(construct_headers_image(utils::get_file_ext(object_name)))
+//         .send()
+//         .await?;
+//     let bytes = &res.bytes().await?;
+//     // Write data
+//     let buffer = File::create(filepath);
+//     let mut b = match buffer {
+//         Ok(buffer) => buffer,
+//         Err(error) => panic!("Problem create the file: {:?}", error),
+//     };
 
-    let mut pos = 0;
-    while pos < bytes.len() {
-        let bytes_written = b.write(&bytes[pos..]);
-        let bw = match bytes_written {
-            Ok(bytes_written) => bytes_written,
-            Err(error) => panic!("Problem writing the file: {:?}", error),
-        };
-        pos += bw;
-    }
-    Ok(filepath.to_string())
-}
+//     let mut pos = 0;
+//     while pos < bytes.len() {
+//         let bytes_written = b.write(&bytes[pos..]);
+//         let bw = match bytes_written {
+//             Ok(bytes_written) => bytes_written,
+//             Err(error) => panic!("Problem writing the file: {:?}", error),
+//         };
+//         pos += bw;
+//     }
+//     Ok(filepath.to_string())
+// }
 
 /* Retrieves object bytes. Mind the "?alt=media" URL parameter! */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US

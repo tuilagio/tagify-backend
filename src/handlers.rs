@@ -19,7 +19,7 @@ use crate::utils;
 use std::fs;
 use std::io::Write;
 
-use bytes::Bytes;
+// use bytes::Bytes;
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use log::{debug, error, info};
@@ -322,6 +322,7 @@ pub async fn post_photo(
             match gg_storage::get_all_object_names_from_bucket(&client_r, &bearer_string, &bucket_name)
             .await{
                 Err(e) =>  {
+                    filenames_storage.push("filenames_storage not used here".to_string());
                     error!(
                         "Error occured : album with id={} not found in google storage {:?}",
                         &album_id, e
@@ -558,7 +559,7 @@ pub async fn put_photo(
                 Err(e) => {
                     error!("Error deleting object from google storage {:?}", &e);
                 },
-                Ok(response) =>  {}
+                Ok(_) =>  {}
             };
             // No need to delete object if existing in bucket.
 
@@ -728,15 +729,12 @@ pub async fn get_photo(
         let bytes = gg_storage::download_object_bytes_from_bucket(
             &client_r, &bearer_string, &bucket_name, &file_path_db)
         .await;
-        let mut bb = Bytes::new();
-        match bytes {
+        let bb = match bytes {
             Err(e) => {
                 error!("Error downloading object from google storage {:?}", &e);
                 return Err(HandlerError::InternalError);
             },
-            Ok(b) => {
-                bb = b;
-            }
+            Ok(b) => b
         };
         Ok(HttpResponse::build(StatusCode::OK)
         .content_type(format!("image/{}", file_ext))
@@ -753,15 +751,13 @@ pub async fn get_photo(
             });
         }
     
-        let mut bb: Vec<u8> = Vec::new();
-        match std::fs::read(filepath) {
+        // let mut bb: Vec<u8> = Vec::new();
+        let bb: Vec<u8> = match std::fs::read(filepath) {
             Err(e) => {
                 error!("Error openning local file {:?}", &e);
                 return Err(HandlerError::InternalError);
             },
-            Ok(bytes) => {
-                bb = bytes;
-            },
+            Ok(bytes) => bytes
         };
         Ok(HttpResponse::build(StatusCode::OK)
         .content_type(format!("image/{}", file_ext))
