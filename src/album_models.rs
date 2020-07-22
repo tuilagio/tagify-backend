@@ -80,3 +80,8 @@ pub struct PhotoToTag {
     pub tag: String,
     pub timestamp: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Search {
+    pub search_after: String
+}

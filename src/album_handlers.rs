@@ -1,4 +1,4 @@
-use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto};
+use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto, Search};
 use crate::user_models::User;
 
 use crate::errors::{DBError, HandlerError};
@@ -329,4 +329,46 @@ pub async fn get_photos_for_tagging(
     };
 
     Ok(HttpResponse::build(StatusCode::OK).json(result))
+}
+
+pub async fn search(
+    pool: web::Data<Pool>,
+    data: web::Json<Search>
+) -> Result<HttpResponse, HandlerError> {
+
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured : {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let albums: AlbumsPreview = match db::get_searched_albums(client, &data.search_after).await {
+        Ok(albums) => albums,
+        Err(e) => match e {
+            DBError::PostgresError(e) => {
+                error!("Getting albums failed {}", e);
+                return Err(HandlerError::AuthFail);
+            }
+            DBError::MapperError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            DBError::ArgonError(e) => {
+                error!("Error occured: {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            DBError::BadArgs { err } => {
+                error!("Error occured: {}", err);
+                return Err(HandlerError::BadClientData {
+                    field: err.to_owned(),
+                });
+            }
+        },
+    };
+    
+
+
+    Ok(HttpResponse::build(StatusCode::OK).json(albums))
 }
