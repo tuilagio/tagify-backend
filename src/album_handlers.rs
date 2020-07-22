@@ -332,8 +332,8 @@ pub async fn get_photos_for_tagging(
 }
 
 pub async fn search(
-    pool: web::Data<Pool>,
-    data: web::Json<Search>
+    pool: web::Data<Pool>, 
+    data: web::Path<(String)>,
 ) -> Result<HttpResponse, HandlerError> {
 
     let client = match pool.get().await {
@@ -344,7 +344,7 @@ pub async fn search(
         }
     };
 
-    let albums: AlbumsPreview = match db::get_searched_albums(client, &data.search_after).await {
+    let albums: AlbumsPreview = match db::get_searched_albums(client, &data).await {
         Ok(albums) => albums,
         Err(e) => match e {
             DBError::PostgresError(e) => {
