@@ -1,4 +1,4 @@
-use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto, Search};
+use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto};
 use crate::user_models::User;
 
 use crate::errors::{DBError, HandlerError};
@@ -333,7 +333,7 @@ pub async fn get_photos_for_tagging(
 
 pub async fn search(
     pool: web::Data<Pool>, 
-    data: web::Path<(String)>,
+    data: web::Path<String>,
 ) -> Result<HttpResponse, HandlerError> {
 
     let client = match pool.get().await {
