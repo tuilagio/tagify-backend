@@ -14,7 +14,7 @@ pub struct Album {
     pub image_number: i32,
     pub tagged_number: i32,
     pub users_id: i32,
-    pub first_photo: String,
+    pub first_photo: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -46,7 +46,7 @@ pub struct AlbumPreview {
     pub id: i32,
     pub title: String,
     pub description: String,
-    pub first_photo: String,
+    pub first_photo: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,4 +79,9 @@ pub struct PhotoToTag {
     pub tagged: bool,
     pub tag: String,
     pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Search {
+    pub search_after: String
 }

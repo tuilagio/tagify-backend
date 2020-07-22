@@ -3,13 +3,16 @@ use crate::album_models::{
     UpdateAlbum,
 };
 use crate::errors::DBError;
-use crate::user_models::{CreateImageMeta, CreateUser, Hash, SendUser, User};
+use crate::user_models::{CreateImageMeta, CreateUser, Hash, SendUser, User, ImageMeta};
 
 use actix_web::Result;
 use log::{error, info, debug};
 use tokio_pg_mapper::FromTokioPostgresRow;
 
 use chrono::offset::Utc;
+
+use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -123,11 +126,10 @@ pub async fn create_album(
     client: &deadpool_postgres::Client,
     album: &CreateAlbum,
     id: i32,
-    first_photo: String,
 ) -> Result<Album, DBError> {
     let result = client.query_one(
-        "INSERT INTO albums (title, description, tags, users_id, first_photo) VAlUES ($1, $2, $3, $4, $5) RETURNING *",
-        &[&album.title, &album.description, &album.tags, &id, &first_photo]).await?;
+        "INSERT INTO albums (title, description, tags, users_id, first_photo) VAlUES ($1, $2, $3, $4, NULL) RETURNING *",
+        &[&album.title, &album.description, &album.tags, &id]).await?;
     // println!("restlt: {:?}", result);
     Ok(Album::from_row_ref(&result)?)
 }
@@ -135,8 +137,8 @@ pub async fn create_album(
 pub async fn create_image_meta(
     client: &deadpool_postgres::Client,
     image_meta: &CreateImageMeta,
-) -> Result<bool, DBError> {
-    let _result = client.query_one(
+) -> Result<ImageMeta, DBError> {
+    let result = client.query_one(
         "insert into image_metas (album_id, file_path, coordinates, tag) values ($1, $2, $3, '') RETURNING *",
         &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates]).await?;
 
@@ -148,19 +150,19 @@ pub async fn create_image_meta(
     .await?;
 
     // println!("restlt: {:?}", result);
-    Ok(true)
+    Ok(ImageMeta::from_row_ref(&result)?)
 }
 
 pub async fn update_image_meta(
     client: &deadpool_postgres::Client,
     image_meta: &CreateImageMeta,
     image_id: &i32,
-) -> Result<bool, DBError> {
-    let _result = client.query_one(
+) -> Result<ImageMeta, DBError> {
+    let result = client.query_one(
         "UPDATE image_metas SET album_id=$1, file_path=$2, coordinates=$3 WHERE id=$4 RETURNING *",
         &[&image_meta.album_id, &image_meta.file_path, &image_meta.coordinates, &image_id]).await?;
     // println!("restlt: {:?}", result);
-    Ok(true)
+    Ok(ImageMeta::from_row_ref(&result)?)
 }
 
 pub async fn delete_image_meta(
@@ -249,9 +251,21 @@ pub async fn get_all_albums(client: deadpool_postgres::Client) -> Result<AlbumsP
     Ok(albums)
 }
 
+pub async fn get_first_photo(
+    client: &deadpool_postgres::Client,
+    id: &i32,
+) -> Result<Option<i32>, DBError> {
+    let row = client.query("SELECT id FROM image_metas WHERE album_id = $1", &[&id]).await?;
+    if row.is_empty(){
+        Ok(None)
+    }else{
+        Ok(row[0].get(0))
+    }
+}
+
 // get all photos from certain album -> sort by date_created
 pub async fn get_photos_from_album(
-    client: deadpool_postgres::Client,
+    client: &deadpool_postgres::Client,
     id: &i32,
     index: &i32,
 ) -> Result<Vec<PhotoPreview>, DBError> {
@@ -260,6 +274,11 @@ pub async fn get_photos_from_album(
     let start_position = index * 20;
     let last_position = &start_position + 20;
     let mut current_position = 0;
+
+    if check_album_exist_by_id(&client, &id).await == false {
+        let err_str = format!("Album with id {} does not exist", id);
+        return Err(DBError::BadArgs { err: err_str.to_string()});
+    }
 
     for row in client
         .query(
@@ -319,6 +338,8 @@ pub async fn get_users_albums(
     client: &deadpool_postgres::Client,
     id: i32,
 ) -> Result<Vec<Album>, DBError> {
+
+
     let result = client
         .query("SELECT * FROM albums WHERE users_id = $1", &[&id])
         .await
@@ -334,6 +355,13 @@ pub async fn get_album_by_id(
     client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
+
+
+    if check_album_exist_by_id(&client, &album_id).await == false {
+        let err_str = format!("Album with id {} does not exist", album_id);
+        return Err(DBError::BadArgs { err: err_str.to_string()});
+    }
+
     // Query data
     let result = client
         .query_one("SELECT * FROM albums WHERE id = $1", &[&album_id])
@@ -351,6 +379,21 @@ pub async fn delete_album(
         .await?; // need to delete all photos from the album firstly
     let result = client
         .query_one("DELETE FROM albums WHERE id=$1 RETURNING *", &[&album_id])
+        .await?;
+    Ok(Album::from_row_ref(&result)?)
+}
+
+
+pub async fn album_set_first_image(
+    client: &deadpool_postgres::Client,
+    album_id: i32,
+    photo_id: Option<i32>
+) -> Result<Album, DBError> {
+    let result = client
+        .query_one(
+            "UPDATE albums SET first_photo=$1 WHERE id=$2 RETURNING *",
+            &[&photo_id, &album_id],
+        )
         .await?;
     Ok(Album::from_row_ref(&result)?)
 }
@@ -481,4 +524,32 @@ pub async fn get_photos_for_tagging(
             }
     }
     Ok(photos)
+}
+
+// get albums data to preview from DB but with fuzzy matcher
+pub async fn get_searched_albums(client: deadpool_postgres::Client, search_after: &String) -> Result<AlbumsPreview, DBError> {
+    let mut albums = AlbumsPreview { albums: Vec::new() };
+    let matcher = SkimMatcherV2::default();
+    let search = String::from(search_after);
+
+    for row in client
+        .query(
+            "SELECT id, title, description, first_photo  FROM albums ",
+            &[],
+        )
+        .await?
+    {
+        let album = AlbumPreview {
+            id: row.get(0),
+            title: row.get(1),
+            description: row.get(2),
+            first_photo: row.get(3),
+        };
+        
+        if matcher.fuzzy_match(&album.title, &search).is_some() {
+            albums.albums.push(album);
+        }
+          
+    }
+    Ok(albums)
 }

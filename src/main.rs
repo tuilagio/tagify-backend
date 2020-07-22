@@ -308,6 +308,7 @@ async fn main() -> std::io::Result<()> {
                             )
                             .service(
                                 web::scope("/albums")
+                                    
                                     //get all own albums
                                     .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
@@ -368,6 +369,8 @@ async fn main() -> std::io::Result<()> {
                     )
                     .service(
                         web::scope("/albums")
+                            //search function
+                            .route("/search", web::get().to(album_handlers::search))
                             //get albums for preview (all)
                             .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id
