@@ -17,9 +17,21 @@ pub struct TagifyData {
 }
 
 #[derive(Deserialize, Clone)]
+pub struct LetsEncrypt {
+    pub port: String,
+    pub path: String,
+    pub domain: String,
+    pub email: String,
+    pub timeout: u64,
+    pub activate: bool,
+}
+
+
+#[derive(Deserialize, Clone)]
 pub struct MyConfig {
     pub postgres: deadpool_postgres::Config,
     pub server: Server,
+    pub cert: LetsEncrypt,
     pub default_admin: CreateUser,
     pub default_user: CreateUser,
     pub tagify_data: TagifyData,

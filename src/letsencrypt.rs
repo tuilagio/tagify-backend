@@ -318,24 +318,6 @@ impl LetsEncrypt {
             Err(_) => return Err("Could not set cert file".into()),
         }
         return Ok(builder);
-
-        // let pkey = match openssl::pkey::PKey::private_key_from_der(&certificate.private_key_der()) {
-        //     Ok(pkey) => pkey,
-        //     Err(_) => return Err("Failed to get private key".into())
-        // };
-        // let cert = match openssl::x509::X509::from_der(&certificate.certificate_der()) {
-        //     Ok(cert) => cert,
-        //     Err(_) => return Err("Failed to get certificate".into())
-        // };
-        // match builder.set_private_key(&pkey) {
-        //     Ok(_) => (),
-        //     Err(_) => return Err("Failed to set private key".into())
-        // }
-        // match builder.set_certificate(&cert) {
-        //     Ok(_) => (),
-        //     Err(_) => return Err("Failed to set certificate".into())
-        // }
-        // Ok(builder)
     }
 }
 

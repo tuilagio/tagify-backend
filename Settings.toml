@@ -4,6 +4,14 @@ port = "5000"
 key = "geDb76JMcsmxJGkTr28rceAQD4q10T8d"
 threads = 8
 
+[cert]
+port = "4000"
+domain = "tagify.gchq.icu"
+email = "it.networking.logging@gmail.com"
+path = "certs"
+timeout = 5000
+activate = false
+
 [default_admin]
 username = "admin"
 nickname = "admin"

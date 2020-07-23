@@ -1,4 +1,5 @@
 target/
+ssl/
 Deploy_Settings.toml
 tagify_data/
 deploy_certs
