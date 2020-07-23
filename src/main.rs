@@ -18,10 +18,10 @@ mod handlers;
 
 mod admin_handlers;
 mod album_handlers;
+mod gg_storage;
 mod my_cookie_policy;
 mod my_identity_service;
 mod utils;
-mod gg_storage;
 
 mod album_models;
 mod user_models;
@@ -88,7 +88,7 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    // Google storage 
+    // Google storage
     // TODO: server-base or file-base token supplier?
     // TODO: how to keep token fresh ?
     // TODO: how to get rid of the clone() bullshit?
@@ -113,11 +113,11 @@ async fn main() -> std::io::Result<()> {
         if b_temp == "" {
             panic!("'google_storage_enable' enabled but 'bearer_string' empty!");
         }
-        if p_temp ==  "" {
+        if p_temp == "" {
             panic!("'google_storage_enable' enabled but 'project_number' empty!");
         }
     }
-    // 
+    //
 
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
@@ -340,7 +340,6 @@ async fn main() -> std::io::Result<()> {
                             )
                             .service(
                                 web::scope("/albums")
-                                    
                                     //get all own albums
                                     .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
@@ -402,7 +401,10 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/albums")
                             //search function
-                            .route("/search/{search_after}", web::get().to(album_handlers::search))
+                            .route(
+                                "/search/{search_after}",
+                                web::get().to(album_handlers::search),
+                            )
                             //get albums for preview (all)
                             .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id

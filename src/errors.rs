@@ -18,7 +18,7 @@ pub enum HandlerError {
     #[fail(display = "Permission denied: {}", err_message)]
     PermissionDenied { err_message: String },
     #[fail(display = "Timeout request a new annotate session")]
-    Timeout
+    Timeout,
 }
 
 impl ResponseError for HandlerError {

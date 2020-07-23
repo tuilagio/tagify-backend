@@ -1,6 +1,6 @@
 use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto};
-use crate::user_models::User;
 use crate::gg_storage;
+use crate::user_models::User;
 extern crate reqwest;
 
 use crate::errors::{DBError, HandlerError};
@@ -41,13 +41,21 @@ pub async fn create_album(
             return Err(HandlerError::InternalError);
         }
         Ok(album) => {
-            print!("google_storage_enable {:?}", google_storage_enable.to_string());
+            print!(
+                "google_storage_enable {:?}",
+                google_storage_enable.to_string()
+            );
             if google_storage_enable.to_string() == "true" {
                 let client_r = reqwest::Client::new();
                 let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
                 let response = gg_storage::create_bucket(
-                    &client_r, &bearer_string.to_string(), &key_refresh_token.to_string(), 
-                    &project_number.to_string(), &bucket_name).await;
+                    &client_r,
+                    &bearer_string.to_string(),
+                    &key_refresh_token.to_string(),
+                    &project_number.to_string(),
+                    &bucket_name,
+                )
+                .await;
                 match response {
                     Ok(response) => {
                         if response.contains("error") {
@@ -64,7 +72,7 @@ pub async fn create_album(
                             };
                         }
                         album
-                    },
+                    }
                     Err(e) => {
                         error!("Fail creating google storage bucket: {}", e);
                         return Err(HandlerError::InternalError);
@@ -130,8 +138,8 @@ pub async fn get_album_by_id(
     let result = match db::get_album_by_id(&client, album_id.0).await {
         Err(e) => {
             error!("Error occured : {}", e);
-            if let DBError::BadArgs{err} = e {
-                return Err(HandlerError::BadClientData{field: err});
+            if let DBError::BadArgs { err } = e {
+                return Err(HandlerError::BadClientData { field: err });
             }
 
             return Err(HandlerError::InternalError);
@@ -194,8 +202,8 @@ pub async fn get_photos_from_album(
     let result = match db::get_photos_from_album(&client, &data.0, &data.1).await {
         Err(e) => {
             error!("Error occured : {}", e);
-            if let DBError::BadArgs{err} = e {
-                return Err(HandlerError::BadClientData{field: err});
+            if let DBError::BadArgs { err } = e {
+                return Err(HandlerError::BadClientData { field: err });
             }
 
             return Err(HandlerError::InternalError);
@@ -246,9 +254,15 @@ pub async fn delete_album_by_id(
                     let client_r = reqwest::Client::new();
                     let bearer_string = &gg_storage_data.bearer_string;
 
-                    let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id.0);
-                    match gg_storage::delete_bucket(&client_r, &bearer_string.to_string(), &bucket_name)
-                    .await {
+                    let bucket_name: String =
+                        format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id.0);
+                    match gg_storage::delete_bucket(
+                        &client_r,
+                        &bearer_string.to_string(),
+                        &bucket_name,
+                    )
+                    .await
+                    {
                         Err(e) => {
                             error!("Error occured deleting album from google storage: {}", e);
                             return Err(HandlerError::InternalError);
@@ -265,16 +279,21 @@ pub async fn delete_album_by_id(
                     let dir_path = format!("{}{}", &tagify_albums_path.to_string(), &album_id.0);
                     match fs::remove_dir_all(&dir_path) {
                         Err(e) => {
-                            error!("Error occured deleting album {} from local storage: {}", dir_path, e);
+                            error!(
+                                "Error occured deleting album {} from local storage: {}",
+                                dir_path, e
+                            );
                             return Err(HandlerError::InternalError);
-                        },
+                        }
                         Ok(_) => {}
                     }
                 }
-            },
+            }
         };
     } else {
-        return Err(HandlerError::PermissionDenied{err_message: "You are not the owner of this album".to_string()});
+        return Err(HandlerError::PermissionDenied {
+            err_message: "You are not the owner of this album".to_string(),
+        });
     }
     Ok(HttpResponse::new(StatusCode::OK))
 }
@@ -313,7 +332,9 @@ pub async fn update_album_by_id(
             Ok(num_updated) => num_updated,
         };
     } else {
-        return Err(HandlerError::PermissionDenied{err_message: "You are not the owner of this album".to_string()});
+        return Err(HandlerError::PermissionDenied {
+            err_message: "You are not the owner of this album".to_string(),
+        });
     }
     Ok(HttpResponse::new(StatusCode::OK))
 }
@@ -337,9 +358,8 @@ pub async fn tag_photo_by_id(
             error!("Error occured : {}", e);
             return Err(HandlerError::InternalError);
         }
-        Ok(item) => item
+        Ok(item) => item,
     };
-
 
     if is_success {
         Ok(HttpResponse::build(StatusCode::OK).finish())
@@ -347,7 +367,6 @@ pub async fn tag_photo_by_id(
         error!("Error occured : timeout");
         Err(HandlerError::Timeout)
     }
-
 }
 
 // verify_photo
@@ -406,10 +425,9 @@ pub async fn get_photos_for_tagging(
 }
 
 pub async fn search(
-    pool: web::Data<Pool>, 
+    pool: web::Data<Pool>,
     data: web::Path<String>,
 ) -> Result<HttpResponse, HandlerError> {
-
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -441,8 +459,6 @@ pub async fn search(
             }
         },
     };
-    
-
 
     Ok(HttpResponse::build(StatusCode::OK).json(albums))
 }

@@ -5,11 +5,11 @@ use actix_web::{web, HttpResponse, Result};
 use deadpool_postgres::Pool;
 use log::{error, info};
 
-use crate::gg_storage;
 use crate::db;
+use crate::gg_storage;
 
-use std::fs;
 use bytes::Bytes;
+use std::fs;
 
 pub async fn create_user(
     pool: web::Data<Pool>,
@@ -106,7 +106,6 @@ pub async fn get_photo(
     gg_storage_data: web::Data<gg_storage::GoogleStorage>,
     parameters: web::Path<(i32, i32)>,
 ) -> Result<HttpResponse, HandlerError> {
-
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -119,7 +118,7 @@ pub async fn get_photo(
     let image_id = parameters.1;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
-    // For gg storage 
+    // For gg storage
     let bearer_string = &gg_storage_data.bearer_string;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
@@ -127,13 +126,12 @@ pub async fn get_photo(
 
     // Check album exist
     if google_storage_enable.to_string() == "true" {
-        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name)
-        .await {
+        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(response) =>  {
+            Ok(response) => {
                 if response.contains("error") {
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
@@ -177,23 +175,27 @@ pub async fn get_photo(
     // Get image
     if google_storage_enable.to_string() == "true" {
         let bytes = gg_storage::download_object_bytes_from_bucket(
-            &client_r, &bearer_string, &bucket_name, &file_path_db)
+            &client_r,
+            &bearer_string,
+            &bucket_name,
+            &file_path_db,
+        )
         .await;
         let mut _bb = Bytes::new();
         match bytes {
             Err(e) => {
                 error!("Error downloading object from google storage {:?}", &e);
                 return Err(HandlerError::InternalError);
-            },
+            }
             Ok(b) => {
                 _bb = b;
             }
         };
         Ok(HttpResponse::build(StatusCode::OK)
-        .content_type(format!("image/{}", file_ext))
-        .body(_bb))
-     } else {
-         // Check file exist
+            .content_type(format!("image/{}", file_ext))
+            .body(_bb))
+    } else {
+        // Check file exist
         if !std::path::Path::new(&filepath).exists() {
             error!(
                 "Error occured : Image file with id={} not found on disk",
@@ -203,20 +205,20 @@ pub async fn get_photo(
                 field: format!("File {} not found on disk", filepath).to_string(),
             });
         }
-    
+
         let mut _bb: Vec<u8> = Vec::new();
         match std::fs::read(filepath) {
             Err(e) => {
                 error!("Error openning local file {:?}", &e);
                 return Err(HandlerError::InternalError);
-            },
+            }
             Ok(bytes) => {
                 _bb = bytes;
-            },
+            }
         };
         Ok(HttpResponse::build(StatusCode::OK)
-        .content_type(format!("image/{}", file_ext))
-        .body(_bb))
+            .content_type(format!("image/{}", file_ext))
+            .body(_bb))
     }
 }
 
@@ -237,7 +239,7 @@ pub async fn delete_photo(
     let image_id = parameters.1;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
-    // For gg storage 
+    // For gg storage
     let bearer_string = &gg_storage_data.bearer_string;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
@@ -254,13 +256,12 @@ pub async fn delete_photo(
 
     // Check album exist
     if google_storage_enable.to_string() == "true" {
-        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name)
-        .await {
+        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(response) =>  {
+            Ok(response) => {
                 if response.contains("error") {
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
@@ -292,12 +293,17 @@ pub async fn delete_photo(
     // Delete file from storage
     if google_storage_enable.to_string() == "true" {
         match gg_storage::delete_object_from_bucket(
-            &client_r, &bearer_string, &bucket_name, &file_path_db)
-        .await {
+            &client_r,
+            &bearer_string,
+            &bucket_name,
+            &file_path_db,
+        )
+        .await
+        {
             Err(e) => {
                 error!("Error deleting object from google storage {:?}", &e);
-            },
-            Ok(_) =>  {}
+            }
+            Ok(_) => {}
         };
     } else {
         // Check file exist

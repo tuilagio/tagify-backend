@@ -1,12 +1,12 @@
 use crate::errors::HandlerError;
+use crate::gg_storage;
 use crate::user_models::{
-    CreateImageMeta, Hash, LoginData, SendUser, Status, 
-    UpdateUserNickname, UpdateUserPassword, User,
+    CreateImageMeta, Hash, LoginData, SendUser, Status, UpdateUserNickname, UpdateUserPassword,
+    User,
 };
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use deadpool_postgres::Pool;
-use crate::gg_storage;
 
 extern crate reqwest;
 use crate::album_models::Album;
@@ -256,7 +256,7 @@ pub async fn post_photo(
     let user: User = id.identity();
     let album_id = parameters.0;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
-    // For gg storage 
+    // For gg storage
     let bearer_string = &gg_storage_data.bearer_string;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
@@ -279,13 +279,12 @@ pub async fn post_photo(
 
     // Check album exist
     if google_storage_enable.to_string() == "true" {
-        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name)
-        .await {
+        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(response) =>  {
+            Ok(response) => {
                 if response.contains("error") {
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
@@ -317,11 +316,17 @@ pub async fn post_photo(
     while let Ok(Some(mut field)) = payload.try_next().await {
         // Get list of names from db and storage
         let mut filenames_storage: Vec<String> = Vec::new();
-        let filenames_db: Vec<String> = db::get_image_filenames_of_album_with_id(&client, &album_id).await;
+        let filenames_db: Vec<String> =
+            db::get_image_filenames_of_album_with_id(&client, &album_id).await;
         if google_storage_enable.to_string() == "true" {
-            match gg_storage::get_all_object_names_from_bucket(&client_r, &bearer_string, &bucket_name)
-            .await{
-                Err(e) =>  {
+            match gg_storage::get_all_object_names_from_bucket(
+                &client_r,
+                &bearer_string,
+                &bucket_name,
+            )
+            .await
+            {
+                Err(e) => {
                     filenames_storage.push("filenames_storage not used here".to_string());
                     error!(
                         "Error occured : album with id={} not found in google storage {:?}",
@@ -330,7 +335,7 @@ pub async fn post_photo(
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
                     });
-                },
+                }
                 Ok(objectnames_bucket) => {
                     filenames_storage = objectnames_bucket;
                 }
@@ -340,10 +345,7 @@ pub async fn post_photo(
         }
 
         // Create new name for object
-        let new_filename = utils::calculate_next_filename_image(
-            &filenames_storage,
-            &filenames_db,
-        );
+        let new_filename = utils::calculate_next_filename_image(&filenames_storage, &filenames_db);
 
         let content_type = field.content_disposition().unwrap();
         let filename_original = content_type.get_filename().unwrap();
@@ -361,18 +363,27 @@ pub async fn post_photo(
 
         // Save file to storage
         if google_storage_enable.to_string() == "true" {
-            info!("new_filename_with_ext gg storage: {}", &new_filename_with_ext);
+            info!(
+                "new_filename_with_ext gg storage: {}",
+                &new_filename_with_ext
+            );
             // TODO: multipart is not really understand here
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();
                 match gg_storage::upload_buffer_with_name_to_bucket(
-                    &client_r, &bearer_string, &bucket_name, &new_filename_with_ext, data)
-                .await {
+                    &client_r,
+                    &bearer_string,
+                    &bucket_name,
+                    &new_filename_with_ext,
+                    data,
+                )
+                .await
+                {
                     Err(e) => {
                         error!("Error uploading object to google storage {:?}", &e);
                         return Err(HandlerError::InternalError);
-                    },
-                    Ok(response) =>  {
+                    }
+                    Ok(response) => {
                         if response.contains("error") {
                             error!(
                                 "Error occured : error uploading object to google storage {:?}",
@@ -414,10 +425,10 @@ pub async fn post_photo(
         )
         .await
         {
-            Ok(i) =>{
+            Ok(i) => {
                 info!(
-                "Write meta data for {} to db success under {}",
-                filename_original, &new_filename_with_ext
+                    "Write meta data for {} to db success under {}",
+                    filename_original, &new_filename_with_ext
                 );
                 i
             }
@@ -426,14 +437,14 @@ pub async fn post_photo(
                 return Err(HandlerError::InternalError);
             }
         };
-        if result.first_photo.is_none(){
-           result = match db::album_set_first_image(&client, album_id, Some(image_meta.id)).await {
+        if result.first_photo.is_none() {
+            result = match db::album_set_first_image(&client, album_id, Some(image_meta.id)).await {
                 Ok(i) => i,
                 Err(e) => {
                     error!("Error occured : {}", e);
                     return Err(HandlerError::InternalError);
                 }
-           }
+            }
         }
     }
     Ok(HttpResponse::build(StatusCode::OK).finish())
@@ -459,7 +470,7 @@ pub async fn put_photo(
     let image_id = parameters.1;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
-    // For gg storage 
+    // For gg storage
     let bearer_string = &gg_storage_data.bearer_string;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
@@ -482,13 +493,12 @@ pub async fn put_photo(
 
     // Check album exist
     if google_storage_enable.to_string() == "true" {
-        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name)
-        .await {
+        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(response) =>  {
+            Ok(response) => {
                 if response.contains("error") {
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
@@ -554,12 +564,17 @@ pub async fn put_photo(
         if google_storage_enable.to_string() == "true" {
             // Delete old object (think of 1.png vs 1.jpg)
             match gg_storage::delete_object_from_bucket(
-                &client_r, &bearer_string, &bucket_name, &file_path_db)
-            .await {
+                &client_r,
+                &bearer_string,
+                &bucket_name,
+                &file_path_db,
+            )
+            .await
+            {
                 Err(e) => {
                     error!("Error deleting object from google storage {:?}", &e);
-                },
-                Ok(_) =>  {}
+                }
+                Ok(_) => {}
             };
             // No need to delete object if existing in bucket.
 
@@ -568,13 +583,19 @@ pub async fn put_photo(
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();
                 match gg_storage::upload_buffer_with_name_to_bucket(
-                    &client_r, &bearer_string, &bucket_name, &new_filename_with_ext, data)
-                .await {
+                    &client_r,
+                    &bearer_string,
+                    &bucket_name,
+                    &new_filename_with_ext,
+                    data,
+                )
+                .await
+                {
                     Err(e) => {
                         error!("Error PUTting object to google storage {:?}", &e);
                         return Err(HandlerError::InternalError);
-                    },
-                    Ok(response) =>  {
+                    }
+                    Ok(response) => {
                         if response.contains("error") {
                             error!(
                                 "Error occured : error PUTting object to google storage {:?}",
@@ -588,13 +609,13 @@ pub async fn put_photo(
         } else {
             // Delete old file:
             let old_file_path = format!("{}{}", album_path, file_path_db);
-                match fs::remove_file(&old_file_path) {
-                    Ok(_) => info!("Deleted old file {}", filepath),
-                    Err(e) => {
-                        error!("Error deleting old file {}: {:?}", &old_file_path, e);
-                        return Err(HandlerError::InternalError);
-                    }
+            match fs::remove_file(&old_file_path) {
+                Ok(_) => info!("Deleted old file {}", filepath),
+                Err(e) => {
+                    error!("Error deleting old file {}: {:?}", &old_file_path, e);
+                    return Err(HandlerError::InternalError);
                 }
+            }
             // Delete existing file with new name:
             let new_file_path = format!("{}{}", album_path, new_filename_with_ext);
             if !std::path::Path::new(&filepath).exists() {
@@ -656,7 +677,6 @@ pub async fn get_photo(
     gg_storage_data: web::Data<gg_storage::GoogleStorage>,
     parameters: web::Path<(i32, i32)>,
 ) -> Result<HttpResponse, HandlerError> {
-
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
@@ -669,7 +689,7 @@ pub async fn get_photo(
     let image_id = parameters.1;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
-    // For gg storage 
+    // For gg storage
     let bearer_string = &gg_storage_data.bearer_string;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
@@ -677,13 +697,12 @@ pub async fn get_photo(
 
     // Check album exist
     if google_storage_enable.to_string() == "true" {
-        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name)
-        .await {
+        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(response) =>  {
+            Ok(response) => {
                 if response.contains("error") {
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
@@ -727,20 +746,24 @@ pub async fn get_photo(
     // Get image
     if google_storage_enable.to_string() == "true" {
         let bytes = gg_storage::download_object_bytes_from_bucket(
-            &client_r, &bearer_string, &bucket_name, &file_path_db)
+            &client_r,
+            &bearer_string,
+            &bucket_name,
+            &file_path_db,
+        )
         .await;
         let bb = match bytes {
             Err(e) => {
                 error!("Error downloading object from google storage {:?}", &e);
                 return Err(HandlerError::InternalError);
-            },
-            Ok(b) => b
+            }
+            Ok(b) => b,
         };
         Ok(HttpResponse::build(StatusCode::OK)
-        .content_type(format!("image/{}", file_ext))
-        .body(bb))
-     } else {
-         // Check file exist
+            .content_type(format!("image/{}", file_ext))
+            .body(bb))
+    } else {
+        // Check file exist
         if !std::path::Path::new(&filepath).exists() {
             error!(
                 "Error occured : Image file with id={} not found on disk",
@@ -750,18 +773,18 @@ pub async fn get_photo(
                 field: format!("File {} not found on disk", filepath).to_string(),
             });
         }
-    
+
         // let mut bb: Vec<u8> = Vec::new();
         let bb: Vec<u8> = match std::fs::read(filepath) {
             Err(e) => {
                 error!("Error openning local file {:?}", &e);
                 return Err(HandlerError::InternalError);
-            },
-            Ok(bytes) => bytes
+            }
+            Ok(bytes) => bytes,
         };
         Ok(HttpResponse::build(StatusCode::OK)
-        .content_type(format!("image/{}", file_ext))
-        .body(bb))
+            .content_type(format!("image/{}", file_ext))
+            .body(bb))
     }
 }
 
@@ -785,7 +808,7 @@ pub async fn delete_photo(
     let image_id = parameters.1;
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
-    // For gg storage 
+    // For gg storage
     let bearer_string = &gg_storage_data.bearer_string;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
@@ -817,13 +840,12 @@ pub async fn delete_photo(
 
     // Check album exist
     if google_storage_enable.to_string() == "true" {
-        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name)
-        .await {
+        match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
                 return Err(HandlerError::InternalError);
             }
-            Ok(response) =>  {
+            Ok(response) => {
                 if response.contains("error") {
                     return Err(HandlerError::BadClientData {
                         field: "Album not found in storage".to_string(),
@@ -855,11 +877,16 @@ pub async fn delete_photo(
     // Delete file from storage
     if google_storage_enable.to_string() == "true" {
         match gg_storage::delete_object_from_bucket(
-            &client_r, &bearer_string, &bucket_name, &file_path_db)
-        .await {
+            &client_r,
+            &bearer_string,
+            &bucket_name,
+            &file_path_db,
+        )
+        .await
+        {
             Err(e) => {
                 error!("Error deleting object from google storage {:?}", &e);
-            },
+            }
             Ok(_) => {}
         };
     } else {
@@ -902,35 +929,33 @@ pub async fn delete_photo(
     if let Some(first_photo) = result.first_photo {
         debug!("first_photo: {} == image_id: {}", first_photo, image_id);
         if first_photo == image_id {
-           let photo_id = match db::get_first_photo(&client, &album_id).await {
+            let photo_id = match db::get_first_photo(&client, &album_id).await {
                 Ok(i) => i,
                 Err(e) => {
                     error!("Error occured : {}", e);
                     return Err(HandlerError::InternalError);
                 }
-           };
-           debug!("photo_id: {:?}", photo_id);
-           if let Some(p_id) = photo_id {
-               result = match db::album_set_first_image(&client, album_id, Some(p_id)).await {
+            };
+            debug!("photo_id: {:?}", photo_id);
+            if let Some(p_id) = photo_id {
+                result = match db::album_set_first_image(&client, album_id, Some(p_id)).await {
                     Ok(i) => i,
                     Err(e) => {
                         error!("Error occured : {}", e);
                         return Err(HandlerError::InternalError);
                     }
-               }
-           }else
-           {
-               result = match db::album_set_first_image(&client, album_id, None).await {
+                }
+            } else {
+                result = match db::album_set_first_image(&client, album_id, None).await {
                     Ok(i) => i,
                     Err(e) => {
                         error!("Error occured : {}", e);
                         return Err(HandlerError::InternalError);
                     }
-               }
-           }
+                }
+            }
         }
     }
-
 
     Ok(HttpResponse::build(StatusCode::OK).finish())
 }

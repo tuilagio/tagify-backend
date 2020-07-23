@@ -3,16 +3,16 @@ use crate::album_models::{
     UpdateAlbum,
 };
 use crate::errors::DBError;
-use crate::user_models::{CreateImageMeta, CreateUser, Hash, SendUser, User, ImageMeta};
+use crate::user_models::{CreateImageMeta, CreateUser, Hash, ImageMeta, SendUser, User};
 
 use actix_web::Result;
-use log::{error, info, debug};
+use log::{debug, error, info};
 use tokio_pg_mapper::FromTokioPostgresRow;
 
 use chrono::offset::Utc;
 
-use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 
 pub async fn get_user_by_name(
     client: deadpool_postgres::Client,
@@ -147,7 +147,7 @@ pub async fn create_image_meta(
             "UPDATE albums SET image_number = image_number +1 WHERE id = $1",
             &[&image_meta.album_id],
         )
-    .await?;
+        .await?;
 
     // println!("restlt: {:?}", result);
     Ok(ImageMeta::from_row_ref(&result)?)
@@ -176,13 +176,13 @@ pub async fn delete_image_meta(
         )
         .await?;
 
-    let album_id:i32 = result.get(0);
+    let album_id: i32 = result.get(0);
     client
         .query(
             "UPDATE albums SET image_number = image_number -1 WHERE id = $1",
             &[&album_id],
         )
-    .await?;
+        .await?;
     Ok(true)
 }
 
@@ -255,10 +255,12 @@ pub async fn get_first_photo(
     client: &deadpool_postgres::Client,
     id: &i32,
 ) -> Result<Option<i32>, DBError> {
-    let row = client.query("SELECT id FROM image_metas WHERE album_id = $1", &[&id]).await?;
-    if row.is_empty(){
+    let row = client
+        .query("SELECT id FROM image_metas WHERE album_id = $1", &[&id])
+        .await?;
+    if row.is_empty() {
         Ok(None)
-    }else{
+    } else {
         Ok(row[0].get(0))
     }
 }
@@ -277,7 +279,9 @@ pub async fn get_photos_from_album(
 
     if check_album_exist_by_id(&client, &id).await == false {
         let err_str = format!("Album with id {} does not exist", id);
-        return Err(DBError::BadArgs { err: err_str.to_string()});
+        return Err(DBError::BadArgs {
+            err: err_str.to_string(),
+        });
     }
 
     for row in client
@@ -338,8 +342,6 @@ pub async fn get_users_albums(
     client: &deadpool_postgres::Client,
     id: i32,
 ) -> Result<Vec<Album>, DBError> {
-
-
     let result = client
         .query("SELECT * FROM albums WHERE users_id = $1", &[&id])
         .await
@@ -355,11 +357,11 @@ pub async fn get_album_by_id(
     client: &deadpool_postgres::Client,
     album_id: i32,
 ) -> Result<Album, DBError> {
-
-
     if check_album_exist_by_id(&client, &album_id).await == false {
         let err_str = format!("Album with id {} does not exist", album_id);
-        return Err(DBError::BadArgs { err: err_str.to_string()});
+        return Err(DBError::BadArgs {
+            err: err_str.to_string(),
+        });
     }
 
     // Query data
@@ -383,11 +385,10 @@ pub async fn delete_album(
     Ok(Album::from_row_ref(&result)?)
 }
 
-
 pub async fn album_set_first_image(
     client: &deadpool_postgres::Client,
     album_id: i32,
-    photo_id: Option<i32>
+    photo_id: Option<i32>,
 ) -> Result<Album, DBError> {
     let result = client
         .query_one(
@@ -527,7 +528,10 @@ pub async fn get_photos_for_tagging(
 }
 
 // get albums data to preview from DB but with fuzzy matcher
-pub async fn get_searched_albums(client: deadpool_postgres::Client, search_after: &String) -> Result<AlbumsPreview, DBError> {
+pub async fn get_searched_albums(
+    client: deadpool_postgres::Client,
+    search_after: &String,
+) -> Result<AlbumsPreview, DBError> {
     let mut albums = AlbumsPreview { albums: Vec::new() };
     let matcher = SkimMatcherV2::default();
     let search = String::from(search_after);
@@ -545,11 +549,10 @@ pub async fn get_searched_albums(client: deadpool_postgres::Client, search_after
             description: row.get(2),
             first_photo: row.get(3),
         };
-        
+
         if matcher.fuzzy_match(&album.title, &search).is_some() {
             albums.albums.push(album);
         }
-          
     }
     Ok(albums)
 }

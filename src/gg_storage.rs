@@ -1,12 +1,12 @@
 extern crate reqwest;
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, /* USER_AGENT */};
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE /* USER_AGENT */};
 use std::collections::HashMap;
 // use std::fs::File;
 // use std::io::prelude::*;
 // use std::io::Read;
-use regex::Regex;
-use bytes::Bytes;
 use crate::utils;
+use bytes::Bytes;
+use regex::Regex;
 
 fn construct_headers_image(ext: String) -> HeaderMap {
     let mut headers = HeaderMap::new();
@@ -22,7 +22,10 @@ fn construct_headers_image(ext: String) -> HeaderMap {
     } else if l_ext == "gif" {
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/gif"));
     } else if l_ext == "ico" {
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/vnd.microsoft.icon"));
+        headers.insert(
+            CONTENT_TYPE,
+            HeaderValue::from_static("image/vnd.microsoft.icon"),
+        );
     } else if l_ext == "svg" {
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("image/svg+xml"));
     } else if l_ext == "tif" || l_ext == "tiff" {
@@ -47,15 +50,14 @@ pub struct GoogleStorage {
 
 pub async fn get_bucket(
     client: &reqwest::Client,
-    bearer_string: &String, bucket_name: &String, 
+    bearer_string: &String,
+    bucket_name: &String,
 ) -> Result<String, reqwest::Error> {
-
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}", bucket_name);
-    let res = client
-        .get(&url)
-        .bearer_auth(&bearer_string)
-        .send()
-        .await?;
+    let url = format!(
+        "https://storage.googleapis.com/storage/v1/b/{}",
+        bucket_name
+    );
+    let res = client.get(&url).bearer_auth(&bearer_string).send().await?;
     let body = res.text().await?;
     return Ok(body);
 }
@@ -63,10 +65,13 @@ pub async fn get_bucket(
 // https://cloud.google.com/storage/docs/json_api/v1/buckets/delete?hl=en_US
 pub async fn delete_bucket(
     client: &reqwest::Client,
-    bearer_string: &String, bucket_name: &String, 
+    bearer_string: &String,
+    bucket_name: &String,
 ) -> Result<String, reqwest::Error> {
-
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}", bucket_name);
+    let url = format!(
+        "https://storage.googleapis.com/storage/v1/b/{}",
+        bucket_name
+    );
     let res = client
         .delete(&url)
         .bearer_auth(&bearer_string)
@@ -78,10 +83,12 @@ pub async fn delete_bucket(
 
 /* https://cloud.google.com/storage/docs/json_api/v1/buckets/insert?hl=en_US */
 pub async fn create_bucket(
-    client: &reqwest::Client, bearer_string: &String, key_refresh_token: &String,
-    project_number: &String, bucket_name: &String, 
+    client: &reqwest::Client,
+    bearer_string: &String,
+    key_refresh_token: &String,
+    project_number: &String,
+    bucket_name: &String,
 ) -> Result<String, reqwest::Error> {
-    
     let loc = "EUROPE-WEST3".to_string();
     let mut map = HashMap::new();
     map.insert("name", bucket_name);
@@ -103,7 +110,7 @@ pub async fn create_bucket(
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
 // pub async fn get_object_from_bucket(
 //     client: &reqwest::Client, bearer_string: &String,
-//     bucket_name: &String, object_string: &String, 
+//     bucket_name: &String, object_string: &String,
 // ) -> Result<String, reqwest::Error> {
 //     //TODO: object  not found (404, but now "error" in body: No such object: tagify_album_ss20_39/1.jpg)
 //     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}", &bucket_name, &object_string);
@@ -118,12 +125,17 @@ pub async fn create_bucket(
 /* Delete object (file) */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/delete?hl=en_US
 pub async fn delete_object_from_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, object_name: &String, 
+    client: &reqwest::Client,
+    bearer_string: &String,
+    bucket_name: &String,
+    object_name: &String,
 ) -> Result<String, reqwest::Error> {
-
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}", &bucket_name, &object_name);
-    let res = client.delete(&url)
+    let url = format!(
+        "https://storage.googleapis.com/storage/v1/b/{}/o/{}",
+        &bucket_name, &object_name
+    );
+    let res = client
+        .delete(&url)
         .bearer_auth(&bearer_string)
         .send()
         .await?;
@@ -135,7 +147,7 @@ pub async fn delete_object_from_bucket(
 // https://cloud.google.com/storage/docs/json_api/v1/objects/list?hl=en_US
 // pub async fn get_all_objects_from_bucket(
 //     client: &reqwest::Client, bearer_string: &String,
-//     bucket_name: &String, 
+//     bucket_name: &String,
 // ) -> Result<String, reqwest::Error> {
 
 //     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o", &bucket_name);
@@ -150,15 +162,15 @@ pub async fn delete_object_from_bucket(
 /* Retrieves a list of object names matching the criteria */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/list?hl=en_US
 pub async fn get_all_object_names_from_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, 
+    client: &reqwest::Client,
+    bearer_string: &String,
+    bucket_name: &String,
 ) -> Result<Vec<String>, reqwest::Error> {
-
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o", &bucket_name);
-    let res = client.get(&url)
-        .bearer_auth(&bearer_string)
-        .send()
-        .await?;
+    let url = format!(
+        "https://storage.googleapis.com/storage/v1/b/{}/o",
+        &bucket_name
+    );
+    let res = client.get(&url).bearer_auth(&bearer_string).send().await?;
     let body = res.text().await?;
     let mut objectnames_bucket: Vec<String> = Vec::new();
     if !body.contains("error") {
@@ -173,7 +185,7 @@ pub async fn get_all_object_names_from_bucket(
 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert?hl=en_US
 // pub async fn upload_file_to_bucket(
 //     client: &reqwest::Client, bearer_string: &String,
-//     bucket_name: &String, filepath: &String, object_name: &String, 
+//     bucket_name: &String, filepath: &String, object_name: &String,
 // ) -> Result<String, reqwest::Error> {
 
 //     let file = File::open(&filepath);
@@ -197,12 +209,18 @@ pub async fn get_all_object_names_from_bucket(
 
 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert?hl=en_US
 pub async fn upload_buffer_with_name_to_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, object_name: &String, buffer: Bytes
+    client: &reqwest::Client,
+    bearer_string: &String,
+    bucket_name: &String,
+    object_name: &String,
+    buffer: Bytes,
 ) -> Result<String, reqwest::Error> {
-
-    let url = format!("https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}", &bucket_name, &object_name);
-    let res = client.post(&url)
+    let url = format!(
+        "https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}",
+        &bucket_name, &object_name
+    );
+    let res = client
+        .post(&url)
         .bearer_auth(&bearer_string)
         .headers(construct_headers_image(utils::get_file_ext(object_name)))
         .body(buffer)
@@ -216,7 +234,7 @@ pub async fn upload_buffer_with_name_to_bucket(
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
 // pub async fn download_file_from_bucket(
 //     client: &reqwest::Client, bearer_string: &String,
-//     bucket_name: &String, filepath: &String, object_name: &String, 
+//     bucket_name: &String, filepath: &String, object_name: &String,
 // ) -> Result<String, reqwest::Error> {
 
 //     let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
@@ -248,12 +266,17 @@ pub async fn upload_buffer_with_name_to_bucket(
 /* Retrieves object bytes. Mind the "?alt=media" URL parameter! */
 // https://cloud.google.com/storage/docs/json_api/v1/objects/get?hl=en_US
 pub async fn download_object_bytes_from_bucket(
-    client: &reqwest::Client, bearer_string: &String,
-    bucket_name: &String, object_name: &String, 
+    client: &reqwest::Client,
+    bearer_string: &String,
+    bucket_name: &String,
+    object_name: &String,
 ) -> Result<Bytes, reqwest::Error> {
-
-    let url = format!("https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media", &bucket_name, &object_name);
-    let res = client.get(&url)
+    let url = format!(
+        "https://storage.googleapis.com/storage/v1/b/{}/o/{}?alt=media",
+        &bucket_name, &object_name
+    );
+    let res = client
+        .get(&url)
         .bearer_auth(&bearer_string)
         .headers(construct_headers_image(utils::get_file_ext(object_name)))
         .send()

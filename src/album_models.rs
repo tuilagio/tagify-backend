@@ -80,4 +80,3 @@ pub struct PhotoToTag {
     pub tag: String,
     pub timestamp: DateTime<Utc>,
 }
-
