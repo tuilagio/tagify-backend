@@ -179,7 +179,7 @@ pub async fn get_photo(
         let bytes = gg_storage::download_object_bytes_from_bucket(
             &client_r, &bearer_string, &bucket_name, &file_path_db)
         .await;
-        let mut bb = Bytes::new();
+        let mut _bb = Bytes::new();
         match bytes {
             Err(e) => {
                 error!("Error downloading object from google storage {:?}", &e);
@@ -204,7 +204,7 @@ pub async fn get_photo(
             });
         }
     
-        let mut bb: Vec<u8> = Vec::new();
+        let mut _bb: Vec<u8> = Vec::new();
         match std::fs::read(filepath) {
             Err(e) => {
                 error!("Error openning local file {:?}", &e);
