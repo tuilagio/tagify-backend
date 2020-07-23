@@ -186,12 +186,12 @@ pub async fn get_photo(
                 return Err(HandlerError::InternalError);
             },
             Ok(b) => {
-                bb = b;
+                _bb = b;
             }
         };
         Ok(HttpResponse::build(StatusCode::OK)
         .content_type(format!("image/{}", file_ext))
-        .body(bb))
+        .body(_bb))
      } else {
          // Check file exist
         if !std::path::Path::new(&filepath).exists() {
@@ -211,12 +211,12 @@ pub async fn get_photo(
                 return Err(HandlerError::InternalError);
             },
             Ok(bytes) => {
-                bb = bytes;
+                _bb = bytes;
             },
         };
         Ok(HttpResponse::build(StatusCode::OK)
         .content_type(format!("image/{}", file_ext))
-        .body(bb))
+        .body(_bb))
     }
 }
 
