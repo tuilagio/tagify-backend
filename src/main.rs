@@ -21,6 +21,7 @@ mod album_handlers;
 mod my_cookie_policy;
 mod my_identity_service;
 mod utils;
+mod gg_storage;
 
 mod album_models;
 mod user_models;
@@ -86,6 +87,37 @@ async fn main() -> std::io::Result<()> {
             panic!("Could not read Settings file");
         }
     };
+
+    // Google storage 
+    // TODO: server-base or file-base token supplier?
+    // TODO: how to keep token fresh ?
+    // TODO: how to get rid of the clone() bullshit?
+    let key_refresh_token = "".to_string();
+    let k_temp = key_refresh_token.clone();
+    let bearer_string = "".to_string();
+    let b_temp = bearer_string.clone();
+    let project_number = conf.tagify_data.project_number;
+    let p_temp = project_number.clone();
+    let google_storage_enable = conf.tagify_data.google_storage_enable;
+    let gg_storage_data = gg_storage::GoogleStorage {
+        key_refresh_token,
+        bearer_string,
+        project_number,
+        google_storage_enable,
+    };
+    // Error message if Authorization not set
+    if gg_storage_data.google_storage_enable == "true" {
+        if k_temp == "" {
+            panic!("'google_storage_enable' enabled but 'key_refresh_token' empty!");
+        }
+        if b_temp == "" {
+            panic!("'google_storage_enable' enabled but 'bearer_string' empty!");
+        }
+        if p_temp ==  "" {
+            panic!("'google_storage_enable' enabled but 'project_number' empty!");
+        }
+    }
+    // 
 
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
@@ -214,10 +246,10 @@ async fn main() -> std::io::Result<()> {
             // Serve index.html
             // Give every handler access to the db connection pool
             .data(pool.clone())
-            // Data path
-            // .data(tagify_data_path.clone())
             // Albums path
             .data(tagify_albums_path.clone())
+            // Google storage:
+            .data(gg_storage_data.clone())
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept

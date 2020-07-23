@@ -25,3 +25,5 @@ port = "5432"
 
 [tagify_data]
 path = "./tagify_data"
+google_storage_enable = "false"
+project_number = ""
