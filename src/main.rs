@@ -402,7 +402,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/albums")
                             //search function
-                            .route("/search", web::get().to(album_handlers::search))
+                            .route("/search/{search_after}", web::get().to(album_handlers::search))
                             //get albums for preview (all)
                             .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id
