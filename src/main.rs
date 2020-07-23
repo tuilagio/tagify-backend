@@ -186,6 +186,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     let (encrypter, ssl_builder) = if conf.cert.activate {
+        error!("Setup encrypter and ssl_builder!");
         let encrypter = letsencrypt::LetsEncrypt::new(conf.cert.domain, vec![]);
         let certificate = match encrypter.certificate() {
             Ok(Some(certificate)) => {
@@ -215,7 +216,10 @@ async fn main() -> std::io::Result<()> {
                         }
                     }
                 }
-            None => None
+            None => {
+                error!("ssl_builder returned None!");
+                None
+            }
         };
         (Some(encrypter), ssl_builder)
     } else {
@@ -495,6 +499,9 @@ async fn main() -> std::io::Result<()> {
                 panic!("Could not take tcp listener: {}", err);
             }
         };
+    };
+
+    if conf.cert.activate {
         // Run encrypter actor that checks for certificate at startup,
         // and attempts to build if missing/non-valid also wrt days left
         // Will run at a specified interval as well

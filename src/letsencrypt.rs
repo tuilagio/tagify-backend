@@ -327,11 +327,11 @@ impl Actor for LetsEncrypt {
     fn started(&mut self, ctx: &mut Self::Context) {
         if self.checked_build() {
             // Relying on docker restart policy to restart the container
-            actix::System::current().stop();
+            std::process::exit(1);
         } else {
             ctx.run_interval(self.check_every, move |act, _ctx| {
                 if act.checked_build() {
-                    actix::System::current().stop();
+                    std::process::exit(1);
                 }
             });
         }
