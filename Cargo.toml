@@ -13,6 +13,7 @@ actix-web = { version = "2.0", features = ["openssl"] }
 openssl = "0.10.30"
 actix-http = "1.0.1"
 log = "0.4.8"
+goauth = { git="https://github.com/Luis-Hebendanz/rust-goauth", rev="2f6a05b4dafc820a401fbe62ca8c3a80dc83a6fa"}
 env_logger = "0.7.1"
 actix-rt = "1.1.1"
 actix-files = "0.2.2"
@@ -33,9 +34,9 @@ time = "0.1.42"
 actix-service = "1.0.5"
 actix-multipart = "0.2.0"
 sanitize-filename = "0.2"
+smpl_jwt = "^0.5"
+reqwest = { version = "0.10", features = ["blocking", "json"] }
 chrono = { version = "0.4", features = ["serde"] }
-# rust request sending. Used for google storage
-reqwest = { version = "0.10.6", features = ["json"] }
 tokio = { version = "0.2", features = ["macros"] }
 hyper = "0.13.7"
 regex = "1"

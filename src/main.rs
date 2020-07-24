@@ -28,8 +28,11 @@ mod utils;
 mod album_models;
 mod user_models;
 
+mod oauth;
+
 use crate::handlers::{login, logout, status};
 use user_models::ROLES;
+use crate::oauth::MyActor;
 
 struct DistPath {
     user: PathBuf,
@@ -507,6 +510,8 @@ async fn main() -> std::io::Result<()> {
         // Will run at a specified interval as well
         encrypter.unwrap().start();
     };
+
+    MyActor.start();
 
     server.run().await
 }
