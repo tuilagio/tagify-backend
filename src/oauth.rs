@@ -9,7 +9,7 @@ use log::{error, debug};
 use actix::prelude::AsyncContext;
 
 const SECS_IN_MINUTE: u64 = 60;
-pub struct MyActor;
+pub struct Oauth;
 
 pub fn get_token()-> String{
     let credentials = Credentials::from_file("/home/lhebendanz/.config/gcloud/tagify-key.json").unwrap();
@@ -30,7 +30,7 @@ pub fn get_token()-> String{
     return token;
 }
 
-impl Actor for MyActor {
+impl Actor for Oauth {
     type Context = Context<Self>;
 
 

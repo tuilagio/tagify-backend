@@ -32,7 +32,7 @@ mod oauth;
 
 use crate::handlers::{login, logout, status};
 use user_models::ROLES;
-use crate::oauth::MyActor;
+use crate::oauth::Oauth;
 
 struct DistPath {
     user: PathBuf,
@@ -511,7 +511,7 @@ async fn main() -> std::io::Result<()> {
         encrypter.unwrap().start();
     };
 
-    MyActor.start();
+    Oauth.start();
 
     server.run().await
 }
