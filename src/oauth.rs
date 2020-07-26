@@ -39,7 +39,11 @@ impl Oauth {
                 std::process::exit(2);
             }
         };
-        return token;
+
+        let json: serde_json::Value = serde_json::from_str(&token).expect("JSON TokenResponse was not well-formatted");
+        let token_bearer: String = json.get("access_token").expect("TokenResponse should have 'access_token' key").to_string().replace("\"", "");
+
+        return token_bearer;
     }
 
 }
@@ -47,19 +51,35 @@ impl Oauth {
 impl Actor for Oauth {
     type Context = Context<Self>;
 
-
     fn started(&mut self, ctx: &mut Self::Context) {
 
         let mut token = self.get_token();
+
         let mut file = std::fs::File::create(&self.key_file).expect("key_file creation failed");
         file.write_all(token.as_bytes()).expect("oauth write failed");
-        debug!("Token is {}", token);
+        debug!("Token is {} write to {}", token, &self.key_file);
 
-        ctx.run_interval(Duration::new(15*SECS_IN_MINUTE, 0), move |_act, _ctx| {
+        ctx.run_interval(Duration::new(10, 0), move |_act, _ctx| {
+            let mut file = std::fs::File::create(_act.key_file.clone()).expect("key_file creation failed");
             token = _act.get_token();
             file.write_all(token.as_bytes()).expect("oauth write failed");
             debug!("Token is {}", token);
         });
 
     }
+
+    // fn started(&mut self, ctx: &mut Self::Context) {
+
+    //     let mut token = self.get_token();
+    //     let mut file = std::fs::File::create(&self.key_file).expect("key_file creation failed");
+    //     file.write_all(token.as_bytes()).expect("oauth write failed");
+    //     debug!("Token is {}", token);
+
+    //     ctx.run_interval(Duration::new(15*SECS_IN_MINUTE, 0), move |_act, _ctx| {
+    //         token = _act.get_token();
+    //         file.write_all(token.as_bytes()).expect("oauth write failed");
+    //         debug!("Token is {}", token);
+    //     });
+
+    // }
 }
