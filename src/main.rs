@@ -2,11 +2,13 @@
 
 use actix_files as fs;
 use actix_files::NamedFile;
-use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result, HttpResponse};
+use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result};
 use std::path::PathBuf;
 
 #[cfg(not(debug_assertions))]
 use actix::prelude::Actor;
+#[cfg(debug_assertions)]
+use actix_web::HttpResponse;
 
 use listenfd::ListenFd;
 use log::{error, info};
