@@ -59,7 +59,7 @@ impl Actor for Oauth {
         file.write_all(token.as_bytes()).expect("oauth write failed");
         debug!("Token is {} write to {}", token, &self.key_file);
 
-        ctx.run_interval(Duration::new(10, 0), move |_act, _ctx| {
+        ctx.run_interval(Duration::new(20*SECS_IN_MINUTE, 0), move |_act, _ctx| {
             let mut file = std::fs::File::create(_act.key_file.clone()).expect("key_file creation failed");
             token = _act.get_token();
             file.write_all(token.as_bytes()).expect("oauth write failed");

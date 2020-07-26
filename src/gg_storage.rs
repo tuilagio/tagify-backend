@@ -42,7 +42,6 @@ pub static PREFIX_BUCKET: &str = "tagify_album_ss20_";
 
 #[derive(Clone)]
 pub struct GoogleStorage {
-    pub key_refresh_token: String,
     pub bearer_string: String,
     pub project_number: String,
     pub google_storage_enable: String,
@@ -85,7 +84,6 @@ pub async fn delete_bucket(
 pub async fn create_bucket(
     client: &reqwest::Client,
     bearer_string: &String,
-    key_refresh_token: &String,
     project_number: &String,
     bucket_name: &String,
 ) -> Result<String, reqwest::Error> {
@@ -94,8 +92,8 @@ pub async fn create_bucket(
     map.insert("name", bucket_name);
     map.insert("location", &loc);
     let url = format!(
-        "https://storage.googleapis.com/storage/v1/b?project={}&predefinedAcl=private&predefinedDefaultObjectAcl=bucketOwnerFullControl&projection=full&key={}", 
-        &project_number, &key_refresh_token);
+        "https://storage.googleapis.com/storage/v1/b?project={}&predefinedAcl=private&predefinedDefaultObjectAcl=bucketOwnerFullControl&projection=full", 
+        &project_number);
     let res = client
         .post(&url)
         .bearer_auth(&bearer_string)
