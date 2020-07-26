@@ -5,7 +5,6 @@ use actix_files::NamedFile;
 use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result};
 use std::path::PathBuf;
 
-#[cfg(not(debug_assertions))]
 use actix::prelude::Actor;
 #[cfg(debug_assertions)]
 use actix_web::HttpResponse;
@@ -528,7 +527,8 @@ async fn main() -> std::io::Result<()> {
         encrypter.unwrap().start();
     };
 
-    Oauth.start();
+    let oauth = Oauth::new(&conf.tagify_data.google_key_json, &conf.tagify_data.key_file);
+    oauth.start();
 
     server.run().await
 }

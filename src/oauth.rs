@@ -1,5 +1,6 @@
 use actix::{Actor, Context};
 use goauth::auth::JwtClaims;
+use std::io::Write;
 use std::time::Duration;
 use goauth::scopes::Scope;
 use goauth::credentials::Credentials;
@@ -9,25 +10,38 @@ use log::{error, debug};
 use actix::prelude::AsyncContext;
 
 const SECS_IN_MINUTE: u64 = 60;
-pub struct Oauth;
+pub struct Oauth {
+    pub cred_file: String,
+    pub key_file: String,
+}
 
-pub fn get_token()-> String{
-    let credentials = Credentials::from_file("/home/lhebendanz/.config/gcloud/tagify-key.json").unwrap();
-    let claims = JwtClaims::new(credentials.iss(),
-                         &Scope::DevStorageReadWrite,
-                         credentials.token_uri(),
-                         None, None);
-    let jwt = Jwt::new(claims, credentials.rsa_key().unwrap(), None);
-    debug!("Calling get_token");
-
-    let token = match get_token_as_string_legacy(&jwt, Some(&credentials.token_uri())){
-        Ok(i) => i,
-        Err(e) => {
-            error!("Error on get_token_as_string: {}",e);
-            std::process::exit(2);
+impl Oauth {
+    pub fn new(cred_file: &str, key_file: &str) -> Self {
+        return Self {
+            cred_file: cred_file.to_string(),
+            key_file: key_file.to_string()
         }
-    };
-    return token;
+    }
+
+    pub fn get_token(&self)-> String {
+        let credentials = Credentials::from_file(&self.cred_file).unwrap();
+        let claims = JwtClaims::new(credentials.iss(),
+                             &Scope::DevStorageReadWrite,
+                             credentials.token_uri(),
+                             None, None);
+        let jwt = Jwt::new(claims, credentials.rsa_key().unwrap(), None);
+        debug!("Calling get_token");
+
+        let token = match get_token_as_string_legacy(&jwt, Some(&credentials.token_uri())){
+            Ok(i) => i,
+            Err(e) => {
+                error!("Error on get_token_as_string: {}",e);
+                std::process::exit(2);
+            }
+        };
+        return token;
+    }
+
 }
 
 impl Actor for Oauth {
@@ -36,11 +50,14 @@ impl Actor for Oauth {
 
     fn started(&mut self, ctx: &mut Self::Context) {
 
-        let mut token = get_token();
+        let mut token = self.get_token();
+        let mut file = std::fs::File::create(&self.key_file).expect("key_file creation failed");
+        file.write_all(token.as_bytes()).expect("oauth write failed");
         debug!("Token is {}", token);
 
         ctx.run_interval(Duration::new(15*SECS_IN_MINUTE, 0), move |_act, _ctx| {
-            token = get_token();
+            token = _act.get_token();
+            file.write_all(token.as_bytes()).expect("oauth write failed");
             debug!("Token is {}", token);
         });
 
