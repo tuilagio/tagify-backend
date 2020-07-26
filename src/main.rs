@@ -102,8 +102,6 @@ async fn main() -> std::io::Result<()> {
     };
 
     // Google storage
-    // TODO: server-base or file-base token supplier?
-    // TODO: how to keep token fresh ?
     // TODO: how to get rid of the clone() bullshit?
     let bearer_string = "".to_string();
     let b_temp = bearer_string.clone();
@@ -116,15 +114,15 @@ async fn main() -> std::io::Result<()> {
         google_storage_enable,
     };
     // Error message if Authorization not set
-    // if gg_storage_data.google_storage_enable == "true" {
-    //     if b_temp == "" {
-    //         panic!("'google_storage_enable' enabled but 'bearer_string' empty!");
-    //     }
-    //     if p_temp == "" {
-    //         panic!("'google_storage_enable' enabled but 'project_number' empty!");
-    //     }
-    // }
-    //
+    if gg_storage_data.google_storage_enable == "true" {
+        // if b_temp == "" {
+        //     panic!("'google_storage_enable' enabled but 'bearer_string' empty!");
+        // }
+        if p_temp == "" {
+            panic!("'google_storage_enable' enabled but 'project_number' empty!");
+        }
+    }
+    
 
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
