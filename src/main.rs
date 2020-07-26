@@ -4,7 +4,11 @@ use actix_files as fs;
 use actix_files::NamedFile;
 use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result};
 use std::path::PathBuf;
+
+#[cfg(not(debug_assertions))]
 use actix::prelude::Actor;
+#[cfg(debug_assertions)]
+use actix_web::HttpResponse;
 
 use listenfd::ListenFd;
 use log::{error, info};
@@ -16,7 +20,12 @@ mod config;
 mod db;
 mod errors;
 mod handlers;
+
+
+#[cfg(not(debug_assertions))]
 mod letsencrypt;
+#[cfg(not(debug_assertions))]
+use letsencrypt::LetsEncrypt;
 
 mod admin_handlers;
 mod album_handlers;
@@ -188,9 +197,10 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    #[cfg(not(debug_assertions))]
     let (encrypter, ssl_builder) = if conf.cert.activate {
         error!("Setup encrypter and ssl_builder!");
-        let encrypter = letsencrypt::LetsEncrypt::new(conf.cert.domain, vec![]);
+        let encrypter = LetsEncrypt::new(conf.cert.domain, vec![]);
         let certificate = match encrypter.certificate() {
             Ok(Some(certificate)) => {
                 if certificate.valid_days_left() > 0 {
@@ -237,6 +247,11 @@ async fn main() -> std::io::Result<()> {
         let path_arg: DistPath;
         let secure_cookie: bool;
         let max_age = 30 * 24 * 60 * 60; // days
+
+        #[cfg(not(debug_assertions))]
+        let nonce_req = web::resource("/.well-known/acme-challenge/{token}").to(letsencrypt::nonce_request);
+        #[cfg(debug_assertions)]
+        let nonce_req = web::resource("/.well-known/acme-challenge/{token}").to(|| HttpResponse::MethodNotAllowed());
 
         // Check if in release mode if so use DIST env variable as path for serving frontend
         if cfg!(debug_assertions) {
@@ -304,7 +319,7 @@ async fn main() -> std::io::Result<()> {
                     .error_handler(|err, _req| actix_web::error::ErrorBadRequest(err)),
             )
             // For letsencrypt
-            .service(web::resource("/.well-known/acme-challenge/{token}").to(letsencrypt::nonce_request))
+            .service(nonce_req)
             .service(
                 web::scope("/api")
                     //all admin endpoints
@@ -487,6 +502,7 @@ async fn main() -> std::io::Result<()> {
 
 
     // Add https if cert exists
+    #[cfg(not(debug_assertions))]
     if let Some(ssl_builder) = ssl_builder {
         let https_ip = conf.server.hostname + ":" + &conf.cert.port;
         println!("Server is reachable at https://{}", https_ip);
@@ -504,6 +520,7 @@ async fn main() -> std::io::Result<()> {
         };
     };
 
+    #[cfg(not(debug_assertions))]
     if conf.cert.activate {
         // Run encrypter actor that checks for certificate at startup,
         // and attempts to build if missing/non-valid also wrt days left
