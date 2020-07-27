@@ -115,6 +115,31 @@ pub async fn delete_user(
     client: &deadpool_postgres::Client,
     user_id: i32,
 ) -> Result<User, DBError> {
+    
+    for row in client
+    .query(
+        "SELECT id FROM albums WHERE users_id = $1 ",
+        &[&user_id],
+    )
+    .await?
+    {
+        let id: i32 = row.get(0);
+        println!("album id is: {}", &id);
+        client
+            .query(
+                "DELETE FROM image_metas WHERE album_id = $1 ",
+                &[&id],
+            ).await?;
+            
+        client
+            .query(
+                "DELETE FROM albums WHERE id = $1 ",
+                &[&id],
+            ).await?;
+            
+
+    }
+
     let result = client
         .query_one("DELETE FROM users WHERE id=$1 RETURNING *", &[&user_id])
         .await?;

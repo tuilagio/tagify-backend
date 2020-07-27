@@ -1,4 +1,4 @@
-use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto, Album};
+use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto};
 use crate::gg_storage;
 use crate::user_models::User;
 extern crate reqwest;
@@ -426,7 +426,7 @@ pub async fn get_photos_for_tagging(
         }
     };
 
-    let mut album: Album = match db::get_album_by_id(&client, data.0).await {
+    match db::get_album_by_id(&client, data.0).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
             return Err(HandlerError::BadClientData { field: e.to_string() });
