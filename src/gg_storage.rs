@@ -7,6 +7,17 @@ use std::collections::HashMap;
 use crate::utils;
 use bytes::Bytes;
 use regex::Regex;
+use crate::errors::HandlerError;
+
+pub fn create_error(response: &str) -> HandlerError {
+    let json: serde_json::Value = match serde_json::from_str(&response) {
+        Ok(i) => i,
+        Err(_) => return HandlerError::InternalError
+    };
+    let err_msg = json["error"]["errors"][0]["message"].clone();
+
+    return HandlerError::StorageError { err: err_msg.to_string() };
+}
 
 fn construct_headers_image(ext: String) -> HeaderMap {
     let mut headers = HeaderMap::new();

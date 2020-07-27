@@ -19,6 +19,8 @@ pub enum HandlerError {
     PermissionDenied { err_message: String },
     #[fail(display = "Timeout request a new annotate session")]
     Timeout,
+    #[fail(display = "Storage failed with: {}", err)]
+    StorageError { err: String  },
 }
 
 impl ResponseError for HandlerError {
@@ -30,6 +32,7 @@ impl ResponseError for HandlerError {
 
     fn status_code(&self) -> StatusCode {
         match *self {
+            HandlerError::StorageError { .. } => StatusCode::BAD_REQUEST,
             HandlerError::Timeout => StatusCode::UNAUTHORIZED,
             HandlerError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             HandlerError::BadClientData { .. } => StatusCode::BAD_REQUEST,

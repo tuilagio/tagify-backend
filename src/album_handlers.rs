@@ -60,16 +60,16 @@ pub async fn create_album(
                     Ok(response) => {
                         if response.contains("error") {
                             error!("Fail creating google storage bucket: {}", response);
+
                             // Delete created album in db because creating on gg storage failed:
                             match db::delete_album(&client, album.id).await {
                                 Err(e) => {
                                     error!("Error occured deleting album: {}", e);
-                                    return Err(HandlerError::InternalError);
                                 }
                                 Ok(_) => {
-                                    return Err(HandlerError::InternalError);
                                 }
                             };
+                            return Err(gg_storage::create_error(&response));
                         }
                         album
                     }
