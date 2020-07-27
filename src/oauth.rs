@@ -67,19 +67,4 @@ impl Actor for Oauth {
         });
 
     }
-
-    // fn started(&mut self, ctx: &mut Self::Context) {
-
-    //     let mut token = self.get_token();
-    //     let mut file = std::fs::File::create(&self.key_file).expect("key_file creation failed");
-    //     file.write_all(token.as_bytes()).expect("oauth write failed");
-    //     debug!("Token is {}", token);
-
-    //     ctx.run_interval(Duration::new(15*SECS_IN_MINUTE, 0), move |_act, _ctx| {
-    //         token = _act.get_token();
-    //         file.write_all(token.as_bytes()).expect("oauth write failed");
-    //         debug!("Token is {}", token);
-    //     });
-
-    // }
 }
