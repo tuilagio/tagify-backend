@@ -22,8 +22,14 @@ pub async fn create_album(
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
 
-    let bearer_string = &gg_storage_data.bearer_string;
-    let key_refresh_token = &gg_storage_data.key_refresh_token;
+    // let bearer_string = &gg_storage_data.bearer_string;
+    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+        Err(e) => {
+            error!("Error reading oauth_key.txt  : {}", e);
+            return Err(HandlerError::InternalError);
+        },
+        Ok(s) => s,
+    };
     let project_number = &gg_storage_data.project_number;
     let google_storage_enable = &gg_storage_data.google_storage_enable;
 
@@ -41,17 +47,12 @@ pub async fn create_album(
             return Err(HandlerError::InternalError);
         }
         Ok(album) => {
-            print!(
-                "google_storage_enable {:?}",
-                google_storage_enable.to_string()
-            );
             if google_storage_enable.to_string() == "true" {
                 let client_r = reqwest::Client::new();
                 let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
                 let response = gg_storage::create_bucket(
                     &client_r,
                     &bearer_string.to_string(),
-                    &key_refresh_token.to_string(),
                     &project_number.to_string(),
                     &bucket_name,
                 )
@@ -252,7 +253,14 @@ pub async fn delete_album_by_id(
                 if gg_storage_data.google_storage_enable.to_string() == "true" {
                     //  Google storage
                     let client_r = reqwest::Client::new();
-                    let bearer_string = &gg_storage_data.bearer_string;
+                    // let bearer_string = &gg_storage_data.bearer_string;
+                    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+                        Err(e) => {
+                            error!("Error reading oauth_key.txt  : {}", e);
+                            return Err(HandlerError::InternalError);
+                        },
+                        Ok(s) => s,
+                    };
 
                     let bucket_name: String =
                         format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id.0);

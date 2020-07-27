@@ -34,6 +34,6 @@ port = "5432"
 [tagify_data]
 path = "./tagify_data"
 google_storage_enable = "false"
-google_key_json = "/home/lhebendanz/.config/gcloud/tagify-key.json"
-key_file = "../oauth_key.txt"
+google_key_json = "./credential/gg-storage.json"
+key_file = "./credential/gen_token/oauth_key.txt"
 project_number = ""

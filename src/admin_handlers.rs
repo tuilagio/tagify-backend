@@ -119,7 +119,14 @@ pub async fn get_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // For gg storage
-    let bearer_string = &gg_storage_data.bearer_string;
+    // let bearer_string = &gg_storage_data.bearer_string;
+    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+        Err(e) => {
+            error!("Error reading oauth_key.txt  : {}", e);
+            return Err(HandlerError::InternalError);
+        },
+        Ok(s) => s,
+    };
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
@@ -240,7 +247,14 @@ pub async fn delete_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
 
     // For gg storage
-    let bearer_string = &gg_storage_data.bearer_string;
+    // let bearer_string = &gg_storage_data.bearer_string;
+    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+        Err(e) => {
+            error!("Error reading oauth_key.txt  : {}", e);
+            return Err(HandlerError::InternalError);
+        },
+        Ok(s) => s,
+    };
     let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
