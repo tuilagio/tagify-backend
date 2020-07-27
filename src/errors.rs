@@ -20,7 +20,7 @@ pub enum HandlerError {
     #[fail(display = "Timeout request a new annotate session")]
     Timeout,
     #[fail(display = "Storage failed with: {}", err)]
-    StorageError { err: String  },
+    StorageError { err: String },
 }
 
 impl ResponseError for HandlerError {

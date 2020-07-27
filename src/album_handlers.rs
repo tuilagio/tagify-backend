@@ -27,7 +27,7 @@ pub async fn create_album(
         Err(e) => {
             error!("Error reading oauth_key.txt  : {}", e);
             return Err(HandlerError::InternalError);
-        },
+        }
         Ok(s) => s,
     };
     let project_number = &gg_storage_data.project_number;
@@ -66,8 +66,7 @@ pub async fn create_album(
                                 Err(e) => {
                                     error!("Error occured deleting album: {}", e);
                                 }
-                                Ok(_) => {
-                                }
+                                Ok(_) => {}
                             };
                             return Err(gg_storage::create_error(&response));
                         }
@@ -253,13 +252,14 @@ pub async fn delete_album_by_id(
                     //  Google storage
                     let client_r = reqwest::Client::new();
                     // let bearer_string = &gg_storage_data.bearer_string;
-                    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-                        Err(e) => {
-                            error!("Error reading oauth_key.txt  : {}", e);
-                            return Err(HandlerError::InternalError);
-                        },
-                        Ok(s) => s,
-                    };
+                    let bearer_string: String =
+                        match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+                            Err(e) => {
+                                error!("Error reading oauth_key.txt  : {}", e);
+                                return Err(HandlerError::InternalError);
+                            }
+                            Ok(s) => s,
+                        };
 
                     let bucket_name: String =
                         format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id.0);

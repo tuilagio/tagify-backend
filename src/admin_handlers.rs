@@ -124,7 +124,7 @@ pub async fn get_photo(
         Err(e) => {
             error!("Error reading oauth_key.txt  : {}", e);
             return Err(HandlerError::InternalError);
-        },
+        }
         Ok(s) => s,
     };
     let client_r = reqwest::Client::new();
@@ -251,7 +251,7 @@ pub async fn delete_photo(
         Err(e) => {
             error!("Error reading oauth_key.txt  : {}", e);
             return Err(HandlerError::InternalError);
-        },
+        }
         Ok(s) => s,
     };
     let client_r = reqwest::Client::new();

@@ -28,7 +28,6 @@ pub struct LetsEncrypt {
     pub activate: bool,
 }
 
-
 #[derive(Deserialize, Clone)]
 pub struct MyConfig {
     pub postgres: deadpool_postgres::Config,
