@@ -102,14 +102,13 @@ async fn main() -> std::io::Result<()> {
     };
 
     // Google storage
-    // TODO: how to get rid of the clone() bullshit?
     let bearer_string = "".to_string();
     let project_number = conf.tagify_data.project_number;
     let p_temp = project_number.clone();
     let gg_storage_data = gg_storage::GoogleStorage {
         bearer_string,
         project_number,
-        google_storage_enable: conf.tagify_data.google_storage_enable,
+        google_storage_enable: conf.tagify_data.google_storage_enable.clone(),
     };
     // Error message if Authorization not set
     if gg_storage_data.google_storage_enable == true {
@@ -514,8 +513,10 @@ async fn main() -> std::io::Result<()> {
         encrypter.unwrap().start();
     };
 
-    let oauth = Oauth::new(&conf.tagify_data.google_key_json, &conf.tagify_data.key_file);
-    oauth.start();
+    if conf.tagify_data.google_storage_enable {
+        let oauth = Oauth::new(&conf.tagify_data.google_key_json, &conf.tagify_data.key_file);
+        oauth.start();
+    }
 
     server.run().await
 }
