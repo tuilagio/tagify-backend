@@ -92,7 +92,9 @@ pub async fn delete_user(
     match result {
         Err(e) => {
             error!("Error occured: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData {
+                field: "User id does not exist".to_owned(),
+            });
         }
         Ok(_res) => {}
     };

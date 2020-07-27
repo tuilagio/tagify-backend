@@ -1,4 +1,4 @@
-use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto};
+use crate::album_models::{AlbumsPreview, CreateAlbum, TagPhoto, UpdateAlbum, VerifyPhoto, Album};
 use crate::gg_storage;
 use crate::user_models::User;
 extern crate reqwest;
@@ -234,7 +234,7 @@ pub async fn delete_album_by_id(
         // TODO: Error response for case supplied album id not found?
         Err(e) => {
             error!("Error occured get user's album: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
@@ -325,7 +325,7 @@ pub async fn update_album_by_id(
         Err(e) => {
             error!("Error occured get users albums: {}", e);
 
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string()});
         }
         Ok(item) => item,
     };
@@ -333,8 +333,10 @@ pub async fn update_album_by_id(
     if user.id == result.users_id || user.role == "admin" {
         match db::update_album(&client, album_id.0, &data).await {
             Err(e) => {
-                error!("Error occured: {}", e);
-                return Err(HandlerError::InternalError);
+                error!("Error occured : {}", e);
+                    return Err(HandlerError::BadClientData {
+                field: e.to_string(),
+                });
             }
             Ok(num_updated) => num_updated,
         };
@@ -363,7 +365,9 @@ pub async fn tag_photo_by_id(
     let is_success = match db::tag_photo_by_id(client, &data_id.0, &data).await {
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData {
+                field: "Photo does not exists in the database.".to_string(),
+            });
         }
         Ok(item) => item,
     };
@@ -393,7 +397,9 @@ pub async fn verify_photo_by_id(
     match db::verify_photo_by_id(client, &data_id.0, data.verified).await {
         Err(e) => {
             error!("Error occured : {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData {
+                field: "Photo does not exists in the database.".to_string(),
+            });
         }
         Ok(item) => match item {
             true => return Ok(HttpResponse::build(StatusCode::OK).json(item)),
@@ -418,6 +424,14 @@ pub async fn get_photos_for_tagging(
             error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
         }
+    };
+
+    let mut album: Album = match db::get_album_by_id(&client, data.0).await {
+        Err(e) => {
+            error!("Error occured get users albums: {}", e);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
+        }
+        Ok(item) => item,
     };
 
     let result = match db::get_photos_for_tagging(client, &data.0).await {

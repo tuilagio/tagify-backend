@@ -339,9 +339,9 @@ async fn main() -> std::io::Result<()> {
                                     //get all albums
                                     .route("", web::get().to(status))
                                     //change album data (description or name)
-                                    .route("/{album_id}", web::put().to(status))
+                                    .route("/{album_id}", web::put().to(album_handlers::update_album_by_id))
                                     //delete own album by id
-                                    .route("/{album_id}", web::delete().to(status))
+                                    .route("/{album_id}", web::delete().to(album_handlers::delete_album_by_id))
                                     /////////////////////////////////////
                                     .route(
                                         "/{album_id}/photos/{photo_id}",

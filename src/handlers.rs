@@ -272,7 +272,7 @@ pub async fn post_photo(
     let mut result: Album = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
@@ -492,7 +492,7 @@ pub async fn put_photo(
     let result = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
@@ -842,7 +842,7 @@ pub async fn delete_photo(
     let mut result: Album = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
