@@ -286,7 +286,7 @@ pub async fn get_photos_from_album(
 
     for row in client
         .query(
-            "SELECT id, file_path  FROM image_metas WHERE album_id = $1 ",
+            "SELECT id, file_path, tag, tagged, verified FROM image_metas WHERE album_id = $1 ",
             &[&id],
         )
         .await?
@@ -295,7 +295,11 @@ pub async fn get_photos_from_album(
             let photo = PhotoPreview {
                 id: row.get(0),
                 file_path: row.get(1),
+                tag: row.get(2),
+                tagged: row.get(3),
+                verified: row.get(4)
             };
+            
             photos.push(photo);
             current_position = current_position + 1;
             if &current_position >= &last_position {

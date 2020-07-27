@@ -59,6 +59,9 @@ pub struct AlbumsPreview {
 pub struct PhotoPreview {
     pub id: i32,
     pub file_path: String,
+    pub tag: String,
+    pub verified: bool,
+    pub tagged: bool
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
