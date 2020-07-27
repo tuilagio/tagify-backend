@@ -286,7 +286,7 @@ pub async fn get_photos_from_album(
 
     for row in client
         .query(
-            "SELECT id, file_path, tag, tagged, verified FROM image_metas WHERE album_id = $1 ",
+            "SELECT id, file_path, tag, tagged, verified FROM image_metas WHERE album_id = $1 ORDER BY id",
             &[&id],
         )
         .await?
