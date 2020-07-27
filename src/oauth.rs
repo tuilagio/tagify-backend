@@ -24,12 +24,12 @@ impl Oauth {
     }
 
     pub fn get_token(&self)-> String {
-        let credentials = Credentials::from_file(&self.cred_file).unwrap();
+        let credentials = Credentials::from_file(&self.cred_file).expect("Could not read google credential file");
         let claims = JwtClaims::new(credentials.iss(),
                              &Scope::DevStorageReadWrite,
                              credentials.token_uri(),
                              None, None);
-        let jwt = Jwt::new(claims, credentials.rsa_key().unwrap(), None);
+        let jwt = Jwt::new(claims, credentials.rsa_key().expect("Invalid rsa key in credential file"), None);
         debug!("Calling get_token");
 
         let token = match get_token_as_string_legacy(&jwt, Some(&credentials.token_uri())){
