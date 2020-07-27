@@ -436,7 +436,7 @@ pub async fn tag_photo_by_id(
     photo_data: &TagPhoto,
 ) -> Result<bool, DBError> {
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30; // 30s timeout TODO: Change in prod to 15 min in sec
+    let offset: i64 = 900; // 30s timeout TODO: Change in prod to 15 min in sec
 
     let result = client
         .query_one("SELECT * FROM image_metas WHERE id = $1", &[&photo_id])
@@ -473,7 +473,7 @@ pub async fn verify_photo_by_id(
     verified: bool,
 ) -> Result<bool, DBError> {
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30; //15 min in sec
+    let offset: i64 = 900; //15 min in sec
 
     let result = client
         .query_one("SELECT locked_at FROM image_metas WHERE id = $1", &[&id])
