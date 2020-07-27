@@ -106,17 +106,13 @@ async fn main() -> std::io::Result<()> {
     let bearer_string = "".to_string();
     let project_number = conf.tagify_data.project_number;
     let p_temp = project_number.clone();
-    let google_storage_enable = conf.tagify_data.google_storage_enable;
     let gg_storage_data = gg_storage::GoogleStorage {
         bearer_string,
         project_number,
-        google_storage_enable,
+        google_storage_enable: conf.tagify_data.google_storage_enable,
     };
     // Error message if Authorization not set
-    if gg_storage_data.google_storage_enable == "true" {
-        // if b_temp == "" {
-        //     panic!("'google_storage_enable' enabled but 'bearer_string' empty!");
-        // }
+    if gg_storage_data.google_storage_enable == true {
         if p_temp == "" {
             panic!("'google_storage_enable' enabled but 'project_number' empty!");
         }

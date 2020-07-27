@@ -265,7 +265,6 @@ pub async fn post_photo(
         },
         Ok(s) => s,
     };
-    let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
@@ -285,7 +284,7 @@ pub async fn post_photo(
     }
 
     // Check album exist
-    if google_storage_enable.to_string() == "true" {
+    if gg_storage_data.google_storage_enable {
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -325,7 +324,7 @@ pub async fn post_photo(
         let mut filenames_storage: Vec<String> = Vec::new();
         let filenames_db: Vec<String> =
             db::get_image_filenames_of_album_with_id(&client, &album_id).await;
-        if google_storage_enable.to_string() == "true" {
+        if gg_storage_data.google_storage_enable {
             match gg_storage::get_all_object_names_from_bucket(
                 &client_r,
                 &bearer_string,
@@ -369,7 +368,7 @@ pub async fn post_photo(
         let new_filename_with_ext = format!("{}.{}", new_filename, file_extension);
 
         // Save file to storage
-        if google_storage_enable.to_string() == "true" {
+        if gg_storage_data.google_storage_enable {
             info!(
                 "new_filename_with_ext gg storage: {}",
                 &new_filename_with_ext
@@ -486,7 +485,6 @@ pub async fn put_photo(
         },
         Ok(s) => s,
     };
-    let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
@@ -506,7 +504,7 @@ pub async fn put_photo(
     }
 
     // Check album exist
-    if google_storage_enable.to_string() == "true" {
+    if gg_storage_data.google_storage_enable {
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -575,7 +573,7 @@ pub async fn put_photo(
         let filepath = format!("{}{}", album_path, new_filename_with_ext);
 
         // Save file to storage
-        if google_storage_enable.to_string() == "true" {
+        if gg_storage_data.google_storage_enable {
             // Delete old object (think of 1.png vs 1.jpg)
             match gg_storage::delete_object_from_bucket(
                 &client_r,
@@ -712,12 +710,11 @@ pub async fn get_photo(
         },
         Ok(s) => s,
     };
-    let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
     // Check album exist
-    if google_storage_enable.to_string() == "true" {
+    if gg_storage_data.google_storage_enable {
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -765,7 +762,7 @@ pub async fn get_photo(
     let vec: Vec<&str> = file_path_db.split(".").collect();
     let file_ext: &str = vec[1];
     // Get image
-    if google_storage_enable.to_string() == "true" {
+    if gg_storage_data.google_storage_enable {
         let bytes = gg_storage::download_object_bytes_from_bucket(
             &client_r,
             &bearer_string,
@@ -838,7 +835,6 @@ pub async fn delete_photo(
         },
         Ok(s) => s,
     };
-    let google_storage_enable = &gg_storage_data.google_storage_enable;
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
@@ -867,7 +863,7 @@ pub async fn delete_photo(
     }
 
     // Check album exist
-    if google_storage_enable.to_string() == "true" {
+    if gg_storage_data.google_storage_enable {
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -903,7 +899,7 @@ pub async fn delete_photo(
     }
 
     // Delete file from storage
-    if google_storage_enable.to_string() == "true" {
+    if gg_storage_data.google_storage_enable {
         match gg_storage::delete_object_from_bucket(
             &client_r,
             &bearer_string,

@@ -31,7 +31,6 @@ pub async fn create_album(
         Ok(s) => s,
     };
     let project_number = &gg_storage_data.project_number;
-    let google_storage_enable = &gg_storage_data.google_storage_enable;
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -47,7 +46,7 @@ pub async fn create_album(
             return Err(HandlerError::InternalError);
         }
         Ok(album) => {
-            if google_storage_enable.to_string() == "true" {
+            if gg_storage_data.google_storage_enable {
                 let client_r = reqwest::Client::new();
                 let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
                 let response = gg_storage::create_bucket(
@@ -250,7 +249,7 @@ pub async fn delete_album_by_id(
             }
             Ok(_) => {
                 // DELETE from storage:
-                if gg_storage_data.google_storage_enable.to_string() == "true" {
+                if gg_storage_data.google_storage_enable {
                     //  Google storage
                     let client_r = reqwest::Client::new();
                     // let bearer_string = &gg_storage_data.bearer_string;

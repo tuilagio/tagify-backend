@@ -44,7 +44,7 @@ pub static PREFIX_BUCKET: &str = "tagify_album_ss20_";
 pub struct GoogleStorage {
     pub bearer_string: String,
     pub project_number: String,
-    pub google_storage_enable: String,
+    pub google_storage_enable: bool,
 }
 
 pub async fn get_bucket(
