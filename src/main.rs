@@ -5,6 +5,10 @@ use actix_files::NamedFile;
 use actix_web::{middleware, middleware::Logger, web, App, HttpServer, Result};
 use std::path::PathBuf;
 
+use actix::prelude::Actor;
+#[cfg(debug_assertions)]
+use actix_web::HttpResponse;
+
 use listenfd::ListenFd;
 use log::{error, info};
 use std::fs::File;
@@ -16,8 +20,15 @@ mod db;
 mod errors;
 mod handlers;
 
+
+#[cfg(not(debug_assertions))]
+mod letsencrypt;
+#[cfg(not(debug_assertions))]
+use letsencrypt::LetsEncrypt;
+
 mod admin_handlers;
 mod album_handlers;
+mod gg_storage;
 mod my_cookie_policy;
 mod my_identity_service;
 mod utils;
@@ -25,8 +36,11 @@ mod utils;
 mod album_models;
 mod user_models;
 
+mod oauth;
+
 use crate::handlers::{login, logout, status};
 use user_models::ROLES;
+use crate::oauth::Oauth;
 
 struct DistPath {
     user: PathBuf,
@@ -87,6 +101,23 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    // Google storage
+    let bearer_string = "".to_string();
+    let project_number = conf.tagify_data.project_number;
+    let p_temp = project_number.clone();
+    let gg_storage_data = gg_storage::GoogleStorage {
+        bearer_string,
+        project_number,
+        google_storage_enable: conf.tagify_data.google_storage_enable.clone(),
+    };
+    // Error message if Authorization not set
+    if gg_storage_data.google_storage_enable == true {
+        if p_temp == "" {
+            panic!("'google_storage_enable' enabled but 'project_number' empty!");
+        }
+    }
+
+
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
 
@@ -113,7 +144,6 @@ async fn main() -> std::io::Result<()> {
             panic!("Could not open schema.sql file");
         }
     };
-
     match client.batch_execute(&schema).await {
         Ok(i) => i,
         Err(e) => {
@@ -123,7 +153,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Build server address
-    let ip = conf.server.hostname + ":" + &conf.server.port;
+    let ip = conf.server.hostname.clone() + ":" + &conf.server.port;
     println!("Server is reachable at http://{}", ip);
 
     // Create default admin accounts
@@ -152,6 +182,48 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    #[cfg(not(debug_assertions))]
+    let (encrypter, ssl_builder) = if conf.cert.activate {
+        error!("Setup encrypter and ssl_builder!");
+        let encrypter = LetsEncrypt::new(conf.cert.domain, vec![]);
+        let certificate = match encrypter.certificate() {
+            Ok(Some(certificate)) => {
+                if certificate.valid_days_left() > 0 {
+                    Some(certificate)
+                } else {
+                    None
+                }
+            }
+            Ok(None) => None,
+            Err(e) => {
+                error!("Failed to get certificate: {}", e);
+                std::process::exit(2);
+            }
+        };
+
+
+        let ssl_builder = match certificate {
+                Some(certificate) => {
+                        match encrypter.ssl_builder(certificate) {
+                            Ok(builder) => {
+                                Some(builder)
+                            }
+                            Err(e) => {
+                                error!("Failed to make ssl_builder: {}", e);
+                                std::process::exit(2);
+                        }
+                    }
+                }
+            None => {
+                error!("ssl_builder returned None!");
+                None
+            }
+        };
+        (Some(encrypter), ssl_builder)
+    } else {
+        (None, None)
+    };
+
     let temp = conf.server.key.clone();
 
     // Register http routes
@@ -160,6 +232,11 @@ async fn main() -> std::io::Result<()> {
         let path_arg: DistPath;
         let secure_cookie: bool;
         let max_age = 30 * 24 * 60 * 60; // days
+
+        #[cfg(not(debug_assertions))]
+        let nonce_req = web::resource("/.well-known/acme-challenge/{token}").to(letsencrypt::nonce_request);
+        #[cfg(debug_assertions)]
+        let nonce_req = web::resource("/.well-known/acme-challenge/{token}").to(|| HttpResponse::MethodNotAllowed());
 
         // Check if in release mode if so use DIST env variable as path for serving frontend
         if cfg!(debug_assertions) {
@@ -214,10 +291,10 @@ async fn main() -> std::io::Result<()> {
             // Serve index.html
             // Give every handler access to the db connection pool
             .data(pool.clone())
-            // Data path
-            // .data(tagify_data_path.clone())
             // Albums path
             .data(tagify_albums_path.clone())
+            // Google storage:
+            .data(gg_storage_data.clone())
             // Enable logger
             .wrap(Logger::default())
             //limit the maximum amount of data that server will accept
@@ -226,6 +303,8 @@ async fn main() -> std::io::Result<()> {
                     .limit(4096)
                     .error_handler(|err, _req| actix_web::error::ErrorBadRequest(err)),
             )
+            // For letsencrypt
+            .service(nonce_req)
             .service(
                 web::scope("/api")
                     //all admin endpoints
@@ -308,7 +387,6 @@ async fn main() -> std::io::Result<()> {
                             )
                             .service(
                                 web::scope("/albums")
-                                    
                                     //get all own albums
                                     .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
@@ -370,7 +448,10 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/albums")
                             //search function
-                            .route("/search", web::get().to(album_handlers::search))
+                            .route(
+                                "/search/{search_after}",
+                                web::get().to(album_handlers::search),
+                            )
                             //get albums for preview (all)
                             .route("", web::get().to(album_handlers::get_all_albums))
                             //get album by id
@@ -403,6 +484,39 @@ async fn main() -> std::io::Result<()> {
             panic!("Could not take tcp listener: {}", err);
         }
     };
+
+
+    // Add https if cert exists
+    #[cfg(not(debug_assertions))]
+    if let Some(ssl_builder) = ssl_builder {
+        let https_ip = conf.server.hostname + ":" + &conf.cert.port;
+        println!("Server is reachable at https://{}", https_ip);
+
+        server = match listenfd.take_tcp_listener(1) {
+            Ok(l) => {
+                match l {
+                    Some(i) => server.listen_openssl(i, ssl_builder).expect("Listening failed"),
+                    None => server.bind_openssl(https_ip, ssl_builder).expect("Binding failed")
+                }
+            }
+            Err(err) => {
+                panic!("Could not take tcp listener: {}", err);
+            }
+        };
+    };
+
+    #[cfg(not(debug_assertions))]
+    if conf.cert.activate {
+        // Run encrypter actor that checks for certificate at startup,
+        // and attempts to build if missing/non-valid also wrt days left
+        // Will run at a specified interval as well
+        encrypter.unwrap().start();
+    };
+
+    if conf.tagify_data.google_storage_enable {
+        let oauth = Oauth::new(&conf.tagify_data.google_key_json, &conf.tagify_data.key_file);
+        oauth.start();
+    }
 
     server.run().await
 }

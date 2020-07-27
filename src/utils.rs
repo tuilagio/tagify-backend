@@ -12,6 +12,12 @@ use std::fs;
 //     is_role
 // }
 
+pub fn get_file_ext(full_filename: &str) -> String {
+    let vec: Vec<&str> = full_filename.split(".").collect();
+    let file_ext: &str = vec[1];
+    return file_ext.to_string();
+}
+
 pub fn get_filenames_in_folder(folder_path: &str) -> Vec<String> {
     let mut filenames_folder = Vec::new();
 

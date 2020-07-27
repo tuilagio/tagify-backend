@@ -4,6 +4,14 @@ port = "5000"
 key = "geDb76JMcsmxJGkTr28rceAQD4q10T8d"
 threads = 8
 
+[cert]
+port = "4000"
+domain = "tagify.gchq.icu"
+email = "it.networking.logging@gmail.com"
+path = "certs"
+timeout = 5000
+activate = false
+
 [default_admin]
 username = "admin"
 nickname = "admin"
@@ -25,3 +33,7 @@ port = "5432"
 
 [tagify_data]
 path = "./tagify_data"
+google_storage_enable = false
+google_key_json = "./credential/gg-storage.json"
+key_file = "./credential/gen_token/oauth_key.txt"
+project_number = ""
