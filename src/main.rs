@@ -104,7 +104,6 @@ async fn main() -> std::io::Result<()> {
     // Google storage
     // TODO: how to get rid of the clone() bullshit?
     let bearer_string = "".to_string();
-    let b_temp = bearer_string.clone();
     let project_number = conf.tagify_data.project_number;
     let p_temp = project_number.clone();
     let google_storage_enable = conf.tagify_data.google_storage_enable;
@@ -122,7 +121,7 @@ async fn main() -> std::io::Result<()> {
             panic!("'google_storage_enable' enabled but 'project_number' empty!");
         }
     }
-    
+
 
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
