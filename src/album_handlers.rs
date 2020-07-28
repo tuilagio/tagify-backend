@@ -35,7 +35,9 @@ pub async fn json_file(
         Ok(item) => item,
     };
 
-    Ok(HttpResponse::build(StatusCode::OK).json(result))
+    Ok(HttpResponse::build(StatusCode::OK)
+        .content_type(format!("json"))
+        .json(result))
 }
 
 pub async fn create_album(
