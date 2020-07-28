@@ -128,7 +128,7 @@ pub async fn get_photo(
     // Check album exist
     let bearer_string: String;
     if gg_storage_data.google_storage_enable {
-         bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+        bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
             Err(e) => {
                 error!("Error reading oauth_key.txt  : {}", e);
                 return Err(HandlerError::InternalError);
@@ -266,7 +266,6 @@ pub async fn delete_photo(
     // Check album exist
     let bearer_string: String;
     if gg_storage_data.google_storage_enable {
-
         bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
             Err(e) => {
                 error!("Error reading oauth_key.txt  : {}", e);

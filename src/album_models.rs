@@ -55,6 +55,7 @@ pub struct PhotosTagsJson {
     pub id: i32,
     pub album_id: i32,
     pub tag: String,
+    pub coordinates: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

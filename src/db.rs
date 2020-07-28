@@ -586,9 +586,10 @@ pub async fn get_searched_albums(
     Ok(albums)
 }
 
-pub async fn get_tags_json(client: deadpool_postgres::Client, id: i32) -> Result<Vec<PhotosTagsJson>, DBError> {
+pub async fn get_tags_json(client: &deadpool_postgres::Client, id: i32) -> Result<Vec<PhotosTagsJson>, DBError> {
+    println!("{}", id);
     let result = client
-        .query("SELECT id, album_id, tag, FROM image_metas where album_id = $1", &[&id])
+        .query("SELECT id, album_id, tag, coordinates FROM image_metas WHERE album_id = $1", &[&id])
         .await
         .expect("ERROR GETTING tags")
         .iter()

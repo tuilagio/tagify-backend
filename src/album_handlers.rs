@@ -18,15 +18,16 @@ pub async fn json_file(
     pool: web::Data<Pool>,
     album_id: web::Path<(i32,)>,
 ) -> Result<HttpResponse, HandlerError> {
+    println!(" hello from json file handler");
     let client = match pool.get().await {
         Ok(item) => item,
         Err(e) => {
-            error!("Error occured: {}", e);
+            error!("Error occured : {}", e);
             return Err(HandlerError::InternalError);
         }
     };
 
-    let result = match db::get_tags_json(client, album_id.0).await {
+    let result = match db::get_tags_json(&client, album_id.0).await {
         Err(e) => {
             error!("Error occured: {}", e);
             return Err(HandlerError::InternalError);
