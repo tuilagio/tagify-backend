@@ -36,7 +36,7 @@ pub async fn json_file(
     };
 
     Ok(HttpResponse::build(StatusCode::OK)
-        .content_type(format!("json"))
+        .content_type(format!("tags_for_album_{}", album_id.0))
         .json(result))
 }
 
