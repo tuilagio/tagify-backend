@@ -82,4 +82,5 @@ pub struct PhotoToTag {
     pub tagged: bool,
     pub tag: String,
     pub timestamp: DateTime<Utc>,
+    pub coordinates: String
 }

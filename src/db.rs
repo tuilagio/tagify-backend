@@ -533,10 +533,10 @@ pub async fn get_photos_for_tagging(
     let mut photos = Vec::new();
 
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30; // 15 min in sec
+    let offset: i64 = 900; // 15 min in sec
     let time_after_offset: i64 = &current_time - &offset;
 
-    for row in client.query("SELECT id, file_path, tagged, tag  FROM image_metas WHERE album_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
+    for row in client.query("SELECT id, file_path, tagged, tag, coordinates  FROM image_metas WHERE album_id = $1 AND verified = false AND locked_at <= $2", &[&id, &time_after_offset]).await? {
             let photo_timestamp = Utc::now();
 
             let photo = PhotoToTag {
@@ -544,6 +544,7 @@ pub async fn get_photos_for_tagging(
                 file_path: row.get(1),
                 tagged: row.get(2),
                 tag: row.get(3),
+                coordinates: row.get(4),
                 timestamp: photo_timestamp
             };
             client.query("UPDATE image_metas SET locked_at = $2 WHERE id = $1 ", &[&&photo.id, &photo.timestamp.timestamp()]).await?;
