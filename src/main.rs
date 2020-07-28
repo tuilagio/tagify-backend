@@ -20,7 +20,6 @@ mod db;
 mod errors;
 mod handlers;
 
-
 #[cfg(not(debug_assertions))]
 mod letsencrypt;
 #[cfg(not(debug_assertions))]
@@ -39,8 +38,8 @@ mod user_models;
 mod oauth;
 
 use crate::handlers::{login, logout, status};
-use user_models::ROLES;
 use crate::oauth::Oauth;
+use user_models::ROLES;
 
 struct DistPath {
     user: PathBuf,
@@ -116,7 +115,6 @@ async fn main() -> std::io::Result<()> {
             panic!("'google_storage_enable' enabled but 'project_number' empty!");
         }
     }
-
 
     // Create db connection pool
     let pool = conf.postgres.create_pool(NoTls).unwrap();
@@ -201,19 +199,14 @@ async fn main() -> std::io::Result<()> {
             }
         };
 
-
         let ssl_builder = match certificate {
-                Some(certificate) => {
-                        match encrypter.ssl_builder(certificate) {
-                            Ok(builder) => {
-                                Some(builder)
-                            }
-                            Err(e) => {
-                                error!("Failed to make ssl_builder: {}", e);
-                                std::process::exit(2);
-                        }
-                    }
+            Some(certificate) => match encrypter.ssl_builder(certificate) {
+                Ok(builder) => Some(builder),
+                Err(e) => {
+                    error!("Failed to make ssl_builder: {}", e);
+                    std::process::exit(2);
                 }
+            },
             None => {
                 error!("ssl_builder returned None!");
                 None
@@ -234,9 +227,11 @@ async fn main() -> std::io::Result<()> {
         let max_age = 30 * 24 * 60 * 60; // days
 
         #[cfg(not(debug_assertions))]
-        let nonce_req = web::resource("/.well-known/acme-challenge/{token}").to(letsencrypt::nonce_request);
+        let nonce_req =
+            web::resource("/.well-known/acme-challenge/{token}").to(letsencrypt::nonce_request);
         #[cfg(debug_assertions)]
-        let nonce_req = web::resource("/.well-known/acme-challenge/{token}").to(|| HttpResponse::MethodNotAllowed());
+        let nonce_req = web::resource("/.well-known/acme-challenge/{token}")
+            .to(|| HttpResponse::MethodNotAllowed());
 
         // Check if in release mode if so use DIST env variable as path for serving frontend
         if cfg!(debug_assertions) {
@@ -339,9 +334,15 @@ async fn main() -> std::io::Result<()> {
                                     //get all albums
                                     .route("", web::get().to(status))
                                     //change album data (description or name)
-                                    .route("/{album_id}", web::put().to(album_handlers::update_album_by_id))
+                                    .route(
+                                        "/{album_id}",
+                                        web::put().to(album_handlers::update_album_by_id),
+                                    )
                                     //delete own album by id
-                                    .route("/{album_id}", web::delete().to(album_handlers::delete_album_by_id))
+                                    .route(
+                                        "/{album_id}",
+                                        web::delete().to(album_handlers::delete_album_by_id),
+                                    )
                                     /////////////////////////////////////
                                     .route(
                                         "/{album_id}/photos/{photo_id}",
@@ -387,6 +388,11 @@ async fn main() -> std::io::Result<()> {
                             )
                             .service(
                                 web::scope("/albums")
+                                    //download json file with tags
+                                    .route(
+                                        "/json/{album_id}",
+                                        web::get().to(album_handlers::json_file),
+                                    )
                                     //get all own albums
                                     .route("", web::get().to(album_handlers::get_own_albums))
                                     //create new album
@@ -485,7 +491,6 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-
     // Add https if cert exists
     #[cfg(not(debug_assertions))]
     if let Some(ssl_builder) = ssl_builder {
@@ -493,12 +498,14 @@ async fn main() -> std::io::Result<()> {
         println!("Server is reachable at https://{}", https_ip);
 
         server = match listenfd.take_tcp_listener(1) {
-            Ok(l) => {
-                match l {
-                    Some(i) => server.listen_openssl(i, ssl_builder).expect("Listening failed"),
-                    None => server.bind_openssl(https_ip, ssl_builder).expect("Binding failed")
-                }
-            }
+            Ok(l) => match l {
+                Some(i) => server
+                    .listen_openssl(i, ssl_builder)
+                    .expect("Listening failed"),
+                None => server
+                    .bind_openssl(https_ip, ssl_builder)
+                    .expect("Binding failed"),
+            },
             Err(err) => {
                 panic!("Could not take tcp listener: {}", err);
             }
@@ -514,7 +521,10 @@ async fn main() -> std::io::Result<()> {
     };
 
     if conf.tagify_data.google_storage_enable {
-        let oauth = Oauth::new(&conf.tagify_data.google_key_json, &conf.tagify_data.key_file);
+        let oauth = Oauth::new(
+            &conf.tagify_data.google_key_json,
+            &conf.tagify_data.key_file,
+        );
         oauth.start();
     }
 

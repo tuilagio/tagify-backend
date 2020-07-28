@@ -49,6 +49,14 @@ pub struct AlbumPreview {
     pub first_photo: Option<i32>,
 }
 
+#[derive(Debug, Serialize, Deserialize, PostgresMapper)]
+#[pg_mapper(table = "image_metas")]
+pub struct PhotosTagsJson {
+    pub id: i32,
+    pub album_id: i32,
+    pub tag: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlbumsPreview {
     pub albums: Vec<AlbumPreview>,
@@ -61,7 +69,7 @@ pub struct PhotoPreview {
     pub file_path: String,
     pub tag: String,
     pub verified: bool,
-    pub tagged: bool
+    pub tagged: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

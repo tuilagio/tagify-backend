@@ -13,6 +13,30 @@ use std::fs;
 
 use crate::db;
 
+//json file with album id and tags
+pub async fn json_file(
+    pool: web::Data<Pool>,
+    album_id: web::Path<(i32,)>,
+) -> Result<HttpResponse, HandlerError> {
+    let client = match pool.get().await {
+        Ok(item) => item,
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+    };
+
+    let result = match db::get_tags_json(client, album_id.0).await {
+        Err(e) => {
+            error!("Error occured: {}", e);
+            return Err(HandlerError::InternalError);
+        }
+        Ok(item) => item,
+    };
+
+    Ok(HttpResponse::build(StatusCode::OK).json(result))
+}
+
 pub async fn create_album(
     pool: web::Data<Pool>,
     data: web::Json<CreateAlbum>,
@@ -21,7 +45,6 @@ pub async fn create_album(
     gg_storage_data: web::Data<gg_storage::GoogleStorage>,
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
-
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -39,13 +62,14 @@ pub async fn create_album(
         Ok(album) => {
             if gg_storage_data.google_storage_enable {
                 // let bearer_string = &gg_storage_data.bearer_string;
-                let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-                    Err(e) => {
-                        error!("Error reading oauth_key.txt  : {}", e);
-                        return Err(HandlerError::InternalError);
-                    }
-                    Ok(s) => s,
-                };
+                let bearer_string: String =
+                    match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+                        Err(e) => {
+                            error!("Error reading oauth_key.txt  : {}", e);
+                            return Err(HandlerError::InternalError);
+                        }
+                        Ok(s) => s,
+                    };
                 let project_number = &gg_storage_data.project_number;
                 let client_r = reqwest::Client::new();
                 let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
@@ -234,7 +258,9 @@ pub async fn delete_album_by_id(
         // TODO: Error response for case supplied album id not found?
         Err(e) => {
             error!("Error occured get user's album: {}", e);
-            return Err(HandlerError::BadClientData { field: e.to_string() });
+            return Err(HandlerError::BadClientData {
+                field: e.to_string(),
+            });
         }
         Ok(item) => item,
     };
@@ -325,7 +351,9 @@ pub async fn update_album_by_id(
         Err(e) => {
             error!("Error occured get users albums: {}", e);
 
-            return Err(HandlerError::BadClientData { field: e.to_string()});
+            return Err(HandlerError::BadClientData {
+                field: e.to_string(),
+            });
         }
         Ok(item) => item,
     };
@@ -334,8 +362,8 @@ pub async fn update_album_by_id(
         match db::update_album(&client, album_id.0, &data).await {
             Err(e) => {
                 error!("Error occured : {}", e);
-                    return Err(HandlerError::BadClientData {
-                field: e.to_string(),
+                return Err(HandlerError::BadClientData {
+                    field: e.to_string(),
                 });
             }
             Ok(num_updated) => num_updated,
@@ -429,7 +457,9 @@ pub async fn get_photos_for_tagging(
     match db::get_album_by_id(&client, data.0).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::BadClientData { field: e.to_string() });
+            return Err(HandlerError::BadClientData {
+                field: e.to_string(),
+            });
         }
         Ok(item) => item,
     };

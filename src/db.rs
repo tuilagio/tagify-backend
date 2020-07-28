@@ -1,6 +1,6 @@
 use crate::album_models::{
     Album, AlbumPreview, AlbumsPreview, CreateAlbum, PhotoPreview, PhotoToTag, TagPhoto,
-    UpdateAlbum,
+    UpdateAlbum, PhotosTagsJson
 };
 use crate::errors::DBError;
 use crate::user_models::{CreateImageMeta, CreateUser, Hash, ImageMeta, SendUser, User};
@@ -584,4 +584,15 @@ pub async fn get_searched_albums(
         }
     }
     Ok(albums)
+}
+
+pub async fn get_tags_json(client: deadpool_postgres::Client, id: i32) -> Result<Vec<PhotosTagsJson>, DBError> {
+    let result = client
+        .query("SELECT id, album_id, tag, FROM image_metas where album_id = $1", &[&id])
+        .await
+        .expect("ERROR GETTING tags")
+        .iter()
+        .map(|row| PhotosTagsJson::from_row_ref(row).unwrap())
+        .collect::<Vec<PhotosTagsJson>>();
+    Ok(result)
 }
