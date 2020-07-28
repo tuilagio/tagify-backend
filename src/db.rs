@@ -501,8 +501,9 @@ pub async fn verify_photo_by_id(
     let offset: i64 = 900; //15 min in sec
 
     let result = client
-        .query_one("SELECT locked_at FROM image_metas WHERE id = $1", &[&id])
+        .query_one("SELECT locked_at, album_id FROM image_metas WHERE id = $1", &[&id])
         .await?;
+    let album_id: i32 = result.get(1);
     if (&result.get(0) + &offset) > current_time {
         if verified {
             client
@@ -516,6 +517,12 @@ pub async fn verify_photo_by_id(
             .query(
                 "UPDATE image_metas SET tag = '', coordinates = '', tagged = false, verified = false, locked_at = 0 WHERE id = $1 ", // reset timer
                 &[ &id],
+            )
+            .await?;
+            client
+            .query(
+                "UPDATE albums SET tagged_number = tagged_number -1 WHERE id = $1",
+                &[&album_id],
             )
             .await?;
         }
