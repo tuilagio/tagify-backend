@@ -258,13 +258,6 @@ pub async fn post_photo(
     let album_path = format!("{}{}/", tagify_albums_path.to_string(), &album_id);
     // For gg storage
     // let bearer_string = &gg_storage_data.bearer_string;
-    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-        Err(e) => {
-            error!("Error reading oauth_key.txt  : {}", e);
-            return Err(HandlerError::InternalError);
-        }
-        Ok(s) => s,
-    };
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
@@ -272,7 +265,7 @@ pub async fn post_photo(
     let mut result: Album = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
@@ -284,7 +277,15 @@ pub async fn post_photo(
     }
 
     // Check album exist
+    let bearer_string: String;
     if gg_storage_data.google_storage_enable {
+         bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+            Err(e) => {
+                error!("Error reading oauth_key.txt  : {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            Ok(s) => s,
+        };
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -299,6 +300,7 @@ pub async fn post_photo(
             }
         }
     } else {
+        bearer_string = "".to_string();
         if !std::path::Path::new(&album_path).exists() {
             error!(
                 "Error occured : album with id={} not found on disk",
@@ -478,13 +480,6 @@ pub async fn put_photo(
 
     // For gg storage
     // let bearer_string = &gg_storage_data.bearer_string;
-    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-        Err(e) => {
-            error!("Error reading oauth_key.txt  : {}", e);
-            return Err(HandlerError::InternalError);
-        }
-        Ok(s) => s,
-    };
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
@@ -492,7 +487,7 @@ pub async fn put_photo(
     let result = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
@@ -504,7 +499,16 @@ pub async fn put_photo(
     }
 
     // Check album exist
+    let bearer_string: String;
     if gg_storage_data.google_storage_enable {
+
+         bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+            Err(e) => {
+                error!("Error reading oauth_key.txt  : {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            Ok(s) => s,
+        };
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -519,6 +523,7 @@ pub async fn put_photo(
             }
         }
     } else {
+        bearer_string = "".to_string();
         if !std::path::Path::new(&album_path).exists() {
             error!(
                 "Error occured : album with id={} not found on disk",
@@ -703,18 +708,20 @@ pub async fn get_photo(
 
     // For gg storage
     // let bearer_string = &gg_storage_data.bearer_string;
-    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-        Err(e) => {
-            error!("Error reading oauth_key.txt  : {}", e);
-            return Err(HandlerError::InternalError);
-        }
-        Ok(s) => s,
-    };
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
     // Check album exist
+    let bearer_string: String;
     if gg_storage_data.google_storage_enable {
+
+        bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+            Err(e) => {
+                error!("Error reading oauth_key.txt  : {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            Ok(s) => s,
+        };
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -729,6 +736,7 @@ pub async fn get_photo(
             }
         }
     } else {
+        bearer_string = "".to_string();
         if !std::path::Path::new(&album_path).exists() {
             error!(
                 "Error occured : album with id={} not found on disk",
@@ -828,13 +836,6 @@ pub async fn delete_photo(
 
     // For gg storage
     // let bearer_string = &gg_storage_data.bearer_string;
-    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-        Err(e) => {
-            error!("Error reading oauth_key.txt  : {}", e);
-            return Err(HandlerError::InternalError);
-        }
-        Ok(s) => s,
-    };
     let client_r = reqwest::Client::new();
     let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album_id);
 
@@ -842,7 +843,7 @@ pub async fn delete_photo(
     let mut result: Album = match db::get_album_by_id(&client, album_id).await {
         Err(e) => {
             error!("Error occured get users albums: {}", e);
-            return Err(HandlerError::InternalError);
+            return Err(HandlerError::BadClientData { field: e.to_string() });
         }
         Ok(item) => item,
     };
@@ -863,7 +864,16 @@ pub async fn delete_photo(
     }
 
     // Check album exist
+    let bearer_string: String;
     if gg_storage_data.google_storage_enable {
+
+        bearer_string = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+            Err(e) => {
+                error!("Error reading oauth_key.txt  : {}", e);
+                return Err(HandlerError::InternalError);
+            }
+            Ok(s) => s,
+        };
         match gg_storage::get_bucket(&client_r, &bearer_string, &bucket_name).await {
             Err(e) => {
                 error!("Error occured getting bucket from gg storage: {}", e);
@@ -878,6 +888,7 @@ pub async fn delete_photo(
             }
         }
     } else {
+        bearer_string = "".to_string();
         if !std::path::Path::new(&album_path).exists() {
             error!(
                 "Error occured : album with id={} not found on disk",

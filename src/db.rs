@@ -115,6 +115,31 @@ pub async fn delete_user(
     client: &deadpool_postgres::Client,
     user_id: i32,
 ) -> Result<User, DBError> {
+    
+    for row in client
+    .query(
+        "SELECT id FROM albums WHERE users_id = $1 ",
+        &[&user_id],
+    )
+    .await?
+    {
+        let id: i32 = row.get(0);
+        println!("album id is: {}", &id);
+        client
+            .query(
+                "DELETE FROM image_metas WHERE album_id = $1 ",
+                &[&id],
+            ).await?;
+            
+        client
+            .query(
+                "DELETE FROM albums WHERE id = $1 ",
+                &[&id],
+            ).await?;
+            
+
+    }
+
     let result = client
         .query_one("DELETE FROM users WHERE id=$1 RETURNING *", &[&user_id])
         .await?;
@@ -286,7 +311,7 @@ pub async fn get_photos_from_album(
 
     for row in client
         .query(
-            "SELECT id, file_path  FROM image_metas WHERE album_id = $1 ",
+            "SELECT id, file_path, tag, tagged, verified FROM image_metas WHERE album_id = $1 ORDER BY id",
             &[&id],
         )
         .await?
@@ -295,7 +320,11 @@ pub async fn get_photos_from_album(
             let photo = PhotoPreview {
                 id: row.get(0),
                 file_path: row.get(1),
+                tag: row.get(2),
+                tagged: row.get(3),
+                verified: row.get(4)
             };
+            
             photos.push(photo);
             current_position = current_position + 1;
             if &current_position >= &last_position {
@@ -432,7 +461,7 @@ pub async fn tag_photo_by_id(
     photo_data: &TagPhoto,
 ) -> Result<bool, DBError> {
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30; // 30s timeout TODO: Change in prod to 15 min in sec
+    let offset: i64 = 900; // 30s timeout TODO: Change in prod to 15 min in sec
 
     let result = client
         .query_one("SELECT * FROM image_metas WHERE id = $1", &[&photo_id])
@@ -469,7 +498,7 @@ pub async fn verify_photo_by_id(
     verified: bool,
 ) -> Result<bool, DBError> {
     let current_time = Utc::now().timestamp();
-    let offset: i64 = 30; //15 min in sec
+    let offset: i64 = 900; //15 min in sec
 
     let result = client
         .query_one("SELECT locked_at FROM image_metas WHERE id = $1", &[&id])
