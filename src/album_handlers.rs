@@ -22,15 +22,6 @@ pub async fn create_album(
 ) -> Result<HttpResponse, HandlerError> {
     let user: User = id.identity();
 
-    // let bearer_string = &gg_storage_data.bearer_string;
-    let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
-        Err(e) => {
-            error!("Error reading oauth_key.txt  : {}", e);
-            return Err(HandlerError::InternalError);
-        }
-        Ok(s) => s,
-    };
-    let project_number = &gg_storage_data.project_number;
 
     let client = match pool.get().await {
         Ok(item) => item,
@@ -47,6 +38,15 @@ pub async fn create_album(
         }
         Ok(album) => {
             if gg_storage_data.google_storage_enable {
+                // let bearer_string = &gg_storage_data.bearer_string;
+                let bearer_string: String = match fs::read_to_string("./credential/gen_token/oauth_key.txt") {
+                    Err(e) => {
+                        error!("Error reading oauth_key.txt  : {}", e);
+                        return Err(HandlerError::InternalError);
+                    }
+                    Ok(s) => s,
+                };
+                let project_number = &gg_storage_data.project_number;
                 let client_r = reqwest::Client::new();
                 let bucket_name: String = format!("{}{}", gg_storage::PREFIX_BUCKET, &album.id);
                 let response = gg_storage::create_bucket(
