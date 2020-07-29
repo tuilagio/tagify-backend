@@ -258,7 +258,7 @@ async fn main() -> std::io::Result<()> {
                 );
             }
             serve_file_service = fs::Files::new("/app/frontend/dist", dist).show_files_listing();
-            secure_cookie = true;
+            secure_cookie = false;
         }
         let cookie_key = temp.as_bytes();
 
